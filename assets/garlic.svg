@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 150">
+<defs><linearGradient id="skin" x1="0" y1="0" x2="1" y2=".4"><stop stop-color="#fffcef"/><stop offset=".5" stop-color="#f3e3d0"/><stop offset="1" stop-color="#b69db1"/></linearGradient><linearGradient id="shoe" x2="0" y2="1"><stop stop-color="#50414e"/><stop offset="1" stop-color="#24202b"/></linearGradient></defs>
+<g stroke="#403044" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+<path d="M37 125Q16 121 14 136Q26 145 53 136L56 123M82 124Q105 119 115 133Q109 146 79 138Z" fill="url(#shoe)"/>
+<path d="M64 9C91 21 81 39 99 58C135 96 104 132 66 130C22 135 6 106 23 78C35 58 61 46 64 9Z" fill="url(#skin)"/>
+<path d="M64 21C75 51 52 67 48 91Q44 111 58 122M73 50Q102 80 86 117" fill="none" stroke="#bfa6b7" stroke-width="2"/>
+<path d="M29 77Q42 67 54 77M78 75Q92 65 103 71" fill="none" stroke-width="5"/>
+<path d="M31 80Q42 73 53 81L52 96Q39 103 32 94ZM78 80Q90 73 101 77L99 93Q88 101 79 94Z" fill="#fff"/>
+<ellipse cx="46" cy="87" rx="4" ry="7" fill="#483242"/><ellipse cx="84" cy="86" rx="4" ry="7" fill="#483242"/>
+<path d="M56 110Q69 100 81 108" fill="none"/><path d="M64 130L58 139M68 130L71 139" fill="none" stroke="#ad8297"/>
+</g></svg>
