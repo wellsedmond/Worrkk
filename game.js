@@ -5,7 +5,10 @@ let assetsReady=false;
 Promise.all([heroImage.decode(),garlicImage.decode(),atmosphere.ready]).then(()=>{assetsReady=true;document.querySelector('#play').disabled=false;}).catch(()=>{overlay.hidden=false;overlay.querySelector('p').textContent='Не удалось загрузить графику. Откройте игру через npm start или используйте автономный HTML-файл.';});
 document.querySelector('#play').disabled=true;
 const keys={left:false,right:false,jump:false};
-const platforms=[[0,430,660,80],[770,430,570,80],[1480,430,600,80],[2220,430,700,80],[340,330,150,22],[850,320,160,22],[1120,240,160,22],[1570,320,170,22],[1850,240,160,22],[2290,320,150,22],[2530,250,160,22]];
+// A jump rises about 102–112 px at supported frame rates. Leave room for timing.
+const groundPlatforms=[[0,430,660,80],[770,430,570,80],[1480,430,600,80],[2220,430,700,80]];
+const ledgePlatforms=[[340,340,150,22],[850,340,160,22],[950,250,160,22],[1570,340,170,22],[1660,250,160,22],[2290,340,150,22],[2380,250,160,22]];
+const platforms=[...groundPlatforms,...ledgePlatforms];
 let player,coins,enemies,camera=0,state='menu',score=0,last=0,clock=0,jumpHeld=false;
 function reset(){atmosphere.reset();player={x:70,y:330,w:40,h:80,vx:0,vy:0,ground:false,hp:3,inv:0,face:1};coins=platforms.flatMap(([x,y,w],i)=>Array.from({length:i<4?Math.floor(w/95)-1:3},(_,j)=>({x:x+55+j*(i<4?90:35),y:y-45,taken:false})));enemies=[{x:530,y:388,origin:530,dir:1},{x:1060,y:388,origin:1060,dir:-1},{x:1770,y:388,origin:1770,dir:1},{x:2410,y:388,origin:2410,dir:1}];score=0;camera=0;clock=0;jumpHeld=false;for(const k in keys)keys[k]=false;}
 function start(){if(!assetsReady)return;reset();state='playing';overlay.classList.remove('defeat');overlay.hidden=true;}
@@ -13,9 +16,20 @@ function finish(win){state=win?'win':'lost';overlay.hidden=false;overlay.classLi
 function hit(){if(player.inv>0)return;player.hp--;player.inv=1.6;atmosphere.burst(player.x+20,player.y+35,'sparks');player.vy=-330;if(player.hp<=0)finish(false);}
 function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 function update(dt){clock+=dt;player.inv=Math.max(0,player.inv-dt);player.vx=((keys.right?1:0)-(keys.left?1:0))*245;if(player.vx)player.face=Math.sign(player.vx);if(keys.jump&&!jumpHeld&&player.ground){player.vy=-590;player.ground=false;}jumpHeld=keys.jump;
-player.x=Math.max(0,Math.min(2860,player.x+player.vx*dt));for(const [x,y,w,h]of platforms){if(overlap(player,{x,y,w,h})){if(player.vx>0)player.x=x-player.w;if(player.vx<0)player.x=x+w;}}
+player.x=Math.max(0,Math.min(2860,player.x+player.vx*dt));for(const [x,y,w,h]of groundPlatforms){if(overlap(player,{x,y,w,h})){if(player.vx>0)player.x=x-player.w;if(player.vx<0)player.x=x+w;}}
 const wasGrounded=player.ground;const prevBottom=player.y+player.h;player.vy+=1550*dt;player.y+=player.vy*dt;player.ground=false;
-for(const [x,y,w,h]of platforms){if(overlap(player,{x,y,w,h})){if(player.vy>=0&&prevBottom<=y+2){player.y=y-player.h;player.vy=0;player.ground=true;if(!wasGrounded)atmosphere.burst(player.x+20,y,'landing');}else if(player.vy<0){player.y=y+h;player.vy=0;}}}
+// Ledges are one-way: only feet crossing the top while falling can collide.
+// Scan all crossed tops and choose the first surface, independent of array order.
+if(player.vy>=0){
+ let landingY=Infinity;
+ for(const [x,y,w]of platforms){
+  if(player.x+player.w>x && player.x<x+w && prevBottom<=y+.001 && player.y+player.h>=y){landingY=Math.min(landingY,y);}
+ }
+ if(landingY!==Infinity){player.y=landingY-player.h;player.vy=0;player.ground=true;if(!wasGrounded)atmosphere.burst(player.x+20,landingY,'landing');}
+}else{
+ // The ground remains solid; floating ledges never block the head or sides.
+ for(const [x,y,w,h]of groundPlatforms){if(overlap(player,{x,y,w,h})){player.y=y+h;player.vy=0;}}
+}
 for(const c of coins)if(!c.taken&&Math.hypot(player.x+20-c.x,player.y+40-c.y)<33){c.taken=true;score++;}
 for(const e of enemies){if(e.dead)continue;e.x+=e.dir*65*dt;if(Math.abs(e.x-e.origin)>65)e.dir*=-1;if(overlap(player,{x:e.x,y:e.y,w:38,h:42})){if(player.vy>0&&prevBottom<e.y+12){e.dead=true;atmosphere.burst(e.x+19,e.y+21,'garlic');atmosphere.burst(e.x+19,e.y+10,'sparks');player.vy=-370;}else hit();}}
 if(player.y>570)finish(false);if(state==='playing'&&player.x>2780)finish(true);camera=Math.max(0,Math.min(1960,player.x-260));}
