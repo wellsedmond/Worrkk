@@ -2,11 +2,16 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 const files = {
   '/': ['index.html', 'text/html'],
+  '/atmosphere.js': ['atmosphere.js', 'text/javascript'],
+  '/Worrkk.html': ['Worrkk.html', 'text/html'],
   '/game.js': ['game.js', 'text/javascript'],
   '/style.css': ['style.css', 'text/css'],
   '/assets/hero.png': ['assets/hero.png', 'image/png'],
   '/assets/garlic.svg': ['assets/garlic.svg', 'image/svg+xml'],
 };
+for (const name of ['ska-palace', 'skyline', 'graveyard', 'web']) {
+  files['/assets/environment/' + name + '.svg'] = ['assets/environment/' + name + '.svg', 'image/svg+xml'];
+}
 http.createServer(async (req, res) => {
   const file = files[new URL(req.url, 'http://localhost').pathname];
   if (!file) { res.writeHead(404); return res.end('Not found'); }

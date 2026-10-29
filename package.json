@@ -1,1 +1,12 @@
-{"name":"cap-runner","version":"0.1.0","private":true,"type":"module","scripts":{"start":"node server.js","check":"node --check game.js && node --check server.js"}}
+{
+  "name": "upyr-run",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check game.js && node --check atmosphere.js && node --check server.js && node --check scripts/build-standalone.js",
+    "build": "node scripts/build-standalone.js",
+    "test": "node tests/gameplay.test.js"
+  }
+}

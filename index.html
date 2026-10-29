@@ -1,1 +1,45 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><title>Кепка: большой забег</title><link rel="stylesheet" href="/style.css"><script src="https://telegram.org/js/telegram-web-app.js" defer></script><script src="/game.js" defer></script></head><body><main><header><div><small>БОЛЬШОЙ ЗАБЕГ · УРОВЕНЬ 01</small><h1>Большой забег</h1></div><button id="reset" aria-label="Начать заново">↻</button></header><section class="stage"><canvas id="game" aria-label="Платформер. Стрелки для движения, пробел для прыжка"></canvas><div id="hud"></div><div id="overlay"><h2>Вперёд, в кепке!</h2><p>Собирай монеты, перепрыгивай пропасти.<br>Прыгай сверху на зубчики чеснока и доберись до флага.</p><button id="play">Начать забег →</button></div></section><footer><span>← → или A / D — движение. Пробел — прыжок.</span><span>ПРИКЛЮЧЕНИЕ НАЧИНАЕТСЯ ЗДЕСЬ</span></footer><nav aria-label="Управление"><div><button data-key="left" aria-label="Влево">◀</button><button data-key="right" aria-label="Вправо">▶</button></div><button data-key="jump" aria-label="Прыжок">Прыжок ↑</button></nav></main></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#17112B">
+  <title>UPYR RUN — Ночь у арены</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+  <script src="/atmosphere.js" defer></script>
+  <script src="/game.js" defer></script>
+</head>
+<body>
+<svg class="symbols" aria-hidden="true"><defs>
+  <symbol id="heart-icon" viewBox="0 0 32 30"><path d="M16 27C-8 12 3-5 16 6C29-5 40 12 16 27Z" fill="currentColor" stroke="#f9a3ad" stroke-width="1.3"/><path d="M8 12l3 7l2-6m7 0l2 6l3-7" fill="#fff0e0"/></symbol>
+  <symbol id="coin-icon" viewBox="0 0 26 30"><ellipse cx="13" cy="15" rx="10" ry="13" fill="#e6b363" stroke="#ffe8af" stroke-width="2"/><path d="M13 7v16m-4-12l4-4l4 4" fill="none" stroke="#8c4c35" stroke-width="2"/></symbol>
+  <symbol id="bat-icon" viewBox="0 0 100 42"><path d="M50 18Q25-6 2 4L13 31Q28 15 41 36L50 42L59 36Q72 15 87 31L98 4Q75-6 50 18M43 25V10L50 18L57 10V25" fill="currentColor"/></symbol>
+</defs></svg>
+<main>
+  <header>
+    <div class="brand"><small>ПОЛНОЛУНИЕ · ГЛАВА I</small><h1>UPYR <span>RUN</span></h1><p>Ночь у арены</p></div>
+    <div class="header-actions"><span class="chapter">Санкт-Петербург<br><b>После заката</b></span><button id="reset" aria-label="Начать заново">↻</button></div>
+  </header>
+  <section class="stage" aria-label="Игровое поле">
+    <canvas id="game" aria-label="Платформер. Стрелки — движение, пробел — прыжок."></canvas>
+    <div id="hud" aria-label="Состояние игры">
+      <div id="health" class="health" data-hp="3" role="img" aria-label="Жизни: 3 из 3"><svg><use href="#heart-icon"/></svg><svg><use href="#heart-icon"/></svg><svg><use href="#heart-icon"/></svg></div>
+      <span class="hud-divider"></span><div class="coin-stat"><svg aria-hidden="true"><use href="#coin-icon"/></svg><span class="stat"><small>МОНЕТЫ</small><b id="coin-count">0</b></span></div>
+      <span class="hud-divider"></span><span class="stat"><small>ПУТЬ</small><b id="progress-count">2%</b></span>
+    </div>
+    <div class="stage-caption" aria-hidden="true">СКА АРЕНА · ВЛАДЕНИЯ УПЫРЯ</div>
+    <div id="overlay">
+      <svg class="menu-bat" aria-hidden="true"><use href="#bat-icon"/></svg>
+      <small class="eyebrow">НОЧЬ ТОЛЬКО НАЧИНАЕТСЯ</small>
+      <h2>UPYR <span>RUN</span></h2>
+      <p>Город уснул. Чеснок вышел на охоту.<br>Собирай монеты, прыгай на чеснок и доберись до флага.</p>
+      <button id="play" disabled>Выйти в ночь <span aria-hidden="true">→</span></button>
+      <span class="menu-hint">Стрелки — движение · Пробел — прыжок</span>
+    </div>
+  </section>
+  <footer><span>← → или A / D — движение · Пробел — прыжок</span><span>ЧЕСНОК НЕ ДРЕМЛЕТ. ТЫ ТОЖЕ.</span></footer>
+  <nav aria-label="Управление"><div><button data-key="left" aria-label="Влево">←</button><button data-key="right" aria-label="Вправо">→</button></div><button data-key="jump" aria-label="Прыжок">Прыжок <span aria-hidden="true">↑</span></button></nav>
+</main>
+</body>
+</html>
