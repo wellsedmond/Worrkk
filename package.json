@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check game.js && node --check atmosphere.js && node --check server.js && node --check scripts/build-standalone.js",
+    "check": "node --check level1.js && node --check level-art.js && node --check progress.js && node --check sound.js && node --check game.js && node --check atmosphere.js && node --check server.js && node --check scripts/build-standalone.js",
     "build": "node scripts/build-standalone.js",
     "test": "node tests/gameplay.test.js"
   }

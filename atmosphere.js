@@ -1,7 +1,7 @@
 /* Rendering only. World coordinates, collision bounds and game rules live in game.js. */
 const atmosphere = (() => {
   const palette = {sky:'#17112B',far:'#302044',stone:'#51465F',red:'#B52239',moon:'#C8B9E8',fire:'#FF812B',green:'#86C44A',fog:'#827B9E'};
-  const images = {};
+  const images = {};const textureCache=new Map();
   const assetNames = ['ska-palace','skyline','graveyard','web'];
   const ready = Promise.all(assetNames.map(async name => {
     const image = new Image(); image.src = `assets/environment/${name}.svg`;
@@ -21,7 +21,9 @@ const atmosphere = (() => {
   function glow(c,x,y,r,color){const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,color);g.addColorStop(1,'transparent');c.fillStyle=g;c.fillRect(x-r,y-r,2*r,2*r);}
   function prepare(platforms){
     // Rasterize once at 2x: no per-frame stone geometry, filters or large blur passes.
-    stones = platforms.map(([x,y,w,h],index)=>{
+    stones = platforms.map((ref,index)=>{
+      const [x,y,w,h]=ref;const key=[w,h,index%3].join(':');
+      if(textureCache.has(key))return {ref,w,h,image:textureCache.get(key)};
       const image=document.createElement('canvas');image.width=(w+6)*2;image.height=(h+12)*2;
       const c=image.getContext('2d');c.scale(2,2);c.translate(3,5);
       const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'#655972');g.addColorStop(1,'#342d42');
@@ -44,7 +46,7 @@ const atmosphere = (() => {
       if(h<30){
         for(const a of [16,w-16]){line(c,[[a,h-2],[a+5,h+3],[a+10,h-2]],'#82728f',2);}
       }
-      return {x,y,w,h,image};
+      textureCache.set(key,image);return {ref,w,h,image};
     });
   }
   function bat(c,x,y,size,phase,color='#171124'){
@@ -55,10 +57,10 @@ const atmosphere = (() => {
     c.quadraticCurveTo(6,-4,13,1);c.lineTo(17,-8-flap);c.quadraticCurveTo(7,-10-flap,0,0);c.fill();
     c.beginPath();c.moveTo(-3,1);c.lineTo(-3,-5);c.lineTo(0,-2);c.lineTo(3,-5);c.lineTo(3,1);c.fill();c.restore();
   }
-  function background(c,camera){
+  function background(c,camera,zone=0,cameraY=0){
     const sky=c.createLinearGradient(0,0,0,510);sky.addColorStop(0,palette.sky);sky.addColorStop(.65,'#382441');sky.addColorStop(1,'#715066');c.fillStyle=sky;c.fillRect(0,0,960,510);
-    for(const s of stars)oval(c,(s.x-camera*.025+960)%960,s.y,s.r,s.r,`rgba(200,185,232,${.25+.45*(.5+.5*Math.sin(time*.8+s.phase))})`);
-    const moonX=755-camera*.035;
+    for(const s of stars)oval(c,((s.x-camera*.025)%960+960)%960,s.y,s.r,s.r,`rgba(200,185,232,${.25+.45*(.5+.5*Math.sin(time*.8+s.phase))})`);
+    const moonX=755-(camera*.035)%160;
     glow(c,moonX,99,140,'#b522393e');glow(c,moonX,99,100,'#db5c5335');
     const moon=c.createRadialGradient(moonX-20,75,4,moonX,99,65);moon.addColorStop(0,'#efb4a8');moon.addColorStop(.7,'#cb666c');moon.addColorStop(1,'#a53e57');
     oval(c,moonX,99,63,63,moon);
@@ -68,8 +70,8 @@ const atmosphere = (() => {
       const x=((i*233+time*5-camera*.065)%1450+1450)%1450-220,y=60+(i%3)*47;
       oval(c,x,y,101,12,'#a495b321');oval(c,x+65,y-8,76,19,'#a495b31a');
     }
-    if(images['ska-palace']){c.globalAlpha=.85;c.drawImage(images['ska-palace'],320-camera*.11,114,570,323);c.globalAlpha=1;}
-    if(images.skyline){c.globalAlpha=.34;for(let i=-1;i<3;i++)c.drawImage(images.skyline,i*1080-camera*.22,180,1080,300);c.globalAlpha=1;}
+    if(images['ska-palace']){c.globalAlpha=zone===4?.95:.25;c.drawImage(images['ska-palace'],320-(camera*.11)%160,114,570,323);c.globalAlpha=1;}
+    if(images.skyline){c.globalAlpha=.34;for(let i=-1;i<3;i++)c.drawImage(images.skyline,i*1080-(camera*.22)%1080,180,1080,300);c.globalAlpha=1;}
     // Slow, low-opacity distant lightning: one brief flash per 23 seconds.
     const phase=time%23;
     if(phase>17&&phase<17.2){
@@ -79,7 +81,7 @@ const atmosphere = (() => {
     }
     for(let i=0;i<8;i++)bat(c,((i*148+time*(9+i%3)-camera*.16)%1200+1200)%1200-80,75+(i%4)*21+Math.sin(time+i)*7,.35+i%3*.1,time*6+i,'#20162e');
     // Graveyard props always behind collision silhouettes and actors.
-    c.save();c.translate(-camera*.43,0);c.globalAlpha=.68;
+    c.save();c.translate(-(camera*.43)%560,0);c.globalAlpha=.68;
     if(images.graveyard)for(let i=-1;i<5;i++)c.drawImage(images.graveyard,i*560,260,512,144);
     c.globalAlpha=1;
     for(let i=-1;i<65;i++){
@@ -102,14 +104,17 @@ const atmosphere = (() => {
   function worldDecor(c,camera){
     c.save();c.translate(-camera,0);
     // Decorations are deliberately absent from floating platform tops and gaps.
-    if(images.graveyard)for(let i=0;i<decorations.length;i++){
-      const x=decorations[i];if(x<camera-120||x>camera+1050)continue;
-      const kind=i%4;
+    const first=Math.floor((camera-120)/410);
+    if(images.graveyard)for(let i=first;i<first+5;i++){
+      const x=i*410+190;
+      if(!stones.some(p=>p.ref.kind==='ground'&&x>=p.ref[0]&&x+50<=p.ref[0]+p.w))continue;
+      const kind=((i%4)+4)%4;
       const crops=[[270,112,63,65],[150,82,65,90],[505,68,58,108],[566,118,62,57]];
       const [sx,sy,sw,sh]=crops[kind];c.drawImage(images.graveyard,sx,sy,sw,sh,x,430-sh*.65,sw*.65,sh*.65);
       if(kind===0)glow(c,x+22,416,30,'#ff812b20');if(kind===3)glow(c,x+20,416,28,'#86c44a20');
     }
-    for(const x of lights){
+    for(let i=Math.floor(camera/600);i<Math.floor(camera/600)+3;i++){const x=i*600+230;
+      if(!stones.some(p=>p.ref.kind==='ground'&&x>=p.ref[0]&&x+20<=p.ref[0]+p.w))continue;
       if(x<camera-70||x>camera+1030)continue;
       // Carved iron lantern post.
       line(c,[[x,430],[x,361],[x-7,352],[x+9,352]],'#24202e',4);
@@ -119,7 +124,16 @@ const atmosphere = (() => {
     }
     c.restore();
   }
-  function platforms(c,camera){for(const p of stones)if(p.x+p.w>=camera&&p.x<=camera+960){c.drawImage(p.image,p.x-3,p.y-5,p.w+6,p.h+12);if(p.h<30&&images.web){c.globalAlpha=.45;c.drawImage(images.web,p.x+2,p.y+p.h-1,39,31);c.globalAlpha=1;}}}
+  function platforms(c,camera,cameraY=0){
+    for(const p of stones){const [x,y]=p.ref;if(x+p.w<camera-20||x>camera+980||y+p.h<cameraY-100||y>cameraY+620)continue;
+      if(!p.ref.active){if(p.ref.restore>.5)continue;c.globalAlpha=1-p.ref.restore*2;}
+      const fall=!p.ref.active?p.ref.restore*180:0;
+      c.drawImage(p.image,x-3,y-5+fall,p.w+6,p.h+12);c.globalAlpha=1;
+      if(p.ref.kind==='moving'){line(c,[[x+12,y+14],[x+p.w-12,y+14]],'#b7a1d1',2);}
+      if(p.ref.kind==='crumble'){line(c,[[x+20,y],[x+38,y+8],[x+28,y+17]],p.ref.collapse>=0?'#f1a36f':'#a59aa9',2);}
+      if(p.h<30&&images.web){c.globalAlpha=.35;c.drawImage(images.web,x+2,y+p.h-1+fall,39,31);c.globalAlpha=1;}
+    }
+  }
   function burst(x,y,kind){
     const count=kind==='landing'?8:18;
     for(let i=0;i<count;i++){

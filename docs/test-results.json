@@ -1,0 +1,56 @@
+{
+  "route": {
+    "state": "win",
+    "steps": 37466,
+    "seconds": 301.21666666655705,
+    "continues": 0,
+    "visited": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "fangs": 3,
+    "hp": 1,
+    "bossHp": 0,
+    "leverOpen": true
+  },
+  "progress": {
+    "version": 1,
+    "completed": true,
+    "bestTime": 301.21666666655705,
+    "fangs": 3,
+    "achievements": [],
+    "maxScore": 144
+  },
+  "performanceResults": [
+    {
+      "zone": 1,
+      "medianMs": 16.699999999999818,
+      "p95Ms": 16.800000000000182
+    },
+    {
+      "zone": 2,
+      "medianMs": 16.69999999999891,
+      "p95Ms": 16.799999999999272
+    },
+    {
+      "zone": 4,
+      "medianMs": 16.69999999999891,
+      "p95Ms": 16.700000000000728
+    },
+    {
+      "zone": 5,
+      "medianMs": 16.69999999999891,
+      "p95Ms": 16.700000000000728
+    }
+  ],
+  "errors": [],
+  "checks": "hosted assets, Telegram stub, audio gesture, full route, 3 fangs, 3 boss phases, cutscene, persistence, checkpoint, multi-touch, pause, offline, restart counts",
+  "limitations": [
+    "Telegram SDK mocked; real Telegram clients and physical Android/iOS not tested.",
+    "Headless frame timing is not a hardware FPS guarantee.",
+    "Persistent progress is local and untrusted, not server verified."
+  ]
+}

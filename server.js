@@ -12,6 +12,8 @@ const files = {
 for (const name of ['ska-palace', 'skyline', 'graveyard', 'web']) {
   files['/assets/environment/' + name + '.svg'] = ['assets/environment/' + name + '.svg', 'image/svg+xml'];
 }
+for (const name of ['level1','progress','sound','level-art'])files['/'+name+'.js']=[name+'.js','text/javascript'];
+for(const name of ['helmet','hunter','coffin','fang','stake','gate','werewolf','tower'])files['/assets/level1/'+name+'.svg']=['assets/level1/'+name+'.svg','image/svg+xml'];
 http.createServer(async (req, res) => {
   const file = files[new URL(req.url, 'http://localhost').pathname];
   if (!file) { res.writeHead(404); return res.end('Not found'); }
