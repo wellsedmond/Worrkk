@@ -6,13 +6,10 @@ function driveLevel(maxSteps=100000){
   if(state==='cutscene'){updateCutscene(1/120);continue;}
   if(state!=='playing')break;
   visited.add(zoneIndex);
-  if(steps%1200===0)trace.push({x:Math.round(player.x),y:Math.round(player.y),hp:player.hp,t:Math.round(clock),boss:boss.mode,fangs:fangs.size});
+  if(steps%1200===0)trace.push({x:Math.round(player.x),y:Math.round(player.y),hp:player.hp,t:Math.round(clock),boss:boss.mode,kills,sword});
   for(const k in keys)keys[k]=false;
   if(player.ground)gapIntent=false;
   let target=LEVEL1.width;
-  const cemetery=items.find(i=>i.id==='fang-cemetery'),tower=items.find(i=>i.id==='fang-tower');
-  if(!cemetery.taken&&player.x>20200&&player.x<21000)target=cemetery.x-20;
-  if(!tower.taken&&player.x>50800&&player.x<51400)target=tower.x-20;
   const fighting=['intro','attack','reload'].includes(boss.mode);
   if(fighting)target=boss.x-50;
   keys.right=player.x<target-3;keys.left=player.x>target+3&&target!==LEVEL1.width;
@@ -20,7 +17,7 @@ function driveLevel(maxSteps=100000){
   const danger=projectiles.some(p=>p.type==='stake'&&p.x+48>player.x-30&&p.x<player.x+230&&Math.abs(p.y-(player.y+player.h-73))<25);
   const readyStake=fighting&&boss.mode!=='reload'&&(boss.phase===1||boss.phase===3&&boss.shots%2===0&&boss.timer<1.3);
   keys.crouch=player.ground&&(danger||readyStake);
-  keys.attack=player.cooldown<=0&&(enemies.some(e=>!e.dead&&overlap(box,e))||walls.some(w=>w.hp>0&&overlap(box,w))||projectiles.some(p=>overlap(box,p))||boss.mode==='reload'&&overlap(box,boss));
+  keys.attack=player.cooldown<=0&&(enemies.some(e=>!e.dead&&overlap(box,e))||projectiles.some(p=>overlap(box,p))||boss.mode==='reload'&&overlap(box,boss));
   if(!fighting){
    const floor=groundPlatforms.find(p=>player.x>=p[0]&&player.x<p[0]+p[2]);
    const end=floor?floor[0]+floor[2]:0;
@@ -35,5 +32,5 @@ function driveLevel(maxSteps=100000){
   }
   update(1/120);atmosphere.tick(1/120);
  }
- return {state,steps,seconds:clock,continues,visited:[...visited],fangs:fangs.size,hp:player.hp,bossHp:boss.hp,leverOpen,trace};
+ return {state,steps,seconds:clock,continues,visited:[...visited],kills,sword,swordRewards,hp:player.hp,bossHp:boss.hp,leverOpen,trace};
 }

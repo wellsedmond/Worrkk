@@ -7,37 +7,37 @@ document.querySelector('#play').disabled=true;
 const keys={left:false,right:false,jump:false,attack:false,crouch:false};
 const toPlatform=p=>Object.assign([p.x,p.y,p.w,p.h],{id:p.id,kind:p.type,baseX:p.x,baseY:p.y,...p,active:true,collapse:-1,restore:0,dx:0,dy:0});
 let groundPlatforms=[],ledgePlatforms=[],platforms=[];
-let player,coins,enemies,traps,items,walls,projectiles=[],boss,checkpoint,snapshot;
+let player,coins,enemies,traps,items,projectiles=[],boss,checkpoint,snapshot;
 let camera=0,cameraY=0,state='menu',score=0,last=0,clock=0,jumpHeld=false,attackHeld=false;
-let fangs=new Set(),damageTaken=0,leverOpen=false,escapeLeft=0,towerTimer=null,towerPassed=false,zoneIndex=0;
+let kills=0,sword=0,swordRewards=0,damageTaken=0,leverOpen=false,escapeLeft=0,towerTimer=null,towerPassed=false,zoneIndex=0;
 let banner={text:'',left:0},cutsceneTime=0,victoryTime=0,paused=false,tutorialDone=new Set();
-const ui={zone:document.querySelector('#zone-name'),timer:document.querySelector('#time-count'),fangs:document.querySelector('#fang-count'),hint:document.querySelector('#tutorial'),banner:document.querySelector('#banner'),boss:document.querySelector('#boss-hud'),rage:document.querySelector('#rage-meter')};
+const ui={zone:document.querySelector('#zone-name'),timer:document.querySelector('#time-count'),kills:document.querySelector('#kill-count'),sword:document.querySelector('#sword-hud'),hint:document.querySelector('#tutorial'),banner:document.querySelector('#banner'),boss:document.querySelector('#boss-hud'),rage:document.querySelector('#rage-meter')};
 function notify(text,seconds=3){banner={text,left:seconds};}
 function makeWorld(){
  groundPlatforms=LEVEL1.ground.map(toPlatform);ledgePlatforms=LEVEL1.ledges.map(toPlatform);platforms=[...groundPlatforms,...ledgePlatforms];
- coins=LEVEL1.coins.map(c=>({...c,taken:false}));items=LEVEL1.items.map(c=>({...c,taken:false}));walls=LEVEL1.walls.map(w=>({...w}));
+ coins=LEVEL1.coins.map(c=>({...c,taken:false}));items=LEVEL1.items.map(c=>({...c,taken:false}));
  enemies=LEVEL1.enemies.map(e=>({...e,origin:e.x,baseY:e.y,w:38,h:42,dir:1,hp:e.type==='helmet'?2:1,dead:false,death:0,vy:0}));
  traps=LEVEL1.traps.map(t=>({...t,phase:0,active:t.type==='fire',warn:false}));
  boss={...LEVEL1.boss,mode:'waiting',phase:1,shots:0,timer:0,dead:false,death:0,inv:0,retreat:0,retreatStart:LEVEL1.boss.x,targetX:LEVEL1.boss.x};projectiles=[];
 }
 function reset(){
- atmosphere.reset();heroAnimator.reset();makeWorld();player={x:70,y:330,w:40,h:80,vx:0,vy:0,ground:false,hp:3,inv:0,face:1,rage:0,attack:0,cooldown:0,support:null};
- score=0;camera=0;cameraY=0;clock=0;jumpHeld=false;attackHeld=false;fangs=new Set();damageTaken=0;leverOpen=false;escapeLeft=0;towerTimer=null;towerPassed=false;zoneIndex=0;cutsceneTime=0;paused=false;tutorialDone=new Set();
+ atmosphere.reset();heroAnimator.reset();makeWorld();player={x:70,y:330,w:40,h:80,vx:0,vy:0,ground:false,hp:3,inv:0,face:1,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false};
+ score=0;camera=0;cameraY=0;clock=0;jumpHeld=false;attackHeld=false;kills=0;sword=0;swordRewards=0;damageTaken=0;leverOpen=false;escapeLeft=0;towerTimer=null;towerPassed=false;zoneIndex=0;cutsceneTime=0;paused=false;tutorialDone=new Set();
  for(const k in keys)keys[k]=false;checkpoint={id:'start',x:70,y:430};captureCheckpoint();atmosphere.prepare(platforms);notify('Пора вернуть своё!',3);
 }
-function captureCheckpoint(){snapshot={score,coins:coins.filter(c=>c.taken).map(c=>c.id),items:items.filter(c=>c.taken).map(c=>c.id),fangs:[...fangs],walls:walls.map(w=>[w.id,w.hp]),enemies:enemies.filter(e=>e.dead).map(e=>e.id),leverOpen};}
+function captureCheckpoint(){snapshot={score,coins:coins.filter(c=>c.taken).map(c=>c.id),items:items.filter(c=>c.taken).map(c=>c.id),kills,sword,swordRewards,enemies:enemies.filter(e=>e.dead).map(e=>e.id),leverOpen};}
 function resumeCheckpoint(){
- if(!assetsReady)return;gameAudio.activate();const saved=snapshot;makeWorld();score=saved.score;fangs=new Set(saved.fangs);leverOpen=saved.leverOpen;
- for(const c of coins)c.taken=saved.coins.includes(c.id);for(const c of items)c.taken=saved.items.includes(c.id);for(const w of walls)w.hp=saved.walls.find(a=>a[0]===w.id)?.[1]??w.hp;for(const e of enemies)e.dead=saved.enemies.includes(e.id);
- Object.assign(player,{x:checkpoint.x,y:checkpoint.y-80,h:80,hp:3,vx:0,vy:0,ground:false,inv:2,rage:0,attack:0,cooldown:0,support:null});
+ if(!assetsReady)return;gameAudio.activate();const saved=snapshot;makeWorld();score=saved.score;kills=saved.kills;sword=saved.sword;swordRewards=saved.swordRewards;leverOpen=saved.leverOpen;
+ for(const c of coins)c.taken=saved.coins.includes(c.id);for(const c of items)c.taken=saved.items.includes(c.id);for(const e of enemies)e.dead=saved.enemies.includes(e.id);
+ Object.assign(player,{x:checkpoint.x,y:checkpoint.y-80,h:80,hp:3,vx:0,vy:0,ground:false,inv:2,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false});
  escapeLeft=leverOpen?LEVEL1.escapeSeconds:0;towerTimer=null;towerPassed=checkpoint.x>=LEVEL1.timedSection.end;projectiles=[];camera=Math.max(0,player.x-260);cameraY=Math.min(0,player.y-250);state='playing';paused=false;
  for(const k in keys)keys[k]=false;jumpHeld=false;attackHeld=false;atmosphere.reset();heroAnimator.reset();atmosphere.prepare(platforms);overlay.hidden=true;notify('Пробуждение у контрольной точки');
 }
 function start(){if(!assetsReady)return;gameAudio.activate();reset();state='playing';overlay.classList.remove('defeat');overlay.hidden=true;document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
 function finish(win){
  state=win?'win':'lost';banner.left=0;overlay.hidden=false;overlay.classList.toggle('defeat',!win);overlay.querySelector('.eyebrow').textContent=win?'LEVEL 1 — ПРОКЛЯТАЯ ДОРОГА К СКА АРЕНЕ':'НОЧЬ НЕ ПРОЩАЕТ ОШИБОК';overlay.querySelector('h2').textContent=win?'LEVEL COMPLETE!':'ВАМПИР ПАЛ!';
- let text=`Монеты: ${score}. Золотые клыки: ${fangs.size}/3. `;
- if(win){const record=progressStore.save({time:victoryTime||clock,score,fangs:fangs.size,damage:damageTaken});text+=`Время: ${formatTime(victoryTime||clock)}. LEVEL 2 — СКОРО.`;if(damageTaken===0)text+=' Достижение: НЕПРОКУСИМЫЙ!';if(!progressStore.available)text+=' Браузер запретил сохранение.';}
+ let text=`Монеты: ${score}. Побеждено: ${kills}. `;
+ if(win){const record=progressStore.save({time:victoryTime||clock,score,kills,damage:damageTaken});text+=`Время: ${formatTime(victoryTime||clock)}. LEVEL 2 — СКОРО.`;if(damageTaken===0)text+=' Достижение: НЕПРОКУСИМЫЙ!';if(!progressStore.available)text+=' Браузер запретил сохранение.';}
  else text+='Продолжи у гроба или начни новый забег.';
  overlay.querySelector('p').textContent=text;document.querySelector('#play').textContent='Повторить уровень';document.querySelector('#continue').hidden=win;document.querySelector('#main-menu').hidden=false;
 }
@@ -46,18 +46,21 @@ function formatTime(t){return Math.floor(t/60)+':'+String(Math.floor(t%60)).padS
 function hit(){if(player.inv>0||state!=='playing')return;damageTaken++;player.hp--;gameAudio.effect('hurt');player.inv=1.6;atmosphere.burst(player.x+20,player.y+25,'sparks');player.vy=-330;if(player.hp<=0)finish(false);}
 function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 function activeNear(x,range=1250){return Math.abs(x-player.x)<range;}
-function solidRects(){return [...groundPlatforms.filter(p=>activeNear(p[0]+p[2]/2,p[2]+160)).map(p=>({x:p[0],y:p[1],w:p[2],h:p[3]})),...walls.filter(w=>w.hp>0&&activeNear(w.x)),...(!leverOpen?[LEVEL1.gate]:[])];}
+function solidRects(){return [...groundPlatforms.filter(p=>activeNear(p[0]+p[2]/2,p[2]+160)).map(p=>({x:p[0],y:p[1],w:p[2],h:p[3]})),...(!leverOpen?[LEVEL1.gate]:[])];}
 function setCrouch(){const feet=player.y+player.h;const height=keys.crouch&&player.ground?44:80;if(height===80&&player.h===44&&solidRects().some(r=>overlap({x:player.x,y:feet-80,w:player.w,h:80},r)))return;player.h=height;player.y=feet-height;}
 function updatePlatforms(dt){for(const p of ledgePlatforms){const oldX=p[0],oldY=p[1];if(p.kind==='moving'){const offset=Math.sin(clock*Math.PI*2/p.period)*p.amplitude;p[0]=p.baseX+(p.axis==='x'?offset:0);p[1]=p.baseY+(p.axis==='y'?offset:0);}
  if(p.collapse>=0){p.collapse+=dt;if(p.collapse>=.8){p.active=false;p.restore+=dt;if(p.restore>4){p.active=true;p.collapse=-1;p.restore=0;}}}p.dx=p[0]-oldX;p.dy=p[1]-oldY;}}
-function attackBox(){return {x:player.face>0?player.x+player.w-5:player.x-58,y:player.y+8,w:63,h:Math.max(40,player.h-12)};}
-function defeatEnemy(e){e.dead=true;e.death=.5;score+=e.type==='helmet'?3:1;atmosphere.burst(e.x+19,e.y+20,'garlic');}
+function attackBox(){const armed=player.attack>0?player.swingSword:sword>0;const reach=armed?96:63;return {x:player.face>0?player.x+player.w-5:player.x-reach+5,y:player.y+8,w:reach,h:Math.max(40,player.h-12)};}
+function recordKill(){kills++;if(kills%10===0){sword=5;swordRewards++;notify('Меч получен! Прочность: 5/5');}}
+function defeatEnemy(e){if(e.dead)return;e.dead=true;e.death=.5;score+=e.type==='helmet'?3:1;recordKill();atmosphere.burst(e.x+19,e.y+20,'garlic');}
+function swordHit(){if(!player.swingSword||sword<=0)return false;sword--;score+=5;if(sword===0){player.swordBroke=true;atmosphere.burst(player.x+player.face*50,player.y+35,'sparks');}return true;}
 function punch(){
- if(player.cooldown>0||player.h<80)return;player.attack=.23;gameAudio.effect('hit');player.cooldown=.42;tutorialDone.add('attack');const box=attackBox(),power=player.rage>0?2:1;
+ if(player.cooldown>0||player.h<80)return;
+ player.attack=.36;player.swordBroke=false;player.swingSword=sword>0;heroAnimator.strike();gameAudio.effect('hit');player.cooldown=.42;tutorialDone.add('attack');const box=attackBox();
  atmosphere.burst(box.x+box.w/2,box.y+20,'sparks');
- for(const e of enemies)if(!e.dead&&overlap(box,e)){e.hp-=power;if(e.hp<=0)defeatEnemy(e);}
- for(const w of walls)if(w.hp>0&&overlap(box,w)){w.hp-=power;atmosphere.burst(w.x+14,w.y+40,'landing');if(w.hp<=0)notify('Тайник открыт. Золотой клык твой!');}
- if(boss.mode==='reload'&&boss.inv<=0&&overlap(box,boss)){boss.hp--;boss.inv=1;atmosphere.burst(boss.x+36,boss.y+50,'sparks');if(boss.hp===0){boss.mode='defeated';boss.dead=true;boss.death=1.6;}else{boss.phase=4-boss.hp;boss.mode='attack';boss.shots=0;boss.timer=2.8;notify(`Охотник: фаза ${boss.phase}`);}}
+ for(const e of enemies)if(!e.dead&&overlap(box,e)){const armed=swordHit();e.hp-=armed||player.rage>0?2:1;if(e.hp<=0)defeatEnemy(e);}
+ if(boss.mode==='reload'&&boss.inv<=0&&overlap(box,boss)){swordHit();boss.hp--;boss.inv=1;atmosphere.burst(boss.x+36,boss.y+50,'sparks');if(boss.hp===0){boss.mode='defeated';boss.dead=true;boss.death=1.6;recordKill();}else{boss.phase=4-boss.hp;boss.mode='attack';boss.shots=0;boss.timer=2.8;notify(`Охотник: фаза ${boss.phase}`);}}
+ if(player.swordBroke&&sword===0)notify(`Меч сломан. До следующего: ${10-kills%10} побед`);
 }
 function spawnProjectile(type,x,y,dir=-1,source='trap'){if(projectiles.length>=48)projectiles.shift();projectiles.push({type,x,y,w:type==='stake'?48:32,h:type==='stake'?12:32,vx:dir*(source==='boss'?210:230),life:0,source});}
 function updateTraps(dt){
@@ -97,7 +100,7 @@ function updateEvents(dt){
  const current=LEVEL1.zones.findIndex(z=>player.x>=z.start&&player.x<z.end);if(current>=0&&current!==zoneIndex){zoneIndex=current;notify(LEVEL1.zones[current].name);}
  for(const cp of LEVEL1.checkpoints)if(cp.x>checkpoint.x&&Math.abs(player.x-cp.x)<70&&Math.abs(player.y+player.h-cp.y)<22){checkpoint={...cp};captureCheckpoint();notify('ПРОБУЖДЕНИЕ СОХРАНЕНО');}
  for(const c of coins)if(!c.taken&&activeNear(c.x)&&Math.hypot(player.x+20-c.x,player.y+player.h/2-c.y)<35){c.taken=true;score++;}
- for(const item of items)if(!item.taken&&activeNear(item.x)&&(!item.wall||walls.find(w=>w.id===item.wall)?.hp<=0)&&Math.hypot(player.x+20-item.x,player.y+player.h/2-item.y)<42){item.taken=true;if(item.type==='fang'){fangs.add(item.id);score+=10;notify(`Золотой клык: ${fangs.size}/3`);}else{player.rage=10;notify('КРОВАВАЯ ЯРОСТЬ — 10 секунд');}}
+ for(const item of items)if(!item.taken&&activeNear(item.x)&&Math.hypot(player.x+20-item.x,player.y+player.h/2-item.y)<42){item.taken=true;player.rage=10;notify('КРОВАВАЯ ЯРОСТЬ — 10 секунд');}
  if(!towerPassed&&player.x>LEVEL1.timedSection.start&&player.x<LEVEL1.timedSection.end&&player.y<-150&&towerTimer===null){towerTimer=LEVEL1.timedSection.seconds;notify('Механизм запущен! Пройди галерею за 24 секунды.');}
  if(towerTimer!==null){towerTimer-=dt;if(player.x>=LEVEL1.timedSection.end){towerPassed=true;towerTimer=null;}else if(towerTimer<=0){damageTaken++;finish(false);}}
  const l=LEVEL1.lever;if(!leverOpen&&Math.abs(player.x-l.x)<70&&Math.abs(player.y+player.h-l.y)<25){leverOpen=true;escapeLeft=LEVEL1.escapeSeconds;notify('Ворота открыты! Башня рушится — к выходу!',4);}
@@ -146,7 +149,7 @@ function character(){
  ellipse(0,-1,25,4,'#100b20aa');
  ctx.translate(0,bounce);
  if(!heroAnimator.draw(ctx)&&heroImage.complete&&heroImage.naturalWidth)ctx.drawImage(heroImage,-34,-92,68,92);
- ctx.save();ctx.translate(0,heroAnimator.effectOffset());levelArt.heroEffects(ctx,player,clock,cutsceneTime,state);ctx.restore();
+ ctx.save();ctx.translate(0,heroAnimator.effectOffset());levelArt.heroEffects(ctx,player,clock,cutsceneTime,state,sword);ctx.restore();
  ctx.restore();
 }
 function drawGarlic(e){
@@ -161,16 +164,16 @@ function draw(){
  atmosphere.background(ctx,camera,zoneIndex,cameraY);levelArt.background(ctx,zoneIndex,camera,cameraY,clock,cutsceneTime);
  ctx.save();if(escapeLeft>0){ctx.translate(Math.sin(clock*32)*1.5,Math.cos(clock*27)*1.2);}ctx.translate(0,-cameraY);
  atmosphere.worldDecor(ctx,camera);ctx.save();ctx.translate(-camera,0);atmosphere.platforms(ctx,camera,cameraY);
- levelArt.world(ctx,{player,camera,cameraY,clock,traps,projectiles,walls,items,checkpoint,leverOpen,escapeLeft,boss,state,cutsceneTime});
+ levelArt.world(ctx,{player,camera,cameraY,clock,traps,projectiles,items,checkpoint,leverOpen,escapeLeft,boss,state,cutsceneTime});
  for(const c of coins){if(c.taken||c.x<camera-30||c.x>camera+990)continue;const y=c.y+Math.sin(clock*4+c.x)*3;const gold=ctx.createLinearGradient(c.x-10,y-10,c.x+10,y+10);gold.addColorStop(0,'#fff2ac');gold.addColorStop(.45,'#f5bf47');gold.addColorStop(1,'#bf7e2d');ctx.fillStyle=gold;ctx.strokeStyle='#b98233';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(c.x,y,9,12,0,0,Math.PI*2);ctx.fill();ctx.stroke();}
  for(const e of enemies)if(activeNear(e.x,1200)&&(!e.dead||e.death>0)){if(e.type==='helmet')levelArt.enemy(ctx,e,clock);else if(!e.dead)drawGarlic(e);}
  character();ctx.restore();atmosphere.effects(ctx,camera);ctx.restore();
  atmosphere.hud(hud,player,score,state==='win'?100:Math.min(100,Math.floor(player.x/LEVEL1.width*100)));renderStatus();
 }
 function renderStatus(){
- ui.zone.textContent=`${zoneIndex+1}/5 · ${LEVEL1.zones[zoneIndex].name}`;ui.timer.textContent=formatTime(clock);ui.fangs.textContent=fangs.size+'/3';
+ ui.zone.textContent=`${zoneIndex+1}/5 · ${LEVEL1.zones[zoneIndex].name}`;ui.timer.textContent=formatTime(clock);ui.kills.textContent=kills;ui.sword.textContent=sword>0?`Меч: ${sword}/5 · +5 монет за попадание`:`До меча: ${10-kills%10} врагов`;
  ui.banner.textContent=banner.left>0?banner.text:'';ui.banner.hidden=banner.left<=0;ui.rage.hidden=player.rage<=0;ui.rage.textContent=`Кровавая ярость: ${Math.ceil(player.rage)} с`;
- const hints=[['move','← → / A D — двигайся',0,700],['jump','Пробел / ↑ — перепрыгни яму',700,1350],['attack','X / J — ударь чеснок',1350,2200],['crouch','↓ / S — присядь под колом',2200,3100]];
+ const hints=[['move','← → / A D — двигайся',0,700],['jump','Пробел / ↑ — перепрыгни яму',700,1350],['attack','F — ударь чеснок',1350,2200],['crouch','↓ / S — присядь под колом',2200,3100]];
  const hint=hints.find(([key,text,a,b])=>!tutorialDone.has(key)&&player.x>=a&&player.x<b);ui.hint.textContent=hint?.[1]||'';ui.hint.hidden=!hint;
  ui.boss.hidden=['waiting','defeated'].includes(boss.mode)||state!=='playing';ui.boss.textContent=`Главный охотник · ${boss.hp}/3 · ${boss.mode==='reload'?'УЯЗВИМ — УДАРЬ!':boss.mode==='intro'?'Приготовься':boss.phase===1?'Присядь под кольями':boss.phase===2?'Ударь чеснок':boss.shots%2?'Далее: чеснок — удар':'Далее: кол — присядь'}`;
  document.querySelector('#escape-timer').textContent=escapeLeft>0?`Побег: ${Math.ceil(escapeLeft)} с`:towerTimer!==null?`Галерея: ${Math.ceil(towerTimer)} с`:'';
@@ -179,8 +182,8 @@ function renderStatus(){
 let accumulator=0;
 function frame(t){const dt=Math.min((t-last)/1000||0,.1);last=t;if(!paused){atmosphere.tick(dt);levelArt.tick(dt);accumulator=Math.min(accumulator+dt,.12);while(accumulator>=1/120){if(state==='playing')update(1/120);else if(state==='cutscene')updateCutscene(1/120);accumulator-=1/120;}}gameAudio.tick(dt,!paused&&state==='playing',player.ground&&Math.abs(player.vx)>0);draw();requestAnimationFrame(frame);}
 function resize(){canvas.width=960*Math.min(devicePixelRatio||1,2);canvas.height=510*Math.min(devicePixelRatio||1,2);}resize();window.addEventListener('resize',resize);
-const physicalKeys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyX:'attack',KeyJ:'attack',ArrowDown:'crouch',KeyS:'crouch'};
-const mapping={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',' ':'jump',ArrowUp:'jump',w:'jump',W:'jump',x:'attack',j:'attack',ArrowDown:'crouch',s:'crouch'};
+const physicalKeys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyF:'attack',ArrowDown:'crouch',KeyS:'crouch'};
+const mapping={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',' ':'jump',ArrowUp:'jump',w:'jump',W:'jump',f:'attack',F:'attack',ArrowDown:'crouch',s:'crouch'};
 function releaseKeys(){for(const key in keys)keys[key]=false;}
 window.addEventListener('keydown',e=>{if(e.target.matches?.('button,input,textarea')&&e.key===' ')return;const key=physicalKeys[e.code]||mapping[e.key];if(key){e.preventDefault();keys[key]=true;}if(e.code==='Escape'&&state==='playing')paused=!paused;});
 window.addEventListener('keyup',e=>{const key=physicalKeys[e.code]||mapping[e.key];if(key)keys[key]=false;});

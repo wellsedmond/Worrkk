@@ -60,7 +60,7 @@ const atmosphere = (() => {
   function background(c,camera,zone=0,cameraY=0){
     const sky=c.createLinearGradient(0,0,0,510);sky.addColorStop(0,palette.sky);sky.addColorStop(.65,'#382441');sky.addColorStop(1,'#715066');c.fillStyle=sky;c.fillRect(0,0,960,510);
     for(const s of stars)oval(c,((s.x-camera*.025)%960+960)%960,s.y,s.r,s.r,`rgba(200,185,232,${.25+.45*(.5+.5*Math.sin(time*.8+s.phase))})`);
-    const moonX=755-(camera*.035)%160;
+    const moonX=parallax.moonX(camera);
     glow(c,moonX,99,140,'#b522393e');glow(c,moonX,99,100,'#db5c5335');
     const moon=c.createRadialGradient(moonX-20,75,4,moonX,99,65);moon.addColorStop(0,'#efb4a8');moon.addColorStop(.7,'#cb666c');moon.addColorStop(1,'#a53e57');
     oval(c,moonX,99,63,63,moon);
@@ -70,8 +70,8 @@ const atmosphere = (() => {
       const x=((i*233+time*5-camera*.065)%1450+1450)%1450-220,y=60+(i%3)*47;
       oval(c,x,y,101,12,'#a495b321');oval(c,x+65,y-8,76,19,'#a495b31a');
     }
-    if(images['ska-palace']){c.globalAlpha=zone===4?.95:.25;c.drawImage(images['ska-palace'],320-(camera*.11)%160,114,570,323);c.globalAlpha=1;}
-    if(images.skyline){c.globalAlpha=.34;for(let i=-1;i<3;i++)c.drawImage(images.skyline,i*1080-(camera*.22)%1080,180,1080,300);c.globalAlpha=1;}
+    if(images['ska-palace']){c.globalAlpha=zone===4?.95:.25;c.drawImage(images['ska-palace'],parallax.palaceX(camera),114,570,323);c.globalAlpha=1;}
+    if(images.skyline){c.globalAlpha=.34;parallax.repeatX(c,images.skyline,camera,.22,1080,180,300);c.globalAlpha=1;}
     // Slow, low-opacity distant lightning: one brief flash per 23 seconds.
     const phase=time%23;
     if(phase>17&&phase<17.2){
@@ -81,13 +81,13 @@ const atmosphere = (() => {
     }
     for(let i=0;i<8;i++)bat(c,((i*148+time*(9+i%3)-camera*.16)%1200+1200)%1200-80,75+(i%4)*21+Math.sin(time+i)*7,.35+i%3*.1,time*6+i,'#20162e');
     // Graveyard props always behind collision silhouettes and actors.
-    c.save();c.translate(-(camera*.43)%560,0);c.globalAlpha=.68;
-    if(images.graveyard)for(let i=-1;i<5;i++)c.drawImage(images.graveyard,i*560,260,512,144);
+    c.save();c.globalAlpha=.68;
+    if(images.graveyard)for(const tile of parallax.tiles(camera,.43,560))c.drawImage(images.graveyard,tile.x,260,512,144);
     c.globalAlpha=1;
-    for(let i=-1;i<65;i++){
-      const x=i*31;line(c,[[x,410],[x,358],[x-4,365],[x,353],[x+4,365],[x,358]],'#42364e',2);
+    for(const tile of parallax.tiles(camera,.43,31)){
+      const x=tile.x;line(c,[[x,410],[x,358],[x-4,365],[x,353],[x+4,365],[x,358]],'#42364e',2);
     }
-    line(c,[[-100,382],[2000,382]],'#58465e',2);line(c,[[-100,399],[2000,399]],'#58465e',2);c.restore();
+    line(c,[[0,382],[960,382]],'#58465e',2);line(c,[[0,399],[960,399]],'#58465e',2);c.restore();
     // Suspended dust remains subtle and avoids obscuring silhouettes.
     for(let i=0;i<20;i++){
       const x=((i*83+Math.sin(time*.3+i)*20-camera*.3)%1000+1000)%1000;

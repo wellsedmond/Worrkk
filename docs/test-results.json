@@ -1,8 +1,8 @@
 {
   "route": {
     "state": "win",
-    "steps": 37466,
-    "seconds": 301.21666666655705,
+    "steps": 37443,
+    "seconds": 301.02499999989055,
     "continues": 0,
     "visited": [
       0,
@@ -11,29 +11,31 @@
       3,
       4
     ],
-    "fangs": 3,
+    "kills": 30,
+    "sword": 5,
+    "swordRewards": 3,
     "hp": 1,
     "bossHp": 0,
     "leverOpen": true
   },
   "progress": {
-    "version": 1,
+    "version": 2,
     "completed": true,
-    "bestTime": 301.21666666655705,
-    "fangs": 3,
+    "bestTime": 301.02499999989055,
+    "maxKills": 30,
     "achievements": [],
-    "maxScore": 144
+    "maxScore": 188
   },
   "performanceResults": [
     {
       "zone": 1,
       "medianMs": 16.699999999999818,
-      "p95Ms": 16.800000000000182
+      "p95Ms": 16.700000000000728
     },
     {
       "zone": 2,
       "medianMs": 16.69999999999891,
-      "p95Ms": 16.799999999999272
+      "p95Ms": 16.700000000000728
     },
     {
       "zone": 4,
@@ -43,14 +45,46 @@
     {
       "zone": 5,
       "medianMs": 16.69999999999891,
-      "p95Ms": 16.700000000000728
+      "p95Ms": 16.799999999999272
+    }
+  ],
+  "seamDiffs": [
+    {
+      "camera": 4571.428571428571,
+      "zone": 1,
+      "meanDifference": 0.005381944444444444
+    },
+    {
+      "camera": 1454.5454545454545,
+      "zone": 1,
+      "meanDifference": 0.0064998638344226575
+    },
+    {
+      "camera": 4909.090909090909,
+      "zone": 2,
+      "meanDifference": 0.004494144880174292
+    },
+    {
+      "camera": 1302.3255813953488,
+      "zone": 2,
+      "meanDifference": 0.0222406045751634
+    },
+    {
+      "camera": 622.2222222222222,
+      "zone": 4,
+      "meanDifference": 0.0071139705882352945
+    },
+    {
+      "camera": 2500,
+      "zone": 4,
+      "meanDifference": 0.007062227668845316
     }
   ],
   "errors": [],
-  "checks": "hosted assets, run cycle, jump sprites, crouch sprite frames, fixed feet, Telegram stub, audio gesture, full route, 3 fangs, 3 boss phases, cutscene, persistence, checkpoint, multi-touch, pause, offline, restart counts",
+  "checks": "F attack input, sword rewards and bonus, background seams, hosted assets, run cycle, jump sprites, crouch sprite frames, fixed feet, Telegram stub, audio gesture, full route, sword rewards, 3 boss phases, cutscene, persistence, checkpoint, multi-touch, pause, offline, restart counts",
   "limitations": [
-    "Telegram SDK mocked; real Telegram clients and physical Android/iOS not tested.",
-    "Headless frame timing is not a hardware FPS guarantee.",
-    "Persistent progress is local and untrusted, not server verified."
+    "Telegram SDK mocked; physical Android/iOS not tested.",
+    "Headless frame timing does not guarantee phone FPS.",
+    "Records are local, not server verified."
   ]
 }

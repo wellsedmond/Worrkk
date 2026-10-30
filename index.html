@@ -10,6 +10,7 @@
   <script src="/level1.js" defer></script>
   <script src="/progress.js" defer></script>
   <script src="/sound.js" defer></script>
+  <script src="/parallax.js" defer></script>
   <script src="/atmosphere.js" defer></script>
   <script src="/level-art.js" defer></script>
   <script src="/hero-animation.js" defer></script>
@@ -32,8 +33,9 @@
       <div id="health" class="health" data-hp="3" role="img" aria-label="Жизни: 3 из 3"><svg><use href="#heart-icon"/></svg><svg><use href="#heart-icon"/></svg><svg><use href="#heart-icon"/></svg></div>
       <span class="hud-divider"></span><div class="coin-stat"><svg aria-hidden="true"><use href="#coin-icon"/></svg><span class="stat"><small>МОНЕТЫ</small><b id="coin-count">0</b></span></div>
       <span class="hud-divider"></span><span class="stat"><small>ПУТЬ</small><b id="progress-count">0%</b></span>
-      <span class="hud-divider"></span><span class="stat"><small>КЛЫКИ</small><b id="fang-count">0/3</b></span><span class="stat"><small>ВРЕМЯ</small><b id="time-count">0:00</b></span>
+      <span class="hud-divider"></span><span class="stat"><small>ПОБЕЖДЕНО</small><b id="kill-count">0</b></span><span class="stat"><small>ВРЕМЯ</small><b id="time-count">0:00</b></span>
     </div>
+    <div id="sword-hud" role="status">До меча: 10 врагов</div>
     <div id="zone-name" class="stage-caption">1/5 · Пробуждение Упыря</div><div id="banner" role="status" hidden></div><div id="tutorial" hidden></div><div id="boss-hud" hidden></div><div id="rage-meter" hidden></div><div id="escape-timer"></div>
     <div id="overlay">
       <svg class="menu-bat" aria-hidden="true"><use href="#bat-icon"/></svg>
@@ -42,10 +44,10 @@
       <p>Охотники украли Кубок Вечной Ночи.<br>Пройди пять зон и открой дорогу к СКА Арене.</p>
       <button id="play" disabled>Выйти в ночь <span aria-hidden="true">→</span></button>
       <button id="continue" hidden>Продолжить у гроба</button><button id="main-menu" hidden>Главное меню</button>
-      <span class="menu-hint">Стрелки — движение · Пробел — прыжок · X — удар · ↓ — присесть</span>
+      <span class="menu-hint">Стрелки — движение · Пробел — прыжок · F — удар · ↓ — присесть</span>
     </div>
   </section>
-  <footer><span>← → / A D — бег · Пробел — прыжок · X / J — удар · ↓ / S — присесть</span><span>ЧЕСНОК НЕ ДРЕМЛЕТ. ТЫ ТОЖЕ.</span></footer>
+  <footer><span>← → / A D — бег · Пробел — прыжок · F — удар · ↓ / S — присесть</span><span>ЧЕСНОК НЕ ДРЕМЛЕТ. ТЫ ТОЖЕ.</span></footer>
   <nav aria-label="Управление"><div><button data-key="left" aria-label="Влево">←</button><button data-key="right" aria-label="Вправо">→</button></div><div class="actions"><button data-key="crouch" aria-label="Присесть">Присесть</button><button data-key="attack" aria-label="Удар">Удар</button><button data-key="jump" aria-label="Прыжок">Прыжок <span aria-hidden="true">↑</span></button></div></nav>
 </main>
 </body>

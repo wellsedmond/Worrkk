@@ -9,7 +9,7 @@ let browser;process.on('exit',()=>server.kill());
  const context=await browser.newContext({viewport:{width:1280,height:960},hasTouch:true});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await context.addInitScript(()=>{window.audioContexts=0;if(window.AudioContext){const Original=window.AudioContext;window.AudioContext=new Proxy(Original,{construct(target,args){audioContexts++;return Reflect.construct(target,args);}});}});
  await page.route('https://telegram.org/js/telegram-web-app.js',route=>route.fulfill({contentType:'text/javascript',body:'window.telegramCalls=[];window.Telegram={WebApp:{ready(){telegramCalls.push("ready")},expand(){telegramCalls.push("expand")}}};'}));
- const urls=['/','/game.js','/hero-animation.js','/assets/hero-crouch.png','/assets/hero-run.png','/assets/hero-jump.png','/level1.js','/level-art.js','/progress.js','/sound.js','/atmosphere.js','/style.css','/assets/hero.png','/assets/garlic.svg',...['helmet','hunter','coffin','fang','stake','gate','werewolf','tower'].map(x=>'/assets/level1/'+x+'.svg')];
+ const urls=['/','/game.js','/hero-animation.js','/assets/hero-crouch.png','/assets/hero-run.png','/assets/hero-jump.png','/assets/hero-attack.png','/parallax.js','/level1.js','/level-art.js','/progress.js','/sound.js','/atmosphere.js','/style.css','/assets/hero.png','/assets/garlic.svg',...['helmet','hunter','coffin','stake','sword','gate','werewolf','tower'].map(x=>'/assets/level1/'+x+'.svg')];
  for(const url of urls)assert.equal((await fetch('http://127.0.0.1:3137'+url)).status,200,url);
  await page.goto('http://127.0.0.1:3137/');await page.waitForFunction(()=>assetsReady);
  assert.deepEqual(await page.evaluate(()=>telegramCalls),['ready','expand']);assert.equal(await page.evaluate(()=>audioContexts),0);
@@ -23,14 +23,28 @@ let browser;process.on('exit',()=>server.kill());
  assert.equal(await page.evaluate(()=>heroAnimator.pose().phase),'hold');assert.equal(await page.evaluate(()=>player.h),44);assert.equal(await page.evaluate(()=>player.y+player.h),footBefore);
  await page.screenshot({path:'/tmp/upyr-crouch.png'});
  await page.keyboard.up('ArrowDown');await page.waitForTimeout(70);assert.equal(await page.evaluate(()=>heroAnimator.pose().phase),'up');await page.waitForTimeout(350);assert.equal(await page.evaluate(()=>heroAnimator.pose().phase),'stand');
+ await page.keyboard.down('f');await page.waitForTimeout(60);assert.equal(await page.evaluate(()=>heroAnimator.pose().phase),'attack');await page.keyboard.up('f');await page.waitForTimeout(400);assert.notEqual(await page.evaluate(()=>heroAnimator.pose().phase),'attack');
+ const swordCase=await page.evaluate(()=>{
+  start();for(const e of enemies.slice(0,10))defeatEnemy(e);const charges=sword;
+  const e=enemies.find(e=>!e.dead);player.x=e.x-60;player.y=e.y;player.face=1;const before=score;punch();
+  return {charges,after:sword,bonus:score-before-(e.dead?(e.type==='helmet'?3:1):0)};
+ });assert.equal(swordCase.charges,5);assert.equal(swordCase.after,4);assert.equal(swordCase.bonus,5);
+ assert.equal(await page.locator('#fang-count').count(),0);
+ const seamDiffs=await page.evaluate(()=>{
+  paused=true;const output=[];
+  function render(x,z){const canvas=document.createElement('canvas');canvas.width=960;canvas.height=510;const c=canvas.getContext('2d');atmosphere.background(c,x,z,0);levelArt.background(c,z,x,0,0,0);return c.getImageData(0,0,960,510).data;}
+  for(const [camera,z]of [[160/.035,0],[160/.11,0],[1080/.22,1],[560/.43,1],[280/.45,3],[1000/.4,3]]){
+   render(camera,z);levelArt.tick(2);const a=render(camera-.01,z),b=render(camera+.01,z);let difference=0;for(let i=0;i<a.length;i+=4)difference+=Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2]);output.push({camera,zone:z+1,meanDifference:difference/(960*510*3)});
+  }return output;
+ });for(const sample of seamDiffs)assert.ok(sample.meanDifference<.3,JSON.stringify(sample));
  await page.click('#sound');assert.equal(await page.evaluate(()=>audioContexts),1);await page.click('#sound');
  // Same real physics/input path as a player; the driver never changes positions or health.
  await page.addScriptTag({content:fs.readFileSync(path.join(root,'tests/route-agent.js'),'utf8')});
  const route=await page.evaluate(()=>{start();return driveLevel(60000)});
- assert.equal(route.state,'win');assert.equal(route.fangs,3);assert.equal(route.continues,0);assert.equal(route.visited.length,5);assert.equal(route.bossHp,0);assert.ok(route.seconds>=300&&route.seconds<=420);
+ assert.equal(route.state,'win');assert.ok(route.kills>=10);assert.ok(route.swordRewards>=1);assert.equal(route.continues,0);assert.equal(route.visited.length,5);assert.equal(route.bossHp,0);assert.ok(route.seconds>=270&&route.seconds<=420);
  assert.equal(await page.locator('#overlay h2').textContent(),'LEVEL COMPLETE!');assert.equal(await page.locator('#continue').isVisible(),false);assert.ok((await page.locator('#overlay p').textContent()).includes('LEVEL 2 — СКОРО'));
  await page.screenshot({path:'/tmp/upyr-level1-complete.png'});
- const record=await page.evaluate(()=>progressStore.load());assert.equal(record.completed,true);assert.equal(record.fangs,3);
+ const record=await page.evaluate(()=>progressStore.load());assert.equal(record.completed,true);assert.ok(record.maxKills>=10);assert.equal('fangs' in record,false);
  await page.reload();await page.waitForFunction(()=>assetsReady);assert.equal(await page.evaluate(()=>progressStore.load().maxScore),record.maxScore);assert.equal(await page.evaluate(()=>audioContexts),0);
  await page.click('#play');await page.waitForTimeout(300);await page.screenshot({path:'/tmp/upyr-level1-forest.png'});
  // Positioning below is for visual snapshots/isolated checks only, not the complete-route run.
@@ -54,6 +68,6 @@ let browser;process.on('exit',()=>server.kill());
  // Restarts keep actor counts stable; no per-run event listeners or textures are appended.
  const sizes=await page.evaluate(()=>{const result=[];for(let i=0;i<12;i++){start();result.push([platforms.length,enemies.length,traps.length,items.length,projectiles.length].join(':'));}return [...new Set(result)];});assert.equal(sizes.length,1);
  const offlineContext=await browser.newContext({offline:true});const offline=await offlineContext.newPage();let network=0;offline.on('request',r=>{if(/^https?:/.test(r.url()))network++});await offline.setContent(fs.readFileSync(path.join(root,'Worrkk.html'),'utf8'));await offline.waitForFunction(()=>assetsReady);await offline.click('#play');assert.equal(await offline.evaluate(()=>state),'playing');assert.equal(network,0);
- assert.deepEqual(errors,[]);console.log(JSON.stringify({route,progress:record,performanceResults,errors,checks:'hosted assets, run cycle, jump sprites, crouch sprite frames, fixed feet, Telegram stub, audio gesture, full route, 3 fangs, 3 boss phases, cutscene, persistence, checkpoint, multi-touch, pause, offline, restart counts'},null,2));
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({route,progress:record,performanceResults,seamDiffs,errors,checks:'F attack input, sword rewards and bonus, background seams, hosted assets, run cycle, jump sprites, crouch sprite frames, fixed feet, Telegram stub, audio gesture, full route, sword rewards, 3 boss phases, cutscene, persistence, checkpoint, multi-touch, pause, offline, restart counts'},null,2));
  await browser.close();server.kill();
 })().catch(async e=>{console.error(e);if(browser)await browser.close();server.kill();process.exitCode=1});

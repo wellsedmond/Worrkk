@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createGame} from './harness.js';
 const game=()=>createGame().run;
 test('map has five continuous zones, safe gaps and all mandatory events',()=>{
- const run=game();assert.equal(run('LEVEL1.zones.length'),5);assert.equal(run('LEVEL1.items.filter(i=>i.type==="fang").length'),3);
+ const run=game();assert.equal(run('LEVEL1.zones.length'),5);assert.equal(run('LEVEL1.items.every(i=>i.type==="rage")'),true);assert.ok(run('LEVEL1.enemies.length')>=30);
  assert.equal(run('LEVEL1.zones.every((z,i)=>!i||z.start===LEVEL1.zones[i-1].end)'),true);
  assert.equal(run('LEVEL1.ground.every((p,i,a)=>!i||p.x-(a[i-1].x+a[i-1].w)<=120)'),true);
  assert.ok(run('LEVEL1.width/245')>240);
@@ -47,10 +47,23 @@ test('stakes telegraph, crouch avoids a shot; fires cycle',()=>{
  run('projectiles=[];keys.crouch=false;setCrouch();spawnProjectile("stake",player.x,357,0);updateTraps(0)');assert.equal(run('player.hp'),2);
  run('const fire=traps.find(t=>t.type==="fire"&&t.cycle);player.x=fire.x-100;clock=fire.cycle*.8;updateTraps(0)');assert.equal(run('fire.active'),false);
 });
-test('all fangs can be collected and the forest wall must be broken first',()=>{
- const run=game();run('const fang=items.find(i=>i.id==="fang-forest");player.x=fang.x-20;player.y=350;updateEvents(0)');assert.equal(run('fangs.size'),0);
- run('player.x=3450;player.face=1;punch();player.cooldown=0;punch();player.x=3560;player.y=350;updateEvents(0)');assert.equal(run('fangs.size'),1);
- run('for(const id of ["fang-cemetery","fang-tower"]){const i=items.find(i=>i.id===id);player.x=i.x-20;player.y=i.y-40;updateEvents(0)}');assert.equal(run('fangs.size'),3);
+test('ten unique enemy kills award a five-hit sword and every tenth kill renews it',()=>{
+ const run=game();run('for(const e of enemies.slice(0,9))defeatEnemy(e)');assert.equal(run('kills'),9);assert.equal(run('sword'),0);
+ run('defeatEnemy(enemies[9]);defeatEnemy(enemies[9])');assert.equal(run('kills'),10);assert.equal(run('sword'),5);
+ run('sword=1;for(const e of enemies.slice(10,20))defeatEnemy(e)');assert.equal(run('kills'),20);assert.equal(run('sword'),5);assert.equal(run('swordRewards'),2);
+});
+test('sword misses and invulnerable boss contacts spend nothing; each enemy hit adds five coins',()=>{
+ const run=game();run('sword=5;punch()');assert.equal(run('sword'),5);assert.equal(run('score'),0);
+ run('const e=enemies.find(e=>e.type==="helmet");player.x=e.x-70;player.y=350;player.face=1;player.cooldown=0;punch()');assert.equal(run('e.dead'),true);assert.equal(run('sword'),4);assert.equal(run('score'),8);
+ run('player.x=boss.x-50;player.cooldown=0;boss.mode="attack";punch()');assert.equal(run('sword'),4);assert.equal(run('boss.hp'),3);
+ run('player.cooldown=0;boss.mode="reload";boss.inv=0;punch()');assert.equal(run('sword'),3);assert.equal(run('score'),13);assert.equal(run('boss.hp'),2);
+});
+test('sword breaks after five successful enemy hits; projectiles give no coins or wear',()=>{
+ const run=game();run('sword=5;for(const e of enemies.slice(0,5)){player.cooldown=0;player.x=e.x-50;player.y=e.y;player.face=1;punch()}');assert.equal(run('sword'),0);assert.equal(run('kills'),5);
+ run('sword=5;player.x=100;player.y=350;player.cooldown=0;punch();const before=score;spawnProjectile("garlic",attackBox().x,player.y+20,0);updateTraps(0)');assert.equal(run('score'),run('before'));assert.equal(run('sword'),5);
+});
+test('checkpoint restores kill counter and sword without duplicating rewards',()=>{
+ const run=game();run('for(const e of enemies.slice(0,10))defeatEnemy(e);sword=3;player.x=29600;player.y=350;updateEvents(0);sword=0;for(const e of enemies.slice(10,12))defeatEnemy(e);resumeCheckpoint()');assert.equal(run('kills'),10);assert.equal(run('sword'),3);assert.equal(run('swordRewards'),1);run('defeatEnemy(enemies[0])');assert.equal(run('kills'),10);
 });
 test('checkpoint restores only its snapshot, prevents farming, preserves run time and damage',()=>{
  const run=game();run('score=5;coins[0].taken=true;player.x=29600;player.y=350;updateEvents(0);score=50;clock=123;damageTaken=1;hit();hit();resumeCheckpoint()');assert.equal(run('player.x'),29600);assert.equal(run('score'),5);assert.equal(run('coins[0].taken'),true);assert.equal(run('clock'),123);assert.ok(run('damageTaken')>0);assert.equal(run('player.hp'),3);
@@ -70,12 +83,12 @@ test('boss fires three shots per phase; rage cannot bypass reload windows',()=>{
  assert.equal(run('boss.mode'),'defeated');run('updateBoss(2)');assert.equal(run('state'),'cutscene');run('updateCutscene(12)');assert.equal(run('state'),'win');
 });
 test('progress persists across sessions, sanitizes malformed data and handles blocked storage',()=>{
- const storage=new Map();const first=createGame(storage);first.run('progressStore.save({time:350,score:100,fangs:3,damage:0})');const second=createGame(storage);assert.equal(second.run('progressStore.load().completed'),true);assert.equal(second.run('progressStore.load().fangs'),3);assert.equal(second.run('progressStore.load().achievements[0]'),'НЕПРОКУСИМЫЙ');second.run('progressStore.save({time:390,score:90,fangs:1,damage:3})');assert.equal(second.run('progressStore.load().bestTime'),350);
- storage.set('upyr-run.progress.v1','broken');assert.equal(second.run('progressStore.load().completed'),false);second.run('localStorage.setItem=()=>{throw Error("blocked")};progressStore.save({time:1,score:1,fangs:0,damage:1})');assert.equal(second.run('progressStore.available'),false);
+ const storage=new Map();const first=createGame(storage);first.run('progressStore.save({time:350,score:100,kills:30,damage:0})');const second=createGame(storage);assert.equal(second.run('progressStore.load().completed'),true);assert.equal(second.run('progressStore.load().maxKills'),30);assert.equal(second.run('progressStore.load().achievements[0]'),'НЕПРОКУСИМЫЙ');second.run('progressStore.save({time:390,score:90,kills:10,damage:3})');assert.equal(second.run('progressStore.load().bestTime'),350);
+ storage.set('upyr-run.progress.v1','broken');assert.equal(second.run('progressStore.load().completed'),false);second.run('localStorage.setItem=()=>{throw Error("blocked")};progressStore.save({time:1,score:1,kills:0,damage:1})');assert.equal(second.run('progressStore.available'),false);
 });
 
-test('complete five-zone route collects all fangs, defeats boss and persists progress without cheats',()=>{
- const run=game();run(readFileSync(new URL('./route-agent.js',import.meta.url),'utf8'));const result=run('driveLevel(60000)');assert.equal(result.state,'win');assert.equal(result.fangs,3);assert.equal(result.bossHp,0);assert.equal(result.continues,0);assert.equal(result.visited.length,5);assert.ok(result.seconds>=300&&result.seconds<=420);assert.equal(run('progressStore.load().completed'),true);
+test('complete denser level unlocks swords, defeats boss and persists progress without cheats',()=>{
+ const run=game();run(readFileSync(new URL('./route-agent.js',import.meta.url),'utf8'));const result=run('driveLevel(60000)');assert.equal(result.state,'win');assert.ok(result.kills>=10);assert.ok(result.swordRewards>=1);assert.equal(result.bossHp,0);assert.equal(result.continues,0);assert.equal(result.visited.length,5);assert.ok(result.seconds>=270&&result.seconds<=420);assert.equal(run('progressStore.load().completed'),true);
 });
 
 test('tower gate cannot be bypassed before lever, pause does not advance physics',()=>{
@@ -128,4 +141,23 @@ test('run and jump sprite geometry stays uniformly scaled with valid frame crops
  for(const sample of ['{ground:true,vy:0,travel:20}','{ground:false,vy:-500,travel:2}','{ground:false,vy:0,travel:2}','{ground:false,vy:500,travel:2}','{ground:true,vy:0,travel:0}']){
   run(`heroAnimator.update(.1,false,${sample})`);const g=run('heroAnimator.geometry()');assert.ok(g);assert.ok(g.sw>0&&g.sh>0);assert.ok(Math.abs(g.dw/g.sw-g.dh/g.sh)<1e-8);assert.ok(g.dh>=60&&g.dh<=110);
  }
+});
+
+test('attack reference poses play once and then return to locomotion',()=>{
+ const run=game();run('heroAnimator.strike()');assert.equal(run('heroAnimator.pose().phase'),'attack');assert.equal(run('heroAnimator.pose().frame'),0);
+ run('heroAnimator.update(.15,false,{ground:true,vy:0,travel:0})');assert.equal(run('heroAnimator.pose().frame'),5);
+ run('heroAnimator.update(.25,false,{ground:true,vy:0,travel:0})');assert.equal(run('heroAnimator.pose().phase'),'stand');
+});
+test('old saved records migrate without the removed collectible field',()=>{
+ const store=new Map([['upyr-run.progress.v1',JSON.stringify({version:1,completed:true,bestTime:350,maxScore:120,fangs:3,achievements:[]})]]);const run=createGame(store).run;
+ assert.equal(run('progressStore.load().completed'),true);assert.equal(run('progressStore.load().maxScore'),120);assert.equal(run('"fangs" in progressStore.load()'),false);assert.equal(run('progressStore.load().version'),2);
+});
+test('parallax keeps visible tiles and unique objects continuous across old wrap boundaries',()=>{
+ const run=game();
+ for(const [speed,period]of [[.22,1080],[.43,31],[.43,560],[.45,280],[.4,1000]]){
+  const boundary=period/speed;const left=JSON.parse(run(`JSON.stringify(parallax.tiles(${boundary}-.01,${speed},${period}))`)),right=JSON.parse(run(`JSON.stringify(parallax.tiles(${boundary}+.01,${speed},${period}))`));
+  for(const tile of left){const match=right.find(t=>t.index===tile.index);if(match)assert.ok(Math.abs(match.x-tile.x)<.03);}
+  const screen=right.filter(t=>t.x+period>=0&&t.x<=960).sort((a,b)=>a.x-b.x);assert.ok(screen[0].x<=0);assert.ok(screen.at(-1).x+period>=960);for(let i=1;i<screen.length;i++)assert.ok(Math.abs(screen[i].x-screen[i-1].x-period)<1e-7);
+ }
+ for(const boundary of [160/.035,160/.11,320/.035]){assert.ok(Math.abs(run(`parallax.moonX(${boundary}+.01)-parallax.moonX(${boundary}-.01)`))<.01);assert.ok(Math.abs(run(`parallax.palaceX(${boundary}+.01)-parallax.palaceX(${boundary}-.01)`))<.01);}
 });
