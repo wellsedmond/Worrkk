@@ -14,7 +14,10 @@
   <script src="/atmosphere.js" defer></script>
   <script src="/level-art.js" defer></script>
   <script src="/hero-animation.js" defer></script>
-  <script src="/game.js" defer></script>
+  <script src="/achievements-core.js" defer></script>
+<script src="/achievements.js" defer></script>
+<script src="/game.js" defer></script>
+<script src="/achievements-ui.js" defer></script>
 </head>
 <body>
 <svg class="symbols" aria-hidden="true"><defs>
@@ -37,6 +40,7 @@
     </div>
     <div id="sword-hud" role="status">До меча: 10 врагов</div>
     <div id="zone-name" class="stage-caption">1/5 · Пробуждение Упыря</div><div id="banner" role="status" hidden></div><div id="tutorial" hidden></div><div id="boss-hud" hidden></div><div id="rage-meter" hidden></div><div id="escape-timer"></div>
+    <div id="achievement-toast" role="status" hidden></div>
     <div id="overlay">
       <svg class="menu-bat" aria-hidden="true"><use href="#bat-icon"/></svg>
       <small class="eyebrow">НОЧЬ ТОЛЬКО НАЧИНАЕТСЯ</small>
@@ -44,11 +48,17 @@
       <p>Охотники украли Кубок Вечной Ночи.<br>Пройди пять зон и открой дорогу к СКА Арене.</p>
       <button id="play" disabled>Выйти в ночь <span aria-hidden="true">→</span></button>
       <button id="continue" hidden>Продолжить у гроба</button><button id="main-menu" hidden>Главное меню</button>
+      <button id="achievements-open">Достижения</button>
       <span class="menu-hint">Стрелки — движение · Пробел — прыжок · F — удар · ↓ — присесть</span>
     </div>
   </section>
   <footer><span>← → / A D — бег · Пробел — прыжок · F — удар · ↓ / S — присесть</span><span>ЧЕСНОК НЕ ДРЕМЛЕТ. ТЫ ТОЖЕ.</span></footer>
   <nav aria-label="Управление"><div><button data-key="left" aria-label="Влево">←</button><button data-key="right" aria-label="Вправо">→</button></div><div class="actions"><button data-key="crouch" aria-label="Присесть">Присесть</button><button data-key="attack" aria-label="Удар">Удар</button><button data-key="jump" aria-label="Прыжок">Прыжок <span aria-hidden="true">↑</span></button></div></nav>
+<section id="achievements-panel" role="dialog" aria-modal="true" aria-labelledby="achievements-title" hidden>
+ <div class="achievement-heading"><div><small>ЛЕТОПИСЬ ВЕЧНОЙ НОЧИ</small><h2 id="achievements-title">Достижения</h2></div><button id="close-achievements" aria-label="Закрыть достижения">Закрыть ×</button></div>
+ <p id="achievement-summary"></p><progress id="achievement-total" max="22" value="0"></progress><p id="achievement-sync" role="status"></p>
+ <div id="achievement-tabs" aria-label="Категории достижений"></div><div id="achievement-list"></div>
+</section>
 </main>
 </body>
 </html>

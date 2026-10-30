@@ -35,39 +35,39 @@
     {
       "zone": 2,
       "medianMs": 16.69999999999891,
-      "p95Ms": 16.700000000000728
+      "p95Ms": 16.799999999999272
     },
     {
       "zone": 4,
       "medianMs": 16.69999999999891,
-      "p95Ms": 16.700000000000728
+      "p95Ms": 16.799999999999272
     },
     {
       "zone": 5,
       "medianMs": 16.69999999999891,
-      "p95Ms": 16.799999999999272
+      "p95Ms": 16.700000000000728
     }
   ],
   "seamDiffs": [
     {
       "camera": 4571.428571428571,
       "zone": 1,
-      "meanDifference": 0.005381944444444444
+      "meanDifference": 0.005422794117647059
     },
     {
       "camera": 1454.5454545454545,
       "zone": 1,
-      "meanDifference": 0.0064998638344226575
+      "meanDifference": 0.006519607843137255
     },
     {
       "camera": 4909.090909090909,
       "zone": 2,
-      "meanDifference": 0.004494144880174292
+      "meanDifference": 0.004436274509803922
     },
     {
       "camera": 1302.3255813953488,
       "zone": 2,
-      "meanDifference": 0.0222406045751634
+      "meanDifference": 0.022224945533769063
     },
     {
       "camera": 622.2222222222222,
@@ -81,10 +81,5 @@
     }
   ],
   "errors": [],
-  "checks": "F attack input, sword rewards and bonus, background seams, hosted assets, run cycle, jump sprites, crouch sprite frames, fixed feet, Telegram stub, audio gesture, full route, sword rewards, 3 boss phases, cutscene, persistence, checkpoint, multi-touch, pause, offline, restart counts",
-  "limitations": [
-    "Telegram SDK mocked; physical Android/iOS not tested.",
-    "Headless frame timing does not guarantee phone FPS.",
-    "Records are local, not server verified."
-  ]
+  "checks": "F attack input, sword rewards and bonus, background seams, hosted assets, run cycle, jump sprites, crouch sprite frames, fixed feet, Telegram stub, audio gesture, full route, sword rewards, 3 boss phases, cutscene, persistence, checkpoint, multi-touch, pause, offline, restart counts"
 }

@@ -1,0 +1,24 @@
+{
+  "checks": [
+    "24 cards, 22 active",
+    "secret titles hidden",
+    "offline outbox persists through reload",
+    "Telegram HMAC server round trip",
+    "repeated sync grants once",
+    "separate achievement points",
+    "sword sprite screenshot",
+    "390px mobile panel",
+    "sequential notifications for simultaneous unlocks"
+  ],
+  "errors": [],
+  "nodeTests": 38,
+  "activeAchievements": 22,
+  "totalAchievements": 24,
+  "deferred": [
+    "Кровожадный: 34 доступных цели меньше требуемых 50",
+    "Без права на ошибку: обязательные атаки по боссу"
+  ],
+  "realTelegramDeviceTested": false,
+  "productionBotConfigured": false,
+  "build": "Worrkk.html includes sword sprites and achievements; fully offline guest mode"
+}

@@ -10,6 +10,7 @@ let groundPlatforms=[],ledgePlatforms=[],platforms=[];
 let player,coins,enemies,traps,items,projectiles=[],boss,checkpoint,snapshot;
 let camera=0,cameraY=0,state='menu',score=0,last=0,clock=0,jumpHeld=false,attackHeld=false;
 let kills=0,sword=0,swordRewards=0,damageTaken=0,leverOpen=false,escapeLeft=0,towerTimer=null,towerPassed=false,zoneIndex=0;
+let achievementClock=0,safeIdle=0,deathNumber=0,projectileNumber=0,jumpFires=new Set(),achievementJump=false;
 let banner={text:'',left:0},cutsceneTime=0,victoryTime=0,paused=false,tutorialDone=new Set();
 const ui={zone:document.querySelector('#zone-name'),timer:document.querySelector('#time-count'),kills:document.querySelector('#kill-count'),sword:document.querySelector('#sword-hud'),hint:document.querySelector('#tutorial'),banner:document.querySelector('#banner'),boss:document.querySelector('#boss-hud'),rage:document.querySelector('#rage-meter')};
 function notify(text,seconds=3){banner={text,left:seconds};}
@@ -27,14 +28,18 @@ function reset(){
 }
 function captureCheckpoint(){snapshot={score,coins:coins.filter(c=>c.taken).map(c=>c.id),items:items.filter(c=>c.taken).map(c=>c.id),kills,sword,swordRewards,enemies:enemies.filter(e=>e.dead).map(e=>e.id),leverOpen};}
 function resumeCheckpoint(){
- if(!assetsReady)return;gameAudio.activate();const saved=snapshot;makeWorld();score=saved.score;kills=saved.kills;sword=saved.sword;swordRewards=saved.swordRewards;leverOpen=saved.leverOpen;
+ if(!assetsReady)return;safeIdle=0;achievementJump=false;jumpFires.clear();gameAudio.activate();const saved=snapshot;makeWorld();score=saved.score;kills=saved.kills;sword=saved.sword;swordRewards=saved.swordRewards;leverOpen=saved.leverOpen;
  for(const c of coins)c.taken=saved.coins.includes(c.id);for(const c of items)c.taken=saved.items.includes(c.id);for(const e of enemies)e.dead=saved.enemies.includes(e.id);
  Object.assign(player,{x:checkpoint.x,y:checkpoint.y-80,h:80,hp:3,vx:0,vy:0,ground:false,inv:2,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false});
  escapeLeft=leverOpen?LEVEL1.escapeSeconds:0;towerTimer=null;towerPassed=checkpoint.x>=LEVEL1.timedSection.end;projectiles=[];camera=Math.max(0,player.x-260);cameraY=Math.min(0,player.y-250);state='playing';paused=false;
  for(const k in keys)keys[k]=false;jumpHeld=false;attackHeld=false;atmosphere.reset();heroAnimator.reset();atmosphere.prepare(platforms);overlay.hidden=true;notify('Пробуждение у контрольной точки');
 }
-function start(){if(!assetsReady)return;gameAudio.activate();reset();state='playing';overlay.classList.remove('defeat');overlay.hidden=true;document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
+function start(){if(!assetsReady)return;gameAudio.activate();reset();achievementSystem.start();achievementClock=0;safeIdle=0;deathNumber=0;projectileNumber=0;achievementJump=false;jumpFires.clear();state='playing';overlay.classList.remove('defeat');overlay.hidden=true;document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
 function finish(win){
+ if(state==='win'||state==='lost')return;
+ achievementSystem.emit('player_moved',{x:player.x,safeSeconds:safeIdle});
+ if(win)achievementSystem.emit('level_completed',{level:'level1'});else achievementSystem.emit('player_died',{id:'death-'+(++deathNumber),elapsed:clock});
+ achievementSystem.emit('run_finished',{completed:win});achievementSystem.persist();
  state=win?'win':'lost';banner.left=0;overlay.hidden=false;overlay.classList.toggle('defeat',!win);overlay.querySelector('.eyebrow').textContent=win?'LEVEL 1 — ПРОКЛЯТАЯ ДОРОГА К СКА АРЕНЕ':'НОЧЬ НЕ ПРОЩАЕТ ОШИБОК';overlay.querySelector('h2').textContent=win?'LEVEL COMPLETE!':'ВАМПИР ПАЛ!';
  let text=`Монеты: ${score}. Побеждено: ${kills}. `;
  if(win){const record=progressStore.save({time:victoryTime||clock,score,kills,damage:damageTaken});text+=`Время: ${formatTime(victoryTime||clock)}. LEVEL 2 — СКОРО.`;if(damageTaken===0)text+=' Достижение: НЕПРОКУСИМЫЙ!';if(!progressStore.available)text+=' Браузер запретил сохранение.';}
@@ -43,7 +48,7 @@ function finish(win){
 }
 function mainMenu(){state='menu';paused=false;overlay.hidden=false;overlay.classList.remove('defeat');overlay.querySelector('.eyebrow').textContent='КУБОК ВЕЧНОЙ НОЧИ ЖДЁТ';overlay.querySelector('h2').textContent='UPYR RUN';const p=progressStore.load();overlay.querySelector('p').textContent='Охотники украли Кубок Вечной Ночи. Пройди лес, кладбище, аллею и башню, чтобы открыть ворота СКА Арены.'+(p.completed?` Рекорд: ${p.maxScore}. Лучшее время: ${formatTime(p.bestTime)}.`:'');document.querySelector('#play').textContent='Выйти в ночь →';document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
 function formatTime(t){return Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');}
-function hit(){if(player.inv>0||state!=='playing')return;damageTaken++;player.hp--;gameAudio.effect('hurt');player.inv=1.6;atmosphere.burst(player.x+20,player.y+25,'sparks');player.vy=-330;if(player.hp<=0)finish(false);}
+function hit(){if(player.inv>0||state!=='playing')return;damageTaken++;achievementSystem.emit('player_damaged');safeIdle=0;jumpFires.clear();player.hp--;gameAudio.effect('hurt');player.inv=1.6;atmosphere.burst(player.x+20,player.y+25,'sparks');player.vy=-330;if(player.hp<=0)finish(false);}
 function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 function activeNear(x,range=1250){return Math.abs(x-player.x)<range;}
 function solidRects(){return [...groundPlatforms.filter(p=>activeNear(p[0]+p[2]/2,p[2]+160)).map(p=>({x:p[0],y:p[1],w:p[2],h:p[3]})),...(!leverOpen?[LEVEL1.gate]:[])];}
@@ -52,26 +57,27 @@ function updatePlatforms(dt){for(const p of ledgePlatforms){const oldX=p[0],oldY
  if(p.collapse>=0){p.collapse+=dt;if(p.collapse>=.8){p.active=false;p.restore+=dt;if(p.restore>4){p.active=true;p.collapse=-1;p.restore=0;}}}p.dx=p[0]-oldX;p.dy=p[1]-oldY;}}
 function attackBox(){const armed=player.attack>0?player.swingSword:sword>0;const reach=armed?96:63;return {x:player.face>0?player.x+player.w-5:player.x-reach+5,y:player.y+8,w:reach,h:Math.max(40,player.h-12)};}
 function recordKill(){kills++;if(kills%10===0){sword=5;swordRewards++;notify('Меч получен! Прочность: 5/5');}}
-function defeatEnemy(e){if(e.dead)return;e.dead=true;e.death=.5;score+=e.type==='helmet'?3:1;recordKill();atmosphere.burst(e.x+19,e.y+20,'garlic');}
-function swordHit(){if(!player.swingSword||sword<=0)return false;sword--;score+=5;if(sword===0){player.swordBroke=true;atmosphere.burst(player.x+player.face*50,player.y+35,'sparks');}return true;}
+function defeatEnemy(e){if(e.dead)return;e.dead=true;e.death=.5;score+=e.type==='helmet'?3:1;achievementSystem.emit('enemy_killed',{id:e.id});if(e.type==='garlic')achievementSystem.emit('garlic_destroyed',{id:e.id});achievementSystem.emit('coin_collected',{id:'kill-'+e.id,amount:e.type==='helmet'?3:1});recordKill();atmosphere.burst(e.x+19,e.y+20,'garlic');}
+function swordHit(target){if(!player.swingSword||sword<=0)return false;sword--;score+=5;achievementSystem.emit('coin_collected',{id:'sword-'+target,amount:5});if(sword===0){player.swordBroke=true;atmosphere.burst(player.x+player.face*50,player.y+35,'sparks');}return true;}
 function punch(){
  if(player.cooldown>0||player.h<80)return;
- player.attack=.36;player.swordBroke=false;player.swingSword=sword>0;heroAnimator.strike();gameAudio.effect('hit');player.cooldown=.42;tutorialDone.add('attack');const box=attackBox();
+ player.attack=.36;player.swordBroke=false;player.swingSword=sword>0;heroAnimator.strike(player.swingSword);achievementSystem.emit('player_attacked');safeIdle=0;gameAudio.effect('hit');player.cooldown=.42;tutorialDone.add('attack');const box=attackBox();
  atmosphere.burst(box.x+box.w/2,box.y+20,'sparks');
- for(const e of enemies)if(!e.dead&&overlap(box,e)){const armed=swordHit();e.hp-=armed||player.rage>0?2:1;if(e.hp<=0)defeatEnemy(e);}
- if(boss.mode==='reload'&&boss.inv<=0&&overlap(box,boss)){swordHit();boss.hp--;boss.inv=1;atmosphere.burst(boss.x+36,boss.y+50,'sparks');if(boss.hp===0){boss.mode='defeated';boss.dead=true;boss.death=1.6;recordKill();}else{boss.phase=4-boss.hp;boss.mode='attack';boss.shots=0;boss.timer=2.8;notify(`Охотник: фаза ${boss.phase}`);}}
+ for(const e of enemies)if(!e.dead&&overlap(box,e)){const armed=swordHit(e.id+'-'+e.hp);e.hp-=armed||player.rage>0?2:1;if(e.hp<=0)defeatEnemy(e);}
+ if(boss.mode==='reload'&&boss.inv<=0&&overlap(box,boss)){swordHit('boss-'+boss.hp);boss.hp--;boss.inv=1;atmosphere.burst(boss.x+36,boss.y+50,'sparks');if(boss.hp===0){boss.mode='defeated';boss.dead=true;boss.death=1.6;achievementSystem.emit('enemy_killed',{id:'boss-hunter'});achievementSystem.emit('boss_defeated',{id:'hunter'});recordKill();}else{boss.phase=4-boss.hp;boss.mode='attack';boss.shots=0;boss.timer=2.8;notify(`Охотник: фаза ${boss.phase}`);}}
  if(player.swordBroke&&sword===0)notify(`Меч сломан. До следующего: ${10-kills%10} побед`);
 }
-function spawnProjectile(type,x,y,dir=-1,source='trap'){if(projectiles.length>=48)projectiles.shift();projectiles.push({type,x,y,w:type==='stake'?48:32,h:type==='stake'?12:32,vx:dir*(source==='boss'?210:230),life:0,source});}
+function spawnProjectile(type,x,y,dir=-1,source='trap'){if(projectiles.length>=48)projectiles.shift();projectiles.push({id:'projectile-'+(++projectileNumber),type,x,y,w:type==='stake'?48:32,h:type==='stake'?12:32,vx:dir*(source==='boss'?210:230),life:0,source});}
 function updateTraps(dt){
  for(const t of traps){if(!activeNear(t.x))continue;
   if(t.type==='fire'){t.active=!t.cycle||(clock%t.cycle)<t.cycle*.55;if(t.active&&overlap(player,t))hit();}
   if(t.type==='stake'){const previous=t.phase;t.phase=(t.phase+dt)%t.period;t.warn=t.phase<t.warning;if(previous<t.warning&&t.phase>=t.warning)spawnProjectile('stake',t.x,t.y,-1);}
   if(t.type==='pendulum'){t.headX=t.x+Math.sin(clock*Math.PI*2/t.period)*145;t.headY=t.y+Math.cos(Math.sin(clock*Math.PI*2/t.period)*.6)*t.length;const box={x:t.headX-t.radius,y:t.headY-t.radius,w:t.radius*2,h:t.radius*2};if(overlap(player,box))hit();}
  }
- for(const p of projectiles){p.life+=dt;p.x+=p.vx*dt;if(p.type==='garlic')p.y+=Math.sin(p.life*5)*14*dt;
+ for(const p of projectiles){const beforeX=p.x;p.life+=dt;p.x+=p.vx*dt;if(p.type==='garlic')p.y+=Math.sin(p.life*5)*14*dt;
   if(player.attack>0&&overlap(attackBox(),p)){p.dead=true;atmosphere.burst(p.x+16,p.y+16,p.type==='garlic'?'garlic':'sparks');tutorialDone.add('attack');}
   else if(overlap(player,p)){p.dead=true;hit();}
+  if(!p.dead&&p.type==='stake'&&Math.abs(p.y-player.y)<150){if(p.x<player.x+player.w&&p.x+p.w>player.x)p.dodgeCandidate=true;const passed=p.vx<0?beforeX+p.w>=player.x&&p.x+p.w<player.x:beforeX<=player.x+player.w&&p.x>player.x+player.w;if(passed&&p.dodgeCandidate&&!p.dodgeCounted){p.dodgeCounted=true;achievementSystem.emit('stake_dodged',{id:p.id});}}
  }
  projectiles=projectiles.filter(p=>!p.dead&&p.life<5&&Math.abs(p.x-player.x)<1400);
 }
@@ -99,7 +105,7 @@ function updateBoss(dt){
 function updateEvents(dt){
  const current=LEVEL1.zones.findIndex(z=>player.x>=z.start&&player.x<z.end);if(current>=0&&current!==zoneIndex){zoneIndex=current;notify(LEVEL1.zones[current].name);}
  for(const cp of LEVEL1.checkpoints)if(cp.x>checkpoint.x&&Math.abs(player.x-cp.x)<70&&Math.abs(player.y+player.h-cp.y)<22){checkpoint={...cp};captureCheckpoint();notify('ПРОБУЖДЕНИЕ СОХРАНЕНО');}
- for(const c of coins)if(!c.taken&&activeNear(c.x)&&Math.hypot(player.x+20-c.x,player.y+player.h/2-c.y)<35){c.taken=true;score++;}
+ for(const c of coins)if(!c.taken&&activeNear(c.x)&&Math.hypot(player.x+20-c.x,player.y+player.h/2-c.y)<35){c.taken=true;score++;achievementSystem.emit('coin_collected',{id:'pickup-'+c.id,amount:1});}
  for(const item of items)if(!item.taken&&activeNear(item.x)&&Math.hypot(player.x+20-item.x,player.y+player.h/2-item.y)<42){item.taken=true;player.rage=10;notify('КРОВАВАЯ ЯРОСТЬ — 10 секунд');}
  if(!towerPassed&&player.x>LEVEL1.timedSection.start&&player.x<LEVEL1.timedSection.end&&player.y<-150&&towerTimer===null){towerTimer=LEVEL1.timedSection.seconds;notify('Механизм запущен! Пройди галерею за 24 секунды.');}
  if(towerTimer!==null){towerTimer-=dt;if(player.x>=LEVEL1.timedSection.end){towerPassed=true;towerTimer=null;}else if(towerTimer<=0){damageTaken++;finish(false);}}
@@ -112,7 +118,7 @@ function update(dt){
  clock+=dt;banner.left=Math.max(0,banner.left-dt);player.inv=Math.max(0,player.inv-dt);player.rage=Math.max(0,player.rage-dt);player.attack=Math.max(0,player.attack-dt);player.cooldown=Math.max(0,player.cooldown-dt);
  updatePlatforms(dt);if(player.ground&&player.support){const p=platforms.find(p=>p.id===player.support);if(p?.active){player.x+=p.dx;player.y+=p.dy;}else{player.ground=false;player.support=null;}}
  setCrouch();const travelStartX=player.x;player.vx=((keys.right?1:0)-(keys.left?1:0))*(player.h<80?125:245);if(player.vx)player.face=Math.sign(player.vx);
- if(keys.jump&&!jumpHeld&&player.ground&&!keys.crouch){player.vy=-590;player.ground=false;player.support=null;}jumpHeld=keys.jump;
+ if(keys.jump&&!jumpHeld&&player.ground&&!keys.crouch){achievementJump=true;jumpFires.clear();player.vy=-590;player.ground=false;player.support=null;}jumpHeld=keys.jump;
  if(keys.attack&&!attackHeld)punch();attackHeld=keys.attack;
  player.x=Math.max(0,Math.min(LEVEL1.width-player.w,player.x+player.vx*dt));
  if(['intro','attack','reload'].includes(boss.mode))player.x=Math.max(LEVEL1.boss.arenaStart,Math.min(LEVEL1.boss.arenaEnd-player.w,player.x));
@@ -123,7 +129,16 @@ function update(dt){
   if(landing){player.y=landingY-player.h;player.vy=0;player.ground=true;player.support=landing.id;if(landing.kind==='crumble'&&landing.collapse<0)landing.collapse=0;if(!wasGrounded)atmosphere.burst(player.x+20,landingY,'landing');}
  }else{for(const r of solidRects())if(overlap(player,r)){player.y=r.y+r.h;player.vy=0;}}
  updateEnemies(dt,prevBottom);updateTraps(dt);if(state!=='playing')return;updateEvents(dt);updateBoss(dt);
- if(player.y>600){damageTaken++;finish(false);}heroAnimator.update(dt,player.h<80,{ground:player.ground,vy:player.vy,travel:player.x-travelStartX});updateCamera(dt);
+ if(player.y>600){damageTaken++;finish(false);}trackAchievements(dt,travelStartX,wasGrounded);heroAnimator.update(dt,player.h<80,{ground:player.ground,vy:player.vy,travel:player.x-travelStartX});updateCamera(dt);
+}
+function trackAchievements(dt,startX,wasGrounded){
+ if(state!=='playing')return;
+ const stationary=Math.abs(player.x-startX)<.001&&player.ground&&!keys.attack&&player.inv<=0;
+ const safe=stationary&&!enemies.some(e=>!e.dead&&Math.abs(e.x-player.x)<260)&&!traps.some(t=>Math.abs(t.x-player.x)<300)&&!projectiles.some(p=>Math.abs(p.x-player.x)<350)&&boss.mode==='waiting';
+ safeIdle=safe?safeIdle+dt:0;achievementClock+=dt;
+ if(achievementClock>=1){achievementClock=0;achievementSystem.emit('player_moved',{x:player.x,safeSeconds:safeIdle});}
+ if(achievementJump&&!player.ground){for(const fire of traps)if(fire.type==='fire'&&fire.active&&player.x+player.w>fire.x&&player.x<fire.x+fire.w&&player.y+player.h<fire.y+3)jumpFires.add(fire.id);}
+ if(player.ground&&!wasGrounded){for(const id of jumpFires){const fire=traps.find(t=>t.id===id);if(fire&&player.x>=fire.x+fire.w)achievementSystem.emit('bonfire_jumped',{id});}jumpFires.clear();achievementJump=false;}
 }
 function updateCamera(dt){camera=Math.max(0,Math.min(LEVEL1.width-960,player.x-260));const target=Math.min(0,player.y-230);cameraY+=(target-cameraY)*Math.min(1,dt*7);}
 function updateCutscene(dt){
@@ -180,12 +195,12 @@ function renderStatus(){
  document.querySelector('#pause').textContent=paused?'Продолжить':'Пауза';
 }
 let accumulator=0;
-function frame(t){const dt=Math.min((t-last)/1000||0,.1);last=t;if(!paused){atmosphere.tick(dt);levelArt.tick(dt);accumulator=Math.min(accumulator+dt,.12);while(accumulator>=1/120){if(state==='playing')update(1/120);else if(state==='cutscene')updateCutscene(1/120);accumulator-=1/120;}}gameAudio.tick(dt,!paused&&state==='playing',player.ground&&Math.abs(player.vx)>0);draw();requestAnimationFrame(frame);}
+function frame(t){const dt=Math.min((t-last)/1000||0,.1);last=t;achievementSystem.tick(dt);if(typeof achievementUI!=='undefined')achievementUI.tick(dt);if(!paused){atmosphere.tick(dt);levelArt.tick(dt);accumulator=Math.min(accumulator+dt,.12);while(accumulator>=1/120){if(state==='playing')update(1/120);else if(state==='cutscene')updateCutscene(1/120);accumulator-=1/120;}}gameAudio.tick(dt,!paused&&state==='playing',player.ground&&Math.abs(player.vx)>0);draw();requestAnimationFrame(frame);}
 function resize(){canvas.width=960*Math.min(devicePixelRatio||1,2);canvas.height=510*Math.min(devicePixelRatio||1,2);}resize();window.addEventListener('resize',resize);
 const physicalKeys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyF:'attack',ArrowDown:'crouch',KeyS:'crouch'};
 const mapping={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',' ':'jump',ArrowUp:'jump',w:'jump',W:'jump',f:'attack',F:'attack',ArrowDown:'crouch',s:'crouch'};
 function releaseKeys(){for(const key in keys)keys[key]=false;}
-window.addEventListener('keydown',e=>{if(e.target.matches?.('button,input,textarea')&&e.key===' ')return;const key=physicalKeys[e.code]||mapping[e.key];if(key){e.preventDefault();keys[key]=true;}if(e.code==='Escape'&&state==='playing')paused=!paused;});
+window.addEventListener('keydown',e=>{if(!document.querySelector('#achievements-panel').hidden)return;if(e.target.matches?.('button,input,textarea')&&e.key===' ')return;const key=physicalKeys[e.code]||mapping[e.key];if(key){e.preventDefault();keys[key]=true;}if(e.code==='Escape'&&state==='playing')paused=!paused;});
 window.addEventListener('keyup',e=>{const key=physicalKeys[e.code]||mapping[e.key];if(key)keys[key]=false;});
 window.addEventListener('blur',()=>{releaseKeys();if(state==='playing')paused=true;});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){releaseKeys();if(state==='playing')paused=true;}});

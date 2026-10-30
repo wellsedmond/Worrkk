@@ -1,0 +1,27 @@
+const {chromium}=require('playwright-core');
+const {spawn}=require('node:child_process');const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{createHmac}=require('node:crypto');
+const root=path.resolve(__dirname,'..'),directory=fs.mkdtempSync(path.join(os.tmpdir(),'upyr-browser-profile-')),token='test-bot-token';
+const params=new URLSearchParams({auth_date:String(Math.floor(Date.now()/1000)),user:JSON.stringify({id:123456,first_name:'Tester'})});const check=[...params].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+'='+v).join('\n');params.set('hash',createHmac('sha256',createHmac('sha256','WebAppData').update(token).digest()).update(check).digest('hex'));
+const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,PORT:'3138',TELEGRAM_BOT_TOKEN:token,UPYR_DATA_DIR:directory},stdio:'ignore'});let browser;
+(async()=>{
+ browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+ for(let i=0;i<50;i++){try{if((await fetch('http://127.0.0.1:3138/')).ok)break;}catch{}await new Promise(r=>setTimeout(r,100));}
+ const context=await browser.newContext({viewport:{width:1280,height:960}});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('https://telegram.org/js/telegram-web-app.js',r=>r.fulfill({contentType:'text/javascript',body:`window.Telegram={WebApp:{initData:${JSON.stringify(params.toString())},initDataUnsafe:{user:{id:123456}},ready(){},expand(){}}}` }));
+ await page.goto('http://127.0.0.1:3138/');await page.waitForFunction(()=>assetsReady);await page.click('#achievements-open');await page.waitForSelector('.achievement-card');assert.equal(await page.locator('.achievement-card').count(),24);assert.equal(await page.locator('.achievement-card.inactive').count(),2);
+ await page.click('[data-category="secret"]');assert.equal(await page.locator('.achievement-card').count(),4);assert.equal(await page.getByText('Секретное достижение',{exact:true}).count(),4);assert.equal(await page.locator('#achievement-list').innerText().then(t=>t.includes('Бессмертие отменяется')),false);
+ await page.click('#close-achievements');await page.click('#play');await page.evaluate(()=>paused=true);
+ // A lost connection must leave an event outbox that survives reload and retries once.
+ await page.route('**/api/achievements',r=>r.abort());
+ await page.evaluate(async()=>{achievementSystem.emit('coin_collected',{id:'test-award',amount:100});await achievementSystem.sync();});
+ assert.equal(await page.evaluate(()=>achievementSystem.state.stats.coins),100);await page.reload();await page.waitForFunction(()=>assetsReady);assert.equal(await page.evaluate(()=>achievementSystem.state.stats.coins),100);
+ await page.unroute('**/api/achievements');await page.evaluate(()=>achievementSystem.sync());await page.waitForFunction(()=>achievementSystem.status==='Сохранено в Telegram-профиле');
+ await page.evaluate(()=>achievementSystem.sync());const stored=JSON.parse(fs.readFileSync(path.join(directory,'123456.json'),'utf8'));assert.equal(stored.stats.coins,100);assert.equal(Object.keys(stored.unlocked).length,1);assert.equal(await page.evaluate(()=>achievementSystem.points),10);
+ await page.click('#achievements-open');await page.click('[data-category="coins"]');assert.equal(await page.locator('.achievement-card.unlocked').count(),1);await page.screenshot({path:path.join(root,'docs/achievements.png')});await page.click('#close-achievements');
+ await page.click('#play');await page.evaluate(()=>{paused=true;sword=5;player.x=400;player.y=350;camera=0;heroAnimator.strike(true);heroAnimator.update(.36*4/16,false);player.attack=.27;player.swingSword=true;draw();});assert.equal(await page.evaluate(()=>heroAnimator.pose().clip),'sword');await page.screenshot({path:path.join(root,'docs/sword-animation.png')});
+ await page.setViewportSize({width:390,height:844});await page.evaluate(()=>mainMenu());await page.click('#achievements-open');await page.click('[data-category="all"]');assert.ok(await page.evaluate(()=>document.querySelector('#achievements-panel').scrollWidth<=document.querySelector('#achievements-panel').clientWidth+1));await page.screenshot({path:path.join(root,'docs/achievements-mobile.png')});
+ // Several thresholds unlock together; notifications must display sequentially once.
+ await page.click('#close-achievements');await page.evaluate(()=>{achievementSystem.toastQueue.splice(0);achievementUI.tick(5);achievementSystem.state.stats.coins=49950;achievementSystem.emit('coin_collected',{id:'qa-multi-threshold',amount:100});achievementUI.tick(.01);});
+ assert.equal(await page.locator('#achievement-toast b').innerText(),'Карманы полны');await page.evaluate(()=>{achievementUI.tick(4.1);achievementUI.tick(.01);});assert.equal(await page.locator('#achievement-toast b').innerText(),'Ночной грабитель');assert.equal(await page.evaluate(()=>achievementSystem.points),410);
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({checks:['24 cards, 22 active','secret titles hidden','offline outbox persists through reload','Telegram HMAC server round trip','repeated sync grants once','separate achievement points','sword sprite screenshot','390px mobile panel','sequential notifications for simultaneous unlocks'],errors},null,2));
+})().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();server.kill();fs.rmSync(directory,{recursive:true,force:true});});
