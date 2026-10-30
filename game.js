@@ -108,7 +108,7 @@ function update(dt){
  if(state!=='playing'||paused)return;
  clock+=dt;banner.left=Math.max(0,banner.left-dt);player.inv=Math.max(0,player.inv-dt);player.rage=Math.max(0,player.rage-dt);player.attack=Math.max(0,player.attack-dt);player.cooldown=Math.max(0,player.cooldown-dt);
  updatePlatforms(dt);if(player.ground&&player.support){const p=platforms.find(p=>p.id===player.support);if(p?.active){player.x+=p.dx;player.y+=p.dy;}else{player.ground=false;player.support=null;}}
- setCrouch();heroAnimator.update(dt,player.h<80);player.vx=((keys.right?1:0)-(keys.left?1:0))*(player.h<80?125:245);if(player.vx)player.face=Math.sign(player.vx);
+ setCrouch();const travelStartX=player.x;player.vx=((keys.right?1:0)-(keys.left?1:0))*(player.h<80?125:245);if(player.vx)player.face=Math.sign(player.vx);
  if(keys.jump&&!jumpHeld&&player.ground&&!keys.crouch){player.vy=-590;player.ground=false;player.support=null;}jumpHeld=keys.jump;
  if(keys.attack&&!attackHeld)punch();attackHeld=keys.attack;
  player.x=Math.max(0,Math.min(LEVEL1.width-player.w,player.x+player.vx*dt));
@@ -120,11 +120,11 @@ function update(dt){
   if(landing){player.y=landingY-player.h;player.vy=0;player.ground=true;player.support=landing.id;if(landing.kind==='crumble'&&landing.collapse<0)landing.collapse=0;if(!wasGrounded)atmosphere.burst(player.x+20,landingY,'landing');}
  }else{for(const r of solidRects())if(overlap(player,r)){player.y=r.y+r.h;player.vy=0;}}
  updateEnemies(dt,prevBottom);updateTraps(dt);if(state!=='playing')return;updateEvents(dt);updateBoss(dt);
- if(player.y>600){damageTaken++;finish(false);}updateCamera(dt);
+ if(player.y>600){damageTaken++;finish(false);}heroAnimator.update(dt,player.h<80,{ground:player.ground,vy:player.vy,travel:player.x-travelStartX});updateCamera(dt);
 }
 function updateCamera(dt){camera=Math.max(0,Math.min(LEVEL1.width-960,player.x-260));const target=Math.min(0,player.y-230);cameraY+=(target-cameraY)*Math.min(1,dt*7);}
 function updateCutscene(dt){
- cutsceneTime+=dt;banner.left=Math.max(0,banner.left-dt);
+ const travelStartX=player.x;cutsceneTime+=dt;banner.left=Math.max(0,banner.left-dt);
  const destination=LEVEL1.exitX-100;if(cutsceneTime>1&&cutsceneTime<5)player.x=Math.min(destination,player.x+150*dt);
  player.y=430-player.h;player.vx=cutsceneTime<5?100:0;
  if(cutsceneTime<2)notify('Золотой ключ выпал из кармана охотника.',.2);
@@ -132,7 +132,7 @@ function updateCutscene(dt){
  else if(cutsceneTime<7)notify('«Ну что, доигрались? Теперь моя очередь!»',.2);
  else notify('На крыше — оборотень с красной звездой…',.2);
  const target=LEVEL1.width-960;camera+=(target-camera)*Math.min(1,dt*1.5);cameraY+=(0-cameraY)*Math.min(1,dt*5);
- if(cutsceneTime>11)finish(true);
+ heroAnimator.update(dt,false,{ground:true,vy:0,travel:player.x-travelStartX});if(cutsceneTime>11)finish(true);
 }
 function shape(path,fill,stroke='#485346',width=2){ctx.fillStyle=fill;ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.fill(path);if(stroke)ctx.stroke(path);}
 function rounded(x,y,w,h,r,fill,stroke){const path=new Path2D();path.roundRect(x,y,w,h,r);shape(path,fill,stroke,2);}
@@ -140,12 +140,11 @@ function ellipse(x,y,rx,ry,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.ellipse(
 function character(){
  ctx.save();ctx.translate(player.x+20,player.y+player.h);
  const animated=heroAnimator.pose().phase!=='stand';
- const moving=!animated&&player.ground&&player.vx;
- const bounce=animated?0:moving?Math.sin(clock*17)*2:Math.sin(clock*3)*.6;
+ const bounce=animated?0:Math.sin(clock*3)*.6;
  ctx.scale(player.face,1);
  if(player.inv>0&&Math.floor(clock*14)%2)ctx.globalAlpha=.35;
  ellipse(0,-1,25,4,'#100b20aa');
- ctx.translate(0,bounce);ctx.rotate(moving?.045*Math.sin(clock*8):0);
+ ctx.translate(0,bounce);
  if(!heroAnimator.draw(ctx)&&heroImage.complete&&heroImage.naturalWidth)ctx.drawImage(heroImage,-34,-92,68,92);
  ctx.save();ctx.translate(0,heroAnimator.effectOffset());levelArt.heroEffects(ctx,player,clock,cutsceneTime,state);ctx.restore();
  ctx.restore();

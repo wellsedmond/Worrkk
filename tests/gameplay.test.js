@@ -106,3 +106,26 @@ test('crouch sprite frames use one uniform scale and a fixed foot baseline',()=>
  }
  assert.ok(ratios.length>10);assert.ok(ratios.every(r=>Math.abs(r-ratios[0])<1e-8));
 });
+
+test('running frames follow distance and stop on idle or blocked movement',()=>{
+ const run=game();run('heroAnimator.update(.1,false,{ground:true,vy:0,travel:0})');assert.equal(run('heroAnimator.pose().phase'),'stand');
+ run('heroAnimator.update(.1,false,{ground:true,vy:0,travel:24.5});const firstRunFrame=heroAnimator.pose().frame');assert.equal(run('heroAnimator.pose().phase'),'run');
+ run('heroAnimator.update(.1,false,{ground:true,vy:0,travel:-24.5})');assert.notEqual(run('heroAnimator.pose().frame'),run('firstRunFrame'));
+ run('heroAnimator.update(.1,false,{ground:true,vy:0,travel:0})');assert.equal(run('heroAnimator.pose().phase'),'stand');
+ run('heroAnimator.reset();for(let i=0;i<60;i++)heroAnimator.update(1/60,false,{ground:true,vy:0,travel:245/60});const at60=heroAnimator.pose().frame;heroAnimator.reset();for(let i=0;i<120;i++)heroAnimator.update(1/120,false,{ground:true,vy:0,travel:245/120})');assert.equal(run('heroAnimator.pose().frame'),run('at60'));
+});
+test('jump poses track real vertical velocity, landing and immediate repeat jumps',()=>{
+ const run=game();run('heroAnimator.update(1/120,false,{ground:false,vy:-575,travel:2})');assert.equal(run('heroAnimator.pose().phase'),'takeoff');
+ run('heroAnimator.update(.1,false,{ground:false,vy:-250,travel:20})');assert.equal(run('heroAnimator.pose().phase'),'rise');
+ run('heroAnimator.update(.1,false,{ground:false,vy:0,travel:20})');assert.equal(run('heroAnimator.pose().phase'),'apex');
+ run('heroAnimator.update(.1,false,{ground:false,vy:250,travel:20})');assert.equal(run('heroAnimator.pose().phase'),'fall');
+ run('heroAnimator.update(1/120,false,{ground:true,vy:0,travel:2})');assert.equal(run('heroAnimator.pose().phase'),'land');
+ run('heroAnimator.update(1/120,false,{ground:false,vy:-575,travel:2})');assert.equal(run('heroAnimator.pose().phase'),'takeoff');
+ run('heroAnimator.update(.4,false,{ground:true,vy:0,travel:0});heroAnimator.update(.2,false,{ground:true,vy:0,travel:0})');assert.equal(run('heroAnimator.pose().phase'),'stand');
+});
+test('run and jump sprite geometry stays uniformly scaled with valid frame crops',()=>{
+ const run=game();
+ for(const sample of ['{ground:true,vy:0,travel:20}','{ground:false,vy:-500,travel:2}','{ground:false,vy:0,travel:2}','{ground:false,vy:500,travel:2}','{ground:true,vy:0,travel:0}']){
+  run(`heroAnimator.update(.1,false,${sample})`);const g=run('heroAnimator.geometry()');assert.ok(g);assert.ok(g.sw>0&&g.sh>0);assert.ok(Math.abs(g.dw/g.sw-g.dh/g.sh)<1e-8);assert.ok(g.dh>=60&&g.dh<=110);
+ }
+});

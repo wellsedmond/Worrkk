@@ -17,8 +17,10 @@ for(const file of ['level1.js','progress.js','sound.js','atmosphere.js','level-a
   for(const name of names)urls[name]='data:image/svg+xml;base64,'+(await readFile(new URL(`assets/level1/${name}.svg`,root))).toString('base64');
   js=js.replace('`assets/level1/${name}.svg`',`(${JSON.stringify(urls)})[name]`);
  }else if(file==='hero-animation.js'){
-  const url='data:image/png;base64,'+(await readFile(new URL('assets/hero-crouch.png',root))).toString('base64');
-  js=js.replace("'assets/hero-crouch.png'",JSON.stringify(url));
+  for(const name of ['hero-crouch','hero-run','hero-jump']){
+   const url='data:image/png;base64,'+(await readFile(new URL('assets/'+name+'.png',root))).toString('base64');
+   js=js.replace("'assets/"+name+".png'",JSON.stringify(url));
+  }
  }else if(file==='game.js'){
   for(const [name,mime] of [['hero.png','image/png'],['garlic.svg','image/svg+xml']]){
    const url='data:'+mime+';base64,'+(await readFile(new URL('assets/'+name,root))).toString('base64');

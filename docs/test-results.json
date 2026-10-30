@@ -33,12 +33,12 @@
     {
       "zone": 2,
       "medianMs": 16.69999999999891,
-      "p95Ms": 16.700000000000728
+      "p95Ms": 16.799999999999272
     },
     {
       "zone": 4,
       "medianMs": 16.69999999999891,
-      "p95Ms": 16.799999999999272
+      "p95Ms": 16.700000000000728
     },
     {
       "zone": 5,
@@ -47,7 +47,7 @@
     }
   ],
   "errors": [],
-  "checks": "hosted assets, crouch sprite frames, fixed feet, Telegram stub, audio gesture, full route, 3 fangs, 3 boss phases, cutscene, persistence, checkpoint, multi-touch, pause, offline, restart counts",
+  "checks": "hosted assets, run cycle, jump sprites, crouch sprite frames, fixed feet, Telegram stub, audio gesture, full route, 3 fangs, 3 boss phases, cutscene, persistence, checkpoint, multi-touch, pause, offline, restart counts",
   "limitations": [
     "Telegram SDK mocked; real Telegram clients and physical Android/iOS not tested.",
     "Headless frame timing is not a hardware FPS guarantee.",
