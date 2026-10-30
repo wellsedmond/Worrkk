@@ -4,6 +4,8 @@ const files = {
   '/': ['index.html', 'text/html'],
   '/atmosphere.js': ['atmosphere.js', 'text/javascript'],
   '/Worrkk.html': ['Worrkk.html', 'text/html'],
+  '/hero-animation.js': ['hero-animation.js', 'text/javascript'],
+  '/assets/hero-crouch.png': ['assets/hero-crouch.png', 'image/png'],
   '/game.js': ['game.js', 'text/javascript'],
   '/style.css': ['style.css', 'text/css'],
   '/assets/hero.png': ['assets/hero.png', 'image/png'],

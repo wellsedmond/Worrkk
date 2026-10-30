@@ -6,7 +6,7 @@ let html=await read('index.html');
 html=html.replace('<link rel="stylesheet" href="/style.css">',`<style>${await read('style.css')}</style>`);
 // Offline edition does not fetch Telegram SDK. Hosted Mini App keeps its SDK.
 html=html.replace(/\s*<script src="https:\/\/telegram.org\/js\/telegram-web-app.js" defer><\/script>/,'');
-for(const file of ['level1.js','progress.js','sound.js','atmosphere.js','level-art.js','game.js']){
+for(const file of ['level1.js','progress.js','sound.js','atmosphere.js','level-art.js','hero-animation.js','game.js']){
  let js=await read(file);
  if(file==='atmosphere.js'){
   const names=['ska-palace','skyline','graveyard','web'];
@@ -16,6 +16,9 @@ for(const file of ['level1.js','progress.js','sound.js','atmosphere.js','level-a
   const names=['helmet','hunter','coffin','fang','stake','gate','werewolf','tower'];const urls={};
   for(const name of names)urls[name]='data:image/svg+xml;base64,'+(await readFile(new URL(`assets/level1/${name}.svg`,root))).toString('base64');
   js=js.replace('`assets/level1/${name}.svg`',`(${JSON.stringify(urls)})[name]`);
+ }else if(file==='hero-animation.js'){
+  const url='data:image/png;base64,'+(await readFile(new URL('assets/hero-crouch.png',root))).toString('base64');
+  js=js.replace("'assets/hero-crouch.png'",JSON.stringify(url));
  }else if(file==='game.js'){
   for(const [name,mime] of [['hero.png','image/png'],['garlic.svg','image/svg+xml']]){
    const url='data:'+mime+';base64,'+(await readFile(new URL('assets/'+name,root))).toString('base64');

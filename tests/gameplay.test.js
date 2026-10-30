@@ -86,3 +86,23 @@ test('tower gate cannot be bypassed before lever, pause does not advance physics
 test('phase-three retreat is an animated backward jump',()=>{
  const run=game();run('player.x=58000;boss.mode="attack";boss.phase=3;boss.timer=0;updateBoss(0);const initialBossX=boss.x;updateBoss(.25)');assert.ok(run('boss.x')>run('initialBossX'));assert.ok(run('boss.y')<310);run('updateBoss(.4)');assert.equal(run('boss.y'),310);
 });
+
+test('crouch animation descends, holds, rises and reverses without changing physics',()=>{
+ const run=game();run('for(let i=0;i<120;i++)update(1/120);const feet=player.y+player.h;keys.crouch=true;update(1/120)');assert.equal(run('heroAnimator.pose().phase'),'down');assert.equal(run('player.h'),44);assert.equal(run('player.y+player.h'),run('feet'));
+ run('for(let i=0;i<60;i++)update(1/120)');assert.equal(run('heroAnimator.pose().phase'),'hold');
+ run('keys.crouch=false;update(1/120)');assert.equal(run('heroAnimator.pose().phase'),'up');assert.equal(run('player.h'),80);assert.equal(run('player.y+player.h'),run('feet'));
+ run('keys.crouch=true;update(1/120)');assert.ok(run('heroAnimator.pose().depth')>.9);
+ run('keys.crouch=false;for(let i=0;i<60;i++)update(1/120)');assert.equal(run('heroAnimator.pose().phase'),'stand');
+ run('keys.crouch=true;for(let i=0;i<60;i++)update(1/120);paused=true;const depthBefore=heroAnimator.pose().depth;update(1)');assert.equal(run('heroAnimator.pose().depth'),run('depthBefore'));
+ run('start()');assert.equal(run('heroAnimator.pose().phase'),'stand');
+});
+
+test('crouch sprite frames use one uniform scale and a fixed foot baseline',()=>{
+ const run=game();let expectedBaseline=null;const ratios=[];
+ for(const crouching of [true,false])for(let i=0;i<50;i++){
+  run(`heroAnimator.update(1/120,${crouching})`);const g=run('heroAnimator.geometry()');if(!g)continue;
+  if(expectedBaseline===null)expectedBaseline=g.dy+g.dh;
+  assert.ok(Math.abs(g.dy+g.dh-expectedBaseline)<1e-8);assert.ok(Math.abs(g.dw/g.sw-g.dh/g.sh)<1e-8);ratios.push(g.dw/g.sw);
+ }
+ assert.ok(ratios.length>10);assert.ok(ratios.every(r=>Math.abs(r-ratios[0])<1e-8));
+});

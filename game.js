@@ -2,7 +2,7 @@ const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d'),hud=do
 const heroImage=new Image(), garlicImage=new Image();
 heroImage.src='assets/hero.png'; garlicImage.src='assets/garlic.svg';
 let assetsReady=false;
-Promise.all([heroImage.decode(),garlicImage.decode(),atmosphere.ready,levelArt.ready]).then(()=>{assetsReady=true;document.querySelector('#play').disabled=false;}).catch(()=>{overlay.hidden=false;overlay.querySelector('p').textContent='Не удалось загрузить графику. Откройте игру через npm start или используйте автономный HTML-файл.';});
+Promise.all([heroImage.decode(),heroAnimator.ready,garlicImage.decode(),atmosphere.ready,levelArt.ready]).then(()=>{assetsReady=true;document.querySelector('#play').disabled=false;}).catch(()=>{overlay.hidden=false;overlay.querySelector('p').textContent='Не удалось загрузить графику. Откройте игру через npm start или используйте автономный HTML-файл.';});
 document.querySelector('#play').disabled=true;
 const keys={left:false,right:false,jump:false,attack:false,crouch:false};
 const toPlatform=p=>Object.assign([p.x,p.y,p.w,p.h],{id:p.id,kind:p.type,baseX:p.x,baseY:p.y,...p,active:true,collapse:-1,restore:0,dx:0,dy:0});
@@ -21,7 +21,7 @@ function makeWorld(){
  boss={...LEVEL1.boss,mode:'waiting',phase:1,shots:0,timer:0,dead:false,death:0,inv:0,retreat:0,retreatStart:LEVEL1.boss.x,targetX:LEVEL1.boss.x};projectiles=[];
 }
 function reset(){
- atmosphere.reset();makeWorld();player={x:70,y:330,w:40,h:80,vx:0,vy:0,ground:false,hp:3,inv:0,face:1,rage:0,attack:0,cooldown:0,support:null};
+ atmosphere.reset();heroAnimator.reset();makeWorld();player={x:70,y:330,w:40,h:80,vx:0,vy:0,ground:false,hp:3,inv:0,face:1,rage:0,attack:0,cooldown:0,support:null};
  score=0;camera=0;cameraY=0;clock=0;jumpHeld=false;attackHeld=false;fangs=new Set();damageTaken=0;leverOpen=false;escapeLeft=0;towerTimer=null;towerPassed=false;zoneIndex=0;cutsceneTime=0;paused=false;tutorialDone=new Set();
  for(const k in keys)keys[k]=false;checkpoint={id:'start',x:70,y:430};captureCheckpoint();atmosphere.prepare(platforms);notify('Пора вернуть своё!',3);
 }
@@ -31,7 +31,7 @@ function resumeCheckpoint(){
  for(const c of coins)c.taken=saved.coins.includes(c.id);for(const c of items)c.taken=saved.items.includes(c.id);for(const w of walls)w.hp=saved.walls.find(a=>a[0]===w.id)?.[1]??w.hp;for(const e of enemies)e.dead=saved.enemies.includes(e.id);
  Object.assign(player,{x:checkpoint.x,y:checkpoint.y-80,h:80,hp:3,vx:0,vy:0,ground:false,inv:2,rage:0,attack:0,cooldown:0,support:null});
  escapeLeft=leverOpen?LEVEL1.escapeSeconds:0;towerTimer=null;towerPassed=checkpoint.x>=LEVEL1.timedSection.end;projectiles=[];camera=Math.max(0,player.x-260);cameraY=Math.min(0,player.y-250);state='playing';paused=false;
- for(const k in keys)keys[k]=false;jumpHeld=false;attackHeld=false;atmosphere.reset();atmosphere.prepare(platforms);overlay.hidden=true;notify('Пробуждение у контрольной точки');
+ for(const k in keys)keys[k]=false;jumpHeld=false;attackHeld=false;atmosphere.reset();heroAnimator.reset();atmosphere.prepare(platforms);overlay.hidden=true;notify('Пробуждение у контрольной точки');
 }
 function start(){if(!assetsReady)return;gameAudio.activate();reset();state='playing';overlay.classList.remove('defeat');overlay.hidden=true;document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
 function finish(win){
@@ -108,7 +108,7 @@ function update(dt){
  if(state!=='playing'||paused)return;
  clock+=dt;banner.left=Math.max(0,banner.left-dt);player.inv=Math.max(0,player.inv-dt);player.rage=Math.max(0,player.rage-dt);player.attack=Math.max(0,player.attack-dt);player.cooldown=Math.max(0,player.cooldown-dt);
  updatePlatforms(dt);if(player.ground&&player.support){const p=platforms.find(p=>p.id===player.support);if(p?.active){player.x+=p.dx;player.y+=p.dy;}else{player.ground=false;player.support=null;}}
- setCrouch();player.vx=((keys.right?1:0)-(keys.left?1:0))*(player.h<80?125:245);if(player.vx)player.face=Math.sign(player.vx);
+ setCrouch();heroAnimator.update(dt,player.h<80);player.vx=((keys.right?1:0)-(keys.left?1:0))*(player.h<80?125:245);if(player.vx)player.face=Math.sign(player.vx);
  if(keys.jump&&!jumpHeld&&player.ground&&!keys.crouch){player.vy=-590;player.ground=false;player.support=null;}jumpHeld=keys.jump;
  if(keys.attack&&!attackHeld)punch();attackHeld=keys.attack;
  player.x=Math.max(0,Math.min(LEVEL1.width-player.w,player.x+player.vx*dt));
@@ -139,15 +139,15 @@ function rounded(x,y,w,h,r,fill,stroke){const path=new Path2D();path.roundRect(x
 function ellipse(x,y,rx,ry,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();}
 function character(){
  ctx.save();ctx.translate(player.x+20,player.y+player.h);
- if(player.h<80)ctx.scale(1,.6);
- const moving=player.ground&&player.vx;
- const bounce=moving?Math.sin(clock*17)*2:Math.sin(clock*3)*.6;
+ const animated=heroAnimator.pose().phase!=='stand';
+ const moving=!animated&&player.ground&&player.vx;
+ const bounce=animated?0:moving?Math.sin(clock*17)*2:Math.sin(clock*3)*.6;
  ctx.scale(player.face,1);
  if(player.inv>0&&Math.floor(clock*14)%2)ctx.globalAlpha=.35;
  ellipse(0,-1,25,4,'#100b20aa');
  ctx.translate(0,bounce);ctx.rotate(moving?.045*Math.sin(clock*8):0);
- if(heroImage.complete&&heroImage.naturalWidth)ctx.drawImage(heroImage,-34,-92,68,92);
- levelArt.heroEffects(ctx,player,clock,cutsceneTime,state);
+ if(!heroAnimator.draw(ctx)&&heroImage.complete&&heroImage.naturalWidth)ctx.drawImage(heroImage,-34,-92,68,92);
+ ctx.save();ctx.translate(0,heroAnimator.effectOffset());levelArt.heroEffects(ctx,player,clock,cutsceneTime,state);ctx.restore();
  ctx.restore();
 }
 function drawGarlic(e){
