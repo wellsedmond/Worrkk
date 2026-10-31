@@ -25,6 +25,10 @@ test('persistent arena entry keeps all statue positions and damage through page 
  const first=createGame();first.run('Relics.strike(statues[0]);statues[1].hp=0;items.push(Relics.drop(statues[1]));items.at(-1).taken=true;saveBossEntry()');const saved=first.run('JSON.stringify(statues.map(s=>({zone:s.zone,x:s.x,hp:s.hp})))');
  const second=createGame(first.storage,{start:false});second.run('restoreBossEntry()');assert.equal(second.run('JSON.stringify(statues.map(s=>({zone:s.zone,x:s.x,hp:s.hp})))'),saved);assert.equal(second.run('items.find(i=>i.id==="blood-relic-1").taken'),true);
 });
+test('saved relic damage and identity survive relocation after a platform layout change',()=>{
+ const {run}=createGame();run('const old=statues.map(s=>({...s}));old[0].x=1;old[0].hp=2;const migrated=Relics.restore(old,LEVEL1)');
+ assert.equal(run('migrated[0].id'),run('old[0].id'));assert.equal(run('migrated[0].hp'),2);assert.equal(run('Relics.candidates(LEVEL1,0).includes(migrated[0].x)'),true);
+});
 test('armored garlic cannot hurt the player during a valid rebound at 30/60/120 Hz',()=>{
  for(const hz of [30,60,120]){const {run}=createGame();run('enemies=[enemies.find(e=>e.type==="helmet")];const e=enemies[0];e.x=500;e.origin=0;e.baseY=388;e.y=388;e.range=999;traps=[];player.x=500;player.y=315;player.vy=100;player.ground=false;updateEnemies(0,385)');assert.equal(run('e.hp'),1);
   for(let i=0;i<Math.ceil(hz*.18);i++)run(`update(1/${hz})`);assert.equal(run('player.hp'),3,'rebound at '+hz+' Hz');assert.equal(run('e.hp'),1);
@@ -33,6 +37,11 @@ test('armored garlic cannot hurt the player during a valid rebound at 30/60/120 
 test('side contact with armored garlic still causes damage',()=>{
  const {run}=createGame();run('enemies=[enemies.find(e=>e.type==="helmet")];const e=enemies[0];e.x=500;e.origin=0;e.baseY=388;e.y=388;e.range=999;player.x=500;player.y=350;player.vy=-20;updateEnemies(0,430)');assert.equal(run('player.hp'),2);assert.equal(run('e.hp'),2);
 });
-test('extra optional tiers are reachable and contain three coins each',()=>{
- const {run}=createGame();assert.ok(run('LEVEL1.ledges.filter(p=>p.optional).length')>=50);assert.equal(run('LEVEL1.ledges.filter(p=>p.optional).every(p=>[340,250,160,70].includes(p.y)&&LEVEL1.coins.filter(c=>c.y===p.y-40&&c.x>p.x&&c.x<p.x+p.w).length>=3)'),true);
+test('platform batches mix sequential and checkerboard routes with unique silhouettes and one coin per platform',()=>{
+ const {run}=createGame();assert.ok(run('LEVEL1.ledges.filter(p=>p.optional).length')>=50);
+ assert.equal(run('LEVEL1.ledges.every(p=>LEVEL1.coins.filter(c=>c.platformId===p.id).length===1)'),true);
+ assert.equal(run('LEVEL1.items.length'),0);
+ assert.equal(run(`new Set(LEVEL1.batches.map(b=>JSON.stringify(b.platformIds.map(id=>{const p=LEVEL1.ledges.find(p=>p.id===id);return [p.x-b.x,p.y,p.w];})))).size`),run('LEVEL1.batches.length'));
+ assert.equal(run('LEVEL1.batches.some(b=>b.pattern==="chain")&&LEVEL1.batches.some(b=>b.pattern==="checkerboard")'),true);
+ assert.equal(run('LEVEL1.ledges.filter(p=>p.optional).every(p=>[...LEVEL1.ground,...LEVEL1.ledges].some(q=>q!==p&&q.y>=p.y&&q.y-p.y<=100&&Math.max(0,p.x-q.x-q.w,q.x-p.x-p.w)<=120))'),true);
 });

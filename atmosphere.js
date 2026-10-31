@@ -184,7 +184,9 @@ const atmosphere = (() => {
       for(let d=0;d<=600;d+=12){const options=d?[original.x-d,original.x+d]:[original.x];const found=options.find(x=>{const o={...original,x},b=lightingBounds(o);return grounded(b.x,b.w)&&!obstacles.some(box=>intersects(b,box))&&!lanterns.some(l=>intersects(b,lightingBounds(l)))&&!placedCandles.some(c=>intersects(b,lightingBounds(c)));});if(found!==undefined){placedCandles.push({...original,x:found});break;}}
     }
     const opening=lanterns.filter(l=>l.x<5000);const reduced=lanterns.filter(l=>l.x>=5000||opening.indexOf(l)%3===0);
-    lightingLayout=[...reduced,...placedCandles];lightingStats={original:candidates.length,baseTarget:target,target:reduced.length,actual:reduced.length,openingBefore:opening.length,openingAfter:reduced.filter(l=>l.x<5000).length};
+    // Restore exactly two clear, previously reserved lamps in the first zone.
+    const added=opening.filter(l=>!reduced.includes(l)).slice(0,2);reduced.push(...added);
+    lightingLayout=[...reduced,...placedCandles];lightingStats={original:candidates.length,baseTarget:target,target:reduced.length,actual:reduced.length,openingBefore:opening.length,openingAdded:added.length,openingAfter:reduced.filter(l=>l.x<5000).length};
   }
   function lightingFrame(elapsed,phase=0){return ((Math.floor((elapsed+phase)*10+1e-7)%8)+8)%8;}
   function lightingObjects(camera){return lightingLayout.filter(o=>o.x>camera-120&&o.x<camera+1080);}

@@ -49,15 +49,31 @@ const LEVEL1 = (() => {
   const type=added++%3===0?'helmet':'garlic';enemy(type,x,{flying:type==='garlic'});
  }
  for(const x of [54300,55250,56250])enemy('garlic',x,{flying:true});
- items.push({id:'rage-forest',type:'rage',x:5600,y:385},{id:'rage-alley',type:'rage',x:38200,y:385});
- for(const p of ground){if(p.x%1000<500&&p.x>300)coins.push({id:'c'+nextId++,x:p.x+Math.min(180,p.w/2),y:390});}
- for(const p of ledges)if(p.w>=150)coins.push({id:'c'+nextId++,x:p.x+p.w/2,y:p.y-40});
+ // Blood only drops from the five breakable relics.
+ for(const p of ground){if(p.x%1000<500&&p.x>300)coins.push({id:'c'+nextId++,x:p.x+Math.min(180,p.w/2),y:390,platformId:p.id});}
+ for(const p of ledges)if(p.w>=150)coins.push({id:'c'+nextId++,x:p.x+p.w/2,y:p.y-40,platformId:p.id});
  // Append optional routes after original IDs are assigned, preserving existing saves.
- const bonus=(x,y,w=170)=>{const p=platform(x,y,w,'ledge',{optional:true});for(const offset of [.25,.5,.75])coins.push({id:'c'+nextId++,x:p.x+p.w*offset,y:p.y-40});};
+ const batches=[];
+ const patterns=[
+  {name:'ascending',points:[[195,160,150],[305,70,170]]},
+  {name:'chain',points:[[320,250,150],[545,250,160]]},
+  {name:'checkerboard',points:[[-145,160,180],[155,160,180],[5,70,170]]},
+  {name:'branch',points:[[-180,250,160],[320,250,160],[105,160,180]]},
+  {name:'zigzag',points:[[-90,160,160],[100,70,160]]},
+  {name:'terrace',points:[[210,160,150],[425,160,170],[315,70,190]]}
+ ];
+ function batch(x,index,base=[]){
+  const id='batch-'+index,pattern=patterns[index%patterns.length],shift=Math.floor(index/6)*9;
+  const add=(dx,y,w)=>{const p=platform(x+dx,y,w,'ledge',{optional:true,batch:id});coins.push({id:'bonus-coin-'+p.id,x:p.x+p.w/2,y:p.y-40,platformId:p.id});return p;};
+  if(!base.length)base=[add(0,340,180+(index%4)*9),add(85+(index%5)*8,250,150+(index%3)*8)];
+  for(const p of base)p.batch=id;
+  const extra=pattern.points.map(([dx,y,w],j)=>add(dx+(dx<0?-shift:shift),y,w+((index+j)%5)*5));
+  batches.push({id,x,pattern:pattern.name,platformIds:[...base,...extra].map(p=>p.id)});
+ }
  const originalTiers=ledges.filter(p=>p.y===340&&p.x<47500);
- for(const p of originalTiers){bonus(p.x+190,160);bonus(p.x+285,70);}
- for(const x of [3700,6500,9450,15000,23800,30800,40800,47860,55000]){bonus(x,340,190);bonus(x+95,250);bonus(x+190,160);bonus(x+285,70);}
- return Object.freeze({id:'level1',name:'Проклятая дорога к СКА Арене',width:60300,stakeY,zones,ground,ledges,enemies,traps,coins,items,
+ originalTiers.forEach((p,i)=>batch(p.x,i,[p,ledges.find(q=>q.x===p.x+95&&q.y===250)]));
+ for(const [i,x]of [3700,6500,9450,15000,23800,30800,40800,47860,55000].entries())batch(x,originalTiers.length+i);
+ return Object.freeze({id:'level1',name:'Проклятая дорога к СКА Арене',width:60300,stakeY,zones,ground,ledges,enemies,traps,coins,items,batches,
   checkpoints:[{id:'cemetery-end',x:29600,y:430},{id:'tower-base',x:48000,y:430},{id:'tower-top',x:52800,y:-290},{id:'arena',x:57200,y:430}],
   lever:{x:53000,y:-290},gate:{x:53500,y:-600,w:48,h:1030},
   timedSection:{start:50000,end:52500,seconds:24},escapeSeconds:45,

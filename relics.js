@@ -17,7 +17,7 @@ const Relics=(()=>{
  function create(level,random=Math.random){return level.zones.map((z,i)=>{const choices=candidates(level,i);if(!choices.length)throw Error('No safe relic location in '+z.id);return statue(i,choices[Math.min(choices.length-1,Math.floor(random()*choices.length))]);});}
  function restore(saved,level){
   if(!Array.isArray(saved)||saved.length!==level.zones.length)return null;
-  const result=[];for(let i=0;i<level.zones.length;i++){const s=saved.find(s=>s.zone===i);if(!s||!candidates(level,i).includes(s.x)||!Number.isInteger(s.hp)||s.hp<0||s.hp>5)return null;result.push(statue(i,s.x,s.hp));}return result;
+  const result=[];for(let i=0;i<level.zones.length;i++){const s=saved.find(s=>s.zone===i);if(!s||!Number.isFinite(s.x)||s.x<level.zones[i].start||s.x>level.zones[i].end||!Number.isInteger(s.hp)||s.hp<0||s.hp>5)return null;const spots=candidates(level,i),x=spots.includes(s.x)?s.x:spots.reduce((a,b)=>Math.abs(b-s.x)<Math.abs(a-s.x)?b:a);result.push(statue(i,x,s.hp));}return result;
  }
  function strike(s){if(s.hp<=0)return false;s.hp--;s.hurt=.16;return true;}
  function drop(s){return {id:'blood-'+s.id,type:'rage',x:s.x+s.w/2,y:s.y-48,taken:false};}
