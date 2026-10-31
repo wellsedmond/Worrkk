@@ -2,7 +2,7 @@ const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d'),hud=do
 const heroImage=new Image(), garlicImage=new Image();
 heroImage.src='assets/hero.png'; garlicImage.src='assets/garlic.svg';
 let assetsReady=false;
-Promise.all([heroImage.decode(),heroAnimator.ready,garlicImage.decode(),atmosphere.ready,levelArt.ready]).then(()=>{assetsReady=true;document.querySelector('#play').disabled=false;}).catch(()=>{overlay.hidden=false;overlay.querySelector('p').textContent='Не удалось загрузить графику. Откройте игру через npm start или используйте автономный HTML-файл.';});
+Promise.all([heroImage.decode(),heroAnimator.ready,garlicImage.decode(),atmosphere.ready,levelArt.ready]).then(()=>{assetsReady=true;atmosphere.prepare(platforms);document.querySelector('#play').disabled=false;}).catch(()=>{overlay.hidden=false;overlay.querySelector('p').textContent='Не удалось загрузить графику. Откройте игру через npm start или используйте автономный HTML-файл.';});
 document.querySelector('#play').disabled=true;
 const keys={left:false,right:false,jump:false,attack:false,crouch:false};
 const toPlatform=p=>Object.assign([p.x,p.y,p.w,p.h],{id:p.id,kind:p.type,baseX:p.x,baseY:p.y,...p,active:true,collapse:-1,restore:0,dx:0,dy:0});
@@ -34,8 +34,9 @@ function resumeCheckpoint(){
  escapeLeft=leverOpen?LEVEL1.escapeSeconds:0;towerTimer=null;towerPassed=checkpoint.x>=LEVEL1.timedSection.end;projectiles=[];camera=Math.max(0,player.x-260);cameraY=Math.min(0,player.y-250);state='playing';paused=false;
  for(const k in keys)keys[k]=false;jumpHeld=false;attackHeld=false;atmosphere.reset();heroAnimator.reset();atmosphere.prepare(platforms);overlay.hidden=true;notify('Пробуждение у контрольной точки');
 }
-function start(){if(!assetsReady)return;gameAudio.activate();reset();achievementSystem.start();achievementClock=0;safeIdle=0;deathNumber=0;projectileNumber=0;achievementJump=false;jumpFires.clear();state='playing';overlay.classList.remove('defeat');overlay.hidden=true;document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
+function start(){if(!assetsReady)return;menuReturnState=null;document.querySelector('#menu-resume').hidden=true;gameAudio.activate();reset();achievementSystem.start();achievementClock=0;safeIdle=0;deathNumber=0;projectileNumber=0;achievementJump=false;jumpFires.clear();state='playing';overlay.classList.remove('defeat');overlay.hidden=true;document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
 function finish(win){
+ menuReturnState=null;document.querySelector('#menu-resume').hidden=true;
  if(state==='win'||state==='lost')return;
  achievementSystem.emit('player_moved',{x:player.x,safeSeconds:safeIdle});
  if(win)achievementSystem.emit('level_completed',{level:'level1'});else achievementSystem.emit('player_died',{id:'death-'+(++deathNumber),elapsed:clock});
@@ -46,7 +47,8 @@ function finish(win){
  else text+='Продолжи у гроба или начни новый забег.';
  overlay.querySelector('p').textContent=text;document.querySelector('#play').textContent='Повторить уровень';document.querySelector('#continue').hidden=win;document.querySelector('#main-menu').hidden=false;
 }
-function mainMenu(){state='menu';paused=false;overlay.hidden=false;overlay.classList.remove('defeat');overlay.querySelector('.eyebrow').textContent='КУБОК ВЕЧНОЙ НОЧИ ЖДЁТ';overlay.querySelector('h2').textContent='UPYR RUN';const p=progressStore.load();overlay.querySelector('p').textContent='Охотники украли Кубок Вечной Ночи. Пройди лес, кладбище, аллею и башню, чтобы открыть ворота СКА Арены.'+(p.completed?` Рекорд: ${p.maxScore}. Лучшее время: ${formatTime(p.bestTime)}.`:'');document.querySelector('#play').textContent='Выйти в ночь →';document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
+let menuReturnState=null;
+function mainMenu(){if(state==='playing'||state==='cutscene')menuReturnState=state;document.querySelector('#menu-resume').hidden=!menuReturnState;state='menu';paused=false;overlay.hidden=false;overlay.classList.remove('defeat');overlay.querySelector('.eyebrow').textContent='КУБОК ВЕЧНОЙ НОЧИ ЖДЁТ';overlay.querySelector('h2').textContent='UPYR RUN';const p=progressStore.load();overlay.querySelector('p').textContent='Охотники украли Кубок Вечной Ночи. Пройди лес, кладбище, аллею и башню, чтобы открыть ворота СКА Арены.'+(p.completed?` Рекорд: ${p.maxScore}. Лучшее время: ${formatTime(p.bestTime)}.`:'');document.querySelector('#play').textContent='▶ Новая игра';document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
 function formatTime(t){return Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');}
 function hit(){if(player.inv>0||state!=='playing')return;damageTaken++;achievementSystem.emit('player_damaged');safeIdle=0;jumpFires.clear();player.hp--;gameAudio.effect('hurt');player.inv=1.6;atmosphere.burst(player.x+20,player.y+25,'sparks');player.vy=-330;if(player.hp<=0)finish(false);}
 function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
@@ -200,7 +202,7 @@ function resize(){canvas.width=960*Math.min(devicePixelRatio||1,2);canvas.height
 const physicalKeys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyF:'attack',ArrowDown:'crouch',KeyS:'crouch'};
 const mapping={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',' ':'jump',ArrowUp:'jump',w:'jump',W:'jump',f:'attack',F:'attack',ArrowDown:'crouch',s:'crouch'};
 function releaseKeys(){for(const key in keys)keys[key]=false;}
-window.addEventListener('keydown',e=>{if(!document.querySelector('#achievements-panel').hidden)return;if(e.target.matches?.('button,input,textarea')&&e.key===' ')return;const key=physicalKeys[e.code]||mapping[e.key];if(key){e.preventDefault();keys[key]=true;}if(e.code==='Escape'&&state==='playing')paused=!paused;});
+window.addEventListener('keydown',e=>{if(!document.querySelector('#achievements-panel').hidden||!document.querySelector('#settings-panel').hidden)return;if(e.target.matches?.('button,input,textarea')&&e.key===' ')return;const key=physicalKeys[e.code]||mapping[e.key];if(key){e.preventDefault();keys[key]=true;}if(e.code==='Escape'&&state==='playing')paused=!paused;});
 window.addEventListener('keyup',e=>{const key=physicalKeys[e.code]||mapping[e.key];if(key)keys[key]=false;});
 window.addEventListener('blur',()=>{releaseKeys();if(state==='playing')paused=true;});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){releaseKeys();if(state==='playing')paused=true;}});
@@ -208,3 +210,13 @@ for(const b of document.querySelectorAll('[data-key]')){const pointers=new Set()
 document.querySelector('#play').onclick=start;document.querySelector('#reset').onclick=start;document.querySelector('#continue').onclick=resumeCheckpoint;document.querySelector('#main-menu').onclick=mainMenu;document.querySelector('#pause').onclick=()=>{if(state==='playing'){paused=!paused;releaseKeys();}};
 document.querySelector('#sound').onclick=gameAudio.toggle;gameAudio.syncButton();
 try{window.Telegram?.WebApp?.ready();window.Telegram?.WebApp?.expand();}catch{}reset();requestAnimationFrame(frame);
+
+// Menu controls share the existing game and audio state.
+document.querySelector('#menu-open').onclick=()=>{releaseKeys();mainMenu();};
+document.querySelector('#menu-resume').onclick=()=>{if(menuReturnState){state=menuReturnState;menuReturnState=null;paused=false;overlay.hidden=true;releaseKeys();}};
+let settingsPaused=false;
+document.querySelector('#settings-open').onclick=()=>{settingsPaused=paused;paused=true;releaseKeys();document.querySelector('#settings-panel').hidden=false;document.querySelector('#settings-close').focus?.();};
+function closeSettings(){document.querySelector('#settings-panel').hidden=true;paused=settingsPaused;document.querySelector('#settings-open').focus?.();}
+document.querySelector('#settings-close').onclick=closeSettings;
+document.querySelector('#settings-sound').onclick=gameAudio.toggle;
+document.querySelector('#settings-panel').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSettings();}if(e.key==='Tab'){const first=document.querySelector('#settings-close'),last=document.querySelector('#settings-sound');if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});

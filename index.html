@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#17112B">
+  <meta name="theme-color" content="#09090f">
   <title>UPYR RUN — Проклятая дорога к СКА Арене</title>
   <link rel="stylesheet" href="/style.css">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
@@ -28,7 +28,7 @@
 <main>
   <header>
     <div class="brand"><small>ПОЛНОЛУНИЕ · ГЛАВА I</small><h1>UPYR <span>RUN</span></h1><p>Проклятая дорога к СКА Арене</p></div>
-    <div class="header-actions"><span class="chapter">Санкт-Петербург<br><b>После заката</b></span><button id="sound" aria-label="Переключить звук">Звук: выкл</button><button id="pause">Пауза</button><button id="reset" aria-label="Начать заново">↻</button></div>
+    <div class="header-actions"><span class="chapter">Санкт-Петербург<br><b>После заката</b></span><button id="sound" aria-label="Переключить звук">Звук: выкл</button><button id="pause">Пауза</button><button id="menu-open" aria-label="Открыть главное меню">☰</button><button id="reset" aria-label="Начать заново">↻</button></div>
   </header>
   <section class="stage" aria-label="Игровое поле">
     <canvas id="game" aria-label="Платформер. Стрелки — движение, пробел — прыжок."></canvas>
@@ -42,18 +42,19 @@
     <div id="zone-name" class="stage-caption">1/5 · Пробуждение Упыря</div><div id="banner" role="status" hidden></div><div id="tutorial" hidden></div><div id="boss-hud" hidden></div><div id="rage-meter" hidden></div><div id="escape-timer"></div>
     <div id="achievement-toast" role="status" hidden></div>
     <div id="overlay">
-      <svg class="menu-bat" aria-hidden="true"><use href="#bat-icon"/></svg>
-      <small class="eyebrow">НОЧЬ ТОЛЬКО НАЧИНАЕТСЯ</small>
+      <span class="arena-sign" aria-hidden="true">СКА АРЕНА</span><div class="menu-emblem" aria-hidden="true"><span>✦</span>†<span>✦</span></div><svg class="menu-bat" aria-hidden="true"><use href="#bat-icon"/></svg>
+      <small class="eyebrow">ПОЛНОЛУНИЕ · ГЛАВА I</small>
       <h2>UPYR <span>RUN</span></h2>
-      <p>Охотники украли Кубок Вечной Ночи.<br>Пройди пять зон и открой дорогу к СКА Арене.</p>
-      <button id="play" disabled>Выйти в ночь <span aria-hidden="true">→</span></button>
-      <button id="continue" hidden>Продолжить у гроба</button><button id="main-menu" hidden>Главное меню</button>
-      <button id="achievements-open">Достижения</button>
+      <div class="menu-subtitle">Проклятая дорога к СКА Арене</div><p>Кубок Вечной Ночи ждёт своего хозяина.</p>
+      <button id="play" disabled><span aria-hidden="true">▶</span> Новая игра</button>
+      <button id="menu-resume" hidden>▶ Продолжить</button><button id="continue" hidden>Продолжить у гроба</button><button id="main-menu" hidden>Главное меню</button>
+      <button id="achievements-open">♜ &nbsp; Достижения</button><button id="settings-open">⚙ &nbsp; Настройки</button><div class="menu-hero" aria-hidden="true"><img src="assets/hero.png" alt=""></div>
       <span class="menu-hint">Стрелки — движение · Пробел — прыжок · F — удар · ↓ — присесть</span>
     </div>
   </section>
   <footer><span>← → / A D — бег · Пробел — прыжок · F — удар · ↓ / S — присесть</span><span>ЧЕСНОК НЕ ДРЕМЛЕТ. ТЫ ТОЖЕ.</span></footer>
   <nav aria-label="Управление"><div><button data-key="left" aria-label="Влево">←</button><button data-key="right" aria-label="Вправо">→</button></div><div class="actions"><button data-key="crouch" aria-label="Присесть">Присесть</button><button data-key="attack" aria-label="Удар">Удар</button><button data-key="jump" aria-label="Прыжок">Прыжок <span aria-hidden="true">↑</span></button></div></nav>
+<section id="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden><div class="achievement-heading"><h2 id="settings-title">Настройки</h2><button id="settings-close">Закрыть ×</button></div><p>Звуки ночи</p><button id="settings-sound">Переключить звук</button><p>← → / A D — движение<br>Пробел / ↑ / W — прыжок<br>F — удар · ↓ / S — присесть<br>Escape — пауза</p><small>Звук включается после нажатия. Ваш выбор сохраняется.</small></section>
 <section id="achievements-panel" role="dialog" aria-modal="true" aria-labelledby="achievements-title" hidden>
  <div class="achievement-heading"><div><small>ЛЕТОПИСЬ ВЕЧНОЙ НОЧИ</small><h2 id="achievements-title">Достижения</h2></div><button id="close-achievements" aria-label="Закрыть достижения">Закрыть ×</button></div>
  <p id="achievement-summary"></p><progress id="achievement-total" max="22" value="0"></progress><p id="achievement-sync" role="status"></p>

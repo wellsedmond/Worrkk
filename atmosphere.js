@@ -1,16 +1,17 @@
 /* Rendering only. World coordinates, collision bounds and game rules live in game.js. */
 const atmosphere = (() => {
-  const palette = {sky:'#17112B',far:'#302044',stone:'#51465F',red:'#B52239',moon:'#C8B9E8',fire:'#FF812B',green:'#86C44A',fog:'#827B9E'};
+  const palette = {sky:'#080b16',far:'#141322',stone:'#22212b',red:'#B52239',moon:'#C8B9E8',fire:'#FF812B',green:'#86C44A',fog:'#827B9E'};
   const images = {};const textureCache=new Map();
   const assetNames = ['ska-palace','skyline','graveyard','web'];
-  const ready = Promise.all(assetNames.map(async name => {
+  const gothicArena=new Image();gothicArena.src='assets/environment/gothic-arena.png';
+  const ready = Promise.all([gothicArena.decode(), ...assetNames.map(async name => {
     const image = new Image(); image.src = `assets/environment/${name}.svg`;
     await image.decode();
     const raster = document.createElement('canvas');
     raster.width=image.naturalWidth; raster.height=image.naturalHeight;
     raster.getContext('2d').drawImage(image,0,0);
     images[name] = raster;
-  }));
+  })]);
   let time = 0, stones = [], particles = [], previousHud = '';
   const stars = Array.from({length:64},(_,i)=>({x:(i*149.7)%960,y:15+(i*37.3)%220,r:i%5===0?1.4:.7,phase:i*2.7}));
   const decorations = [190,600,800,1230,1510,2020,2260,2700];
@@ -23,30 +24,42 @@ const atmosphere = (() => {
     // Rasterize once at 2x: no per-frame stone geometry, filters or large blur passes.
     stones = platforms.map((ref,index)=>{
       const [x,y,w,h]=ref;const key=[w,h,index%3].join(':');
-      if(textureCache.has(key))return {ref,w,h,image:textureCache.get(key)};
+      if(textureCache.has(key)&&gothicArena.complete&&gothicArena.naturalWidth)return {ref,w,h,image:textureCache.get(key)};
       const image=document.createElement('canvas');image.width=(w+6)*2;image.height=(h+12)*2;
       const c=image.getContext('2d');c.scale(2,2);c.translate(3,5);
-      const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'#655972');g.addColorStop(1,'#342d42');
-      round(c,0,0,w,h,4,g,'#282232');
-      for(let row=0;row<h;row+=22){
-        const offset=(Math.floor(row/22)%2)*26;
-        for(let col=-offset;col<w;col+=52){
-          const left=Math.max(1,col+1),right=Math.min(w-1,col+50);
-          if(right<=left)continue;
-          round(c,left,row+1,right-left,Math.min(20,h-row-2),2,(Math.floor((col+offset)/52)+row+index)%3===0?'#62566f':'#51465f','#362e44');
-          line(c,[[left+3,row+3],[right-3,row+3]],'#80718b',.7);
-          if((col+offset+index*13)%5===0)line(c,[[left+12,row+2],[left+18,row+9],[left+14,row+14]],'#30283c');
+      const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'#36333b');g.addColorStop(.25,'#191a22');g.addColorStop(1,'#080a10');
+      c.fillStyle=g;c.fillRect(0,0,w,h);c.strokeStyle='#08080d';c.lineWidth=2;c.strokeRect(0,0,w,h);
+      // Deterministic fractured basalt: cache once, retain exact collision surfaces.
+      const noise=n=>{const v=Math.sin(n*127.1+index*31.7)*43758.5453;return v-Math.floor(v);};
+      for(let row=0;row<h;row+=27){
+        const offset=(Math.floor(row/27)%2)*23;
+        for(let col=-offset;col<w;col+=47){
+          const left=Math.max(0,col),right=Math.min(w,col+46),bottom=Math.min(h,row+26);if(right<=left)continue;
+          const n=col+row*37;
+          c.fillStyle=['#25252f','#1d1f28','#303039','#161922'][Math.floor(noise(n)*4)];
+          c.beginPath();c.moveTo(left+3,row+2);c.lineTo(right-5,row+noise(n+1)*5);c.lineTo(right,bottom-5);c.lineTo(right-8,bottom);c.lineTo(left+2,bottom-2);c.closePath();c.fill();
+          line(c,[[left+3,row+3],[right-6,row+2],[right-2,row+9]],'#69606b',.8);
+          line(c,[[left+12,row+3],[left+20,row+13],[left+17,bottom],[left+24,bottom-3]],'#08090f',2);
+          if(noise(n+2)>.6)line(c,[[left+20,row+13],[right-5,row+19]],'#a2172c',.8);
+          for(let j=0;j<4;j++){c.fillStyle=j%2?'#7c6a7033':'#0005';c.fillRect(left+noise(n+j+5)*(right-left),row+noise(n+j+20)*20,1,1);}
         }
       }
-      round(c,0,-2,w,8,3,'#95869e','#b3a1bb');
-      for(let moss=15;moss<w-5;moss+=71){
-        line(c,[[moss,-1],[moss+18,0],[moss+22,5],[moss+33,4]],'#697c4f',3);
-        line(c,[[moss+18,1],[moss+16,9]],'#86a05b',1.5);
+      // Reuse the painted basalt from the scene for every ground and floating surface.
+      if(gothicArena.complete&&gothicArena.naturalWidth){
+        for(let yy=0;yy<h;yy+=70)for(let xx=0;xx<w;xx+=150){
+          const dw=Math.min(150,w-xx),dh=Math.min(70,h-yy);
+          const sx=(noise(xx+index*11)*.65+.05)*gothicArena.naturalWidth;
+          c.drawImage(gothicArena,sx,gothicArena.naturalHeight*.84,gothicArena.naturalWidth*.16*dw/150,gothicArena.naturalHeight*.12*dh/70,xx,yy,dw,dh);
+        }
       }
-      if(h<30){
-        for(const a of [16,w-16]){line(c,[[a,h-2],[a+5,h+3],[a+10,h-2]],'#82728f',2);}
-      }
-      textureCache.set(key,image);return {ref,w,h,image};
+      // Pale chipped lip and a thin ember seam keep ledges easy to read.
+      c.fillStyle='#82747a';c.beginPath();c.moveTo(0,0);
+      for(let x=0;x<=w;x+=7)c.lineTo(x,-2+noise(x+7)*4);
+      c.lineTo(w,5);for(let x=w;x>=0;x-=9)c.lineTo(x,3+noise(x+33)*4);c.closePath();c.fill();
+      line(c,[[0,0],[w,0]],'#c5acaa',1);
+      for(let x=7;x<w-4;x+=39){line(c,[[x,6],[Math.min(w,x+14),7],[Math.min(w,x+21),12]],'#9e1c32',1);}
+      if(h<30)for(const x of [12,w-12]){line(c,[[x,7],[x,Math.min(h-2,20)]],'#ad8584',2);oval(c,x,9,2,2,'#0a0b11');}
+      if(gothicArena.complete&&gothicArena.naturalWidth)textureCache.set(key,image);return {ref,w,h,image};
     });
   }
   function bat(c,x,y,size,phase,color='#171124'){
@@ -58,20 +71,19 @@ const atmosphere = (() => {
     c.beginPath();c.moveTo(-3,1);c.lineTo(-3,-5);c.lineTo(0,-2);c.lineTo(3,-5);c.lineTo(3,1);c.fill();c.restore();
   }
   function background(c,camera,zone=0,cameraY=0){
-    const sky=c.createLinearGradient(0,0,0,510);sky.addColorStop(0,palette.sky);sky.addColorStop(.65,'#382441');sky.addColorStop(1,'#715066');c.fillStyle=sky;c.fillRect(0,0,960,510);
-    for(const s of stars)oval(c,((s.x-camera*.025)%960+960)%960,s.y,s.r,s.r,`rgba(200,185,232,${.25+.45*(.5+.5*Math.sin(time*.8+s.phase))})`);
-    const moonX=parallax.moonX(camera);
-    glow(c,moonX,99,140,'#b522393e');glow(c,moonX,99,100,'#db5c5335');
-    const moon=c.createRadialGradient(moonX-20,75,4,moonX,99,65);moon.addColorStop(0,'#efb4a8');moon.addColorStop(.7,'#cb666c');moon.addColorStop(1,'#a53e57');
-    oval(c,moonX,99,63,63,moon);
-    for(let i=0;i<9;i++)oval(c,moonX+Math.sin(i*3.7)*43,99+Math.cos(i*2.1)*43,5+i%4*2,3+i%3,'#70354d24');
-    // Five depth speeds: stars/moon, clouds, palace, skyline, graveyard.
-    for(let i=0;i<7;i++){
-      const x=((i*233+time*5-camera*.065)%1450+1450)%1450-220,y=60+(i%3)*47;
-      oval(c,x,y,101,12,'#a495b321');oval(c,x+65,y-8,76,19,'#a495b31a');
+    c.fillStyle='#080b16';c.fillRect(0,0,960,510);
+    if(gothicArena.complete&&gothicArena.naturalWidth){
+      const height=640,width=height*gothicArena.naturalWidth/gothicArena.naturalHeight;
+      const drift=Math.sin(camera*.00008)*45;
+      c.drawImage(gothicArena,(960-width)/2-drift,-95-cameraY*.035,width,height);
+      c.save();c.translate((960-width)/2-drift+width*.535,-95-cameraY*.035+height*.43);c.font='bold 23px Georgia';c.textAlign='center';c.letterSpacing='3px';c.shadowColor='#ff142f';c.shadowBlur=12;c.strokeStyle='#26080f';c.lineWidth=4;c.strokeText('СКА АРЕНА',0,0);c.fillStyle='#ff2544';c.fillText('СКА АРЕНА',0,0);c.restore();
+      c.fillStyle=zone===3?'#06081670':zone===1?'#0d101c30':'#080a1415';c.fillRect(0,0,960,510);
     }
-    if(images['ska-palace']){c.globalAlpha=zone===4?.95:.25;c.drawImage(images['ska-palace'],parallax.palaceX(camera),114,570,323);c.globalAlpha=1;}
-    if(images.skyline){c.globalAlpha=.34;parallax.repeatX(c,images.skyline,camera,.22,1080,180,300);c.globalAlpha=1;}
+    // Fine moving mist and bats add life without repainting the backdrop.
+    for(let i=0;i<5;i++){
+      const x=((i*283+time*5-camera*.065)%1450+1450)%1450-220;
+      oval(c,x,375+(i%3)*13,115,8,'#bfb3c00a');
+    }
     // Slow, low-opacity distant lightning: one brief flash per 23 seconds.
     const phase=time%23;
     if(phase>17&&phase<17.2){
@@ -80,14 +92,6 @@ const atmosphere = (() => {
       c.fillStyle='#c8b9e80a';c.fillRect(0,0,960,510);c.globalAlpha=1;
     }
     for(let i=0;i<8;i++)bat(c,((i*148+time*(9+i%3)-camera*.16)%1200+1200)%1200-80,75+(i%4)*21+Math.sin(time+i)*7,.35+i%3*.1,time*6+i,'#20162e');
-    // Graveyard props always behind collision silhouettes and actors.
-    c.save();c.globalAlpha=.68;
-    if(images.graveyard)for(const tile of parallax.tiles(camera,.43,560))c.drawImage(images.graveyard,tile.x,260,512,144);
-    c.globalAlpha=1;
-    for(const tile of parallax.tiles(camera,.43,31)){
-      const x=tile.x;line(c,[[x,410],[x,358],[x-4,365],[x,353],[x+4,365],[x,358]],'#42364e',2);
-    }
-    line(c,[[0,382],[960,382]],'#58465e',2);line(c,[[0,399],[960,399]],'#58465e',2);c.restore();
     // Suspended dust remains subtle and avoids obscuring silhouettes.
     for(let i=0;i<20;i++){
       const x=((i*83+Math.sin(time*.3+i)*20-camera*.3)%1000+1000)%1000;
@@ -105,14 +109,6 @@ const atmosphere = (() => {
     c.save();c.translate(-camera,0);
     // Decorations are deliberately absent from floating platform tops and gaps.
     const first=Math.floor((camera-120)/410);
-    if(images.graveyard)for(let i=first;i<first+5;i++){
-      const x=i*410+190;
-      if(!stones.some(p=>p.ref.kind==='ground'&&x>=p.ref[0]&&x+50<=p.ref[0]+p.w))continue;
-      const kind=((i%4)+4)%4;
-      const crops=[[270,112,63,65],[150,82,65,90],[505,68,58,108],[566,118,62,57]];
-      const [sx,sy,sw,sh]=crops[kind];c.drawImage(images.graveyard,sx,sy,sw,sh,x,430-sh*.65,sw*.65,sh*.65);
-      if(kind===0)glow(c,x+22,416,30,'#ff812b20');if(kind===3)glow(c,x+20,416,28,'#86c44a20');
-    }
     for(let i=Math.floor(camera/600);i<Math.floor(camera/600)+3;i++){const x=i*600+230;
       if(!stones.some(p=>p.ref.kind==='ground'&&x>=p.ref[0]&&x+20<=p.ref[0]+p.w))continue;
       if(x<camera-70||x>camera+1030)continue;
@@ -129,7 +125,7 @@ const atmosphere = (() => {
       if(!p.ref.active){if(p.ref.restore>.5)continue;c.globalAlpha=1-p.ref.restore*2;}
       const fall=!p.ref.active?p.ref.restore*180:0;
       c.drawImage(p.image,x-3,y-5+fall,p.w+6,p.h+12);c.globalAlpha=1;
-      if(p.ref.kind==='moving'){line(c,[[x+12,y+14],[x+p.w-12,y+14]],'#b7a1d1',2);}
+      if(p.ref.kind==='moving'){line(c,[[x+12,y+14],[x+p.w-12,y+14]],'#e8b8ae',2);}
       if(p.ref.kind==='crumble'){line(c,[[x+20,y],[x+38,y+8],[x+28,y+17]],p.ref.collapse>=0?'#f1a36f':'#a59aa9',2);}
       if(p.h<30&&images.web){c.globalAlpha=.35;c.drawImage(images.web,x+2,y+p.h-1+fall,39,31);c.globalAlpha=1;}
     }

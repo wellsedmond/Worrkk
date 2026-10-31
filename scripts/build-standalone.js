@@ -4,11 +4,16 @@ const root=new URL('../',import.meta.url);
 const read=path=>readFile(new URL(path,root),'utf8');
 let html=await read('index.html');
 html=html.replace('<link rel="stylesheet" href="/style.css">',`<style>${await read('style.css')}</style>`);
+// Embed CSS backdrop and decorative menu portrait as well as runtime images.
+const gothicUrl='data:image/png;base64,'+(await readFile(new URL('assets/environment/gothic-arena.png',root))).toString('base64');
+html=html.replaceAll('assets/environment/gothic-arena.png',gothicUrl);
+html=html.replace('src="assets/hero.png"','src="data:image/png;base64,'+(await readFile(new URL('assets/hero.png',root))).toString('base64')+'"');
 // Offline edition does not fetch Telegram SDK. Hosted Mini App keeps its SDK.
 html=html.replace(/\s*<script src="https:\/\/telegram.org\/js\/telegram-web-app.js" defer><\/script>/,'');
 for(const file of ['level1.js','progress.js','sound.js','parallax.js','atmosphere.js','level-art.js','hero-animation.js','achievements-core.js','achievements.js','game.js','achievements-ui.js']){
  let js=await read(file);
  if(file==='atmosphere.js'){
+  js=js.replace("'assets/environment/gothic-arena.png'",JSON.stringify(gothicUrl));
   const names=['ska-palace','skyline','graveyard','web'];
   const urls={};for(const name of names)urls[name]='data:image/svg+xml;base64,'+(await readFile(new URL(`assets/environment/${name}.svg`,root))).toString('base64');
   js=js.replace('`assets/environment/${name}.svg`',`(${JSON.stringify(urls)})[name]`);
