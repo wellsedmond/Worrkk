@@ -29,8 +29,8 @@ test('jump, run, crouch and one-way side and underside collisions',()=>{
  run('start();player.x=2650;player.y=350;player.vy=-400;update(1/120)');assert.ok(run('player.vy')<0);
 });
 test('moving platforms carry their rider; crumble triggers at 0.8s and restores',()=>{
- const run=game();run('enemies=[];traps=[];const moving=ledgePlatforms.find(p=>p.kind==="moving");player.x=moving[0]+20;player.y=moving[1]-80;player.support=moving.id;player.ground=true;const offset=player.x-moving[0];for(let i=0;i<60;i++)update(1/120)');assert.ok(Math.abs(run('player.x-moving[0]-offset'))<.01);assert.equal(run('player.ground'),true);
- run('const crumble=ledgePlatforms.find(p=>p.kind==="crumble");player.x=crumble[0]+20;player.y=crumble[1]-80;player.vy=0;player.ground=true;update(1/120);for(let i=0;i<90;i++)update(1/120)');assert.equal(run('crumble.active'),true);
+ const run=game();run('enemies=[];traps=[];const moving=ledgePlatforms.find(p=>p.kind==="moving");player.x=moving[0]+20;zoneIndex=LEVEL1.zones.findIndex(z=>player.x>=z.start&&player.x<z.end);player.y=moving[1]-80;player.support=moving.id;player.ground=true;const offset=player.x-moving[0];for(let i=0;i<60;i++)update(1/120)');assert.ok(Math.abs(run('player.x-moving[0]-offset'))<.01);assert.equal(run('player.ground'),true);
+ run('const crumble=ledgePlatforms.find(p=>p.kind==="crumble");player.x=crumble[0]+20;clearPageTurn();zoneIndex=LEVEL1.zones.findIndex(z=>player.x>=z.start&&player.x<z.end);player.y=crumble[1]-80;player.vy=0;player.ground=true;update(1/120);for(let i=0;i<90;i++)update(1/120)');assert.equal(run('crumble.active'),true);
  run('for(let i=0;i<12;i++)update(1/120)');assert.equal(run('crumble.active'),false);
  run('for(let i=0;i<600;i++)updatePlatforms(1/120)');assert.equal(run('crumble.active'),true);
 });

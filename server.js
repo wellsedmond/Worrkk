@@ -3,6 +3,7 @@ import {createAchievementApi} from './achievement-server.js';
 const achievementApi=createAchievementApi();
 import { readFile } from 'node:fs/promises';
 const files = {
+  '/assets/environment/cemetery.png': ['assets/environment/cemetery.png', 'image/png'],
   '/assets/environment/gothic-arena.png': ['assets/environment/gothic-arena.png', 'image/png'],
   '/assets/level1/crossbow-atlas.png': ['assets/level1/crossbow-atlas.png', 'image/png'],
   '/assets/level1/props-atlas.png': ['assets/level1/props-atlas.png', 'image/png'],

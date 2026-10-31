@@ -14,6 +14,33 @@ let kills=0,sword=0,swordRewards=0,damageTaken=0,leverOpen=false,escapeLeft=0,to
 let achievementClock=0,safeIdle=0,deathNumber=0,projectileNumber=0,jumpFires=new Set(),achievementJump=false;
 let banner={text:'',left:0},cutsceneTime=0,victoryTime=0,paused=false,tutorialDone=new Set();
 const ui={zone:document.querySelector('#zone-name'),timer:document.querySelector('#time-count'),kills:document.querySelector('#kill-count'),sword:document.querySelector('#sword-hud'),hint:document.querySelector('#tutorial'),banner:document.querySelector('#banner'),boss:document.querySelector('#boss-hud'),rage:document.querySelector('#rage-meter')};
+// One reusable bitmap: transitions never accumulate old frames.
+const pageTurn={active:false,elapsed:0,duration:.9,to:0,snapshot:document.createElement('canvas'),reduced:false};
+function clearPageTurn(){pageTurn.active=false;pageTurn.elapsed=0;pageTurn.snapshot.width=pageTurn.snapshot.height=1;}
+function beginPageTurn(to){
+ pageTurn.snapshot.width=canvas.width;pageTurn.snapshot.height=canvas.height;
+ pageTurn.snapshot.getContext('2d').drawImage(canvas,0,0);
+ pageTurn.to=to;pageTurn.elapsed=0;pageTurn.reduced=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+ pageTurn.duration=pageTurn.reduced?.18:.9;pageTurn.active=true;
+}
+function drawPageTurn(){
+ if(!pageTurn.active)return;
+ const t=Math.min(1,pageTurn.elapsed/pageTurn.duration),ease=t*t*(3-2*t),old=pageTurn.snapshot;
+ ctx.save();
+ if(pageTurn.reduced){ctx.globalAlpha=1-ease;ctx.drawImage(old,0,0,960,510);ctx.restore();return;}
+ const fold=960*(1-ease),curl=Math.sin(Math.PI*t)*155;
+ if(fold>0)ctx.drawImage(old,0,0,old.width*fold/960,old.height,0,0,fold,510);
+ const shadow=ctx.createLinearGradient(fold,0,Math.min(960,fold+curl+55),0);
+ shadow.addColorStop(0,'#000a');shadow.addColorStop(1,'#0000');ctx.fillStyle=shadow;ctx.fillRect(fold,0,curl+55,510);
+ if(curl>1){
+  // The warm reverse of the leaf bends around the moving spine.
+  ctx.beginPath();ctx.moveTo(fold,0);ctx.quadraticCurveTo(fold+curl*.7,35,fold+curl,70*t);ctx.lineTo(fold+curl,510-70*t);ctx.quadraticCurveTo(fold+curl*.7,475,fold,510);ctx.closePath();
+  const paper=ctx.createLinearGradient(fold,0,fold+curl,0);paper.addColorStop(0,'#635249');paper.addColorStop(.22,'#d6c4a1');paper.addColorStop(.72,'#eee0bd');paper.addColorStop(1,'#8b7560');ctx.fillStyle=paper;ctx.fill();
+  ctx.strokeStyle='#f5e3b980';ctx.lineWidth=1;ctx.stroke();
+ }
+ const alpha=Math.sin(Math.PI*t);ctx.globalAlpha=alpha;ctx.fillStyle='#100d16c9';ctx.fillRect(210,207,540,88);ctx.strokeStyle='#a98a60';ctx.strokeRect(214,211,532,80);
+ ctx.fillStyle='#e8d5b0';ctx.textAlign='center';ctx.font='15px Georgia';ctx.fillText('СТРАНИЦА '+(pageTurn.to+1),480,237);ctx.font='23px Georgia';ctx.fillText(LEVEL1.zones[pageTurn.to].name,480,270,510);ctx.restore();
+}
 function notify(text,seconds=3){banner={text,left:seconds};}
 function makeWorld(){
  groundPlatforms=LEVEL1.ground.map(toPlatform);ledgePlatforms=LEVEL1.ledges.map(toPlatform);platforms=[...groundPlatforms,...ledgePlatforms];
@@ -23,13 +50,14 @@ function makeWorld(){
  boss=Inquisitor.create(LEVEL1.boss,bossDifficulty);projectiles=[];
 }
 function reset(){
+ clearPageTurn();
  atmosphere.reset();heroAnimator.reset();makeWorld();coffinStates=[{id:'start',x:30,y:430,spawnX:70},...LEVEL1.checkpoints.map(cp=>({...cp,spawnX:cp.x}))].map(cp=>({...cp,opened:false,openTime:0}));player={x:70,y:330,w:40,h:80,vx:0,vy:0,ground:false,hp:3,inv:0,face:1,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false};
  score=0;camera=0;cameraY=0;clock=0;jumpHeld=false;attackHeld=false;kills=0;sword=0;swordRewards=0;damageTaken=0;leverOpen=false;escapeLeft=0;towerTimer=null;towerPassed=false;zoneIndex=0;cutsceneTime=0;paused=false;tutorialDone=new Set();
  for(const k in keys)keys[k]=false;checkpoint={id:'start',x:70,y:430};captureCheckpoint();atmosphere.prepare(platforms);notify('Пора вернуть своё!',3);
 }
 function captureCheckpoint(){snapshot={score,coins:coins.filter(c=>c.taken).map(c=>c.id),items:items.filter(c=>c.taken).map(c=>c.id),kills,sword,swordRewards,enemies:enemies.filter(e=>e.dead).map(e=>e.id),leverOpen};}
 function resumeCheckpoint(){
- if(!assetsReady)return;safeIdle=0;achievementJump=false;jumpFires.clear();gameAudio.activate();const saved=snapshot;makeWorld();score=saved.score;kills=saved.kills;sword=saved.sword;swordRewards=saved.swordRewards;leverOpen=saved.leverOpen;
+ if(!assetsReady)return;clearPageTurn();safeIdle=0;achievementJump=false;jumpFires.clear();gameAudio.activate();const saved=snapshot;makeWorld();score=saved.score;kills=saved.kills;sword=saved.sword;swordRewards=saved.swordRewards;leverOpen=saved.leverOpen;
  for(const c of coins)c.taken=saved.coins.includes(c.id);for(const c of items)c.taken=saved.items.includes(c.id);for(const e of enemies)e.dead=saved.enemies.includes(e.id);
  Object.assign(player,{x:checkpoint.x,y:checkpoint.y-80,h:80,hp:3,vx:0,vy:0,ground:false,inv:2,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false});
  escapeLeft=leverOpen?LEVEL1.escapeSeconds:0;towerTimer=null;towerPassed=checkpoint.x>=LEVEL1.timedSection.end;projectiles=[];camera=Math.max(0,player.x-260);cameraY=Math.min(0,player.y-250);state='playing';paused=false;
@@ -136,7 +164,7 @@ function updateBoss(dt){
  if(boss.state==='VICTORY')completeBossBattle();
 }
 function updateEvents(dt){
- const current=LEVEL1.zones.findIndex(z=>player.x>=z.start&&player.x<z.end);if(current>=0&&current!==zoneIndex){zoneIndex=current;notify(LEVEL1.zones[current].name);}
+ const current=LEVEL1.zones.findIndex(z=>player.x>=z.start&&player.x<z.end);if(current>=0&&current!==zoneIndex){beginPageTurn(current);zoneIndex=current;notify(LEVEL1.zones[current].name);}
  for(const cp of coffinStates){
   if(cp.opened){cp.openTime=Math.min(.8,cp.openTime+dt);continue;}
   if(Math.abs(player.x-cp.x)<70&&Math.abs(player.y+player.h-cp.y)<22){
@@ -155,6 +183,7 @@ function updateEvents(dt){
 }
 function update(dt){
  if(state!=='playing'||paused)return;
+ if(pageTurn.active){pageTurn.elapsed+=dt;if(pageTurn.elapsed>=pageTurn.duration)clearPageTurn();return;}
  clock+=dt;banner.left=Math.max(0,banner.left-dt);player.inv=Math.max(0,player.inv-dt);player.rage=Math.max(0,player.rage-dt);player.attack=Math.max(0,player.attack-dt);player.cooldown=Math.max(0,player.cooldown-dt);
  updatePlatforms(dt);if(player.ground&&player.support){const p=platforms.find(p=>p.id===player.support);if(p?.active){player.x+=p.dx;player.y+=p.dy;}else{player.ground=false;player.support=null;}}
  setCrouch();const travelStartX=player.x;player.vx=(boss.state==='INTRO'?0:((keys.right?1:0)-(keys.left?1:0)))*(player.h<80?125:245);if(player.vx)player.face=Math.sign(player.vx);
@@ -220,11 +249,11 @@ function draw(){
  for(const c of coins){if(c.taken||boss.engaged&&c.x>=boss.arenaStart&&c.x<boss.arenaEnd||c.x<camera-30||c.x>camera+990)continue;const y=c.y+Math.sin(clock*4+c.x)*3;levelArt.coin(ctx,c.x,y,clock);}
  for(const e of enemies)if(activeNear(e.x,1200)&&(!e.dead||e.death>0)){if(e.type==='helmet')levelArt.enemy(ctx,e,clock);else if(!e.dead)drawGarlic(e);}
  character();ctx.restore();atmosphere.effects(ctx,camera);ctx.restore();
- atmosphere.hud(hud,player,score,state==='win'?100:Math.min(100,Math.floor(player.x/LEVEL1.width*100)));renderStatus();
+ atmosphere.hud(hud,player,score,state==='win'?100:Math.min(100,Math.floor(player.x/LEVEL1.width*100)));renderStatus();drawPageTurn();
 }
 function renderStatus(){
  ui.zone.textContent=`${zoneIndex+1}/5 · ${LEVEL1.zones[zoneIndex].name}`;ui.timer.textContent=formatTime(clock);ui.kills.textContent=kills;ui.sword.textContent=sword>0?`Меч: ${sword}/5 · +5 монет за попадание`:`До меча: ${10-kills%10} врагов`;
- ui.banner.textContent=banner.left>0?banner.text:'';ui.banner.hidden=banner.left<=0;ui.rage.hidden=player.rage<=0;ui.rage.textContent=`Кровавая ярость: ${Math.ceil(player.rage)} с`;
+ ui.banner.textContent=banner.left>0?banner.text:'';ui.banner.hidden=banner.left<=0||pageTurn.active;ui.rage.hidden=player.rage<=0;ui.rage.textContent=`Кровавая ярость: ${Math.ceil(player.rage)} с`;
  const hints=[['move','← → / A D — двигайся',0,700],['jump','Пробел / ↑ — перепрыгни яму',700,1350],['attack','F — ударь чеснок',1350,2200],['crouch','↓ / S — присядь под колом',2200,3100]];
  const hint=hints.find(([key,text,a,b])=>!tutorialDone.has(key)&&player.x>=a&&player.x<b);ui.hint.textContent=hint?.[1]||'';ui.hint.hidden=!hint;
  ui.boss.hidden=!boss.engaged||state!=='playing';
@@ -238,7 +267,7 @@ function renderStatus(){
  document.querySelector('#pause').textContent=paused?'Продолжить':'Пауза';
 }
 let accumulator=0;
-function frame(t){const dt=Math.min((t-last)/1000||0,.1);last=t;achievementSystem.tick(dt);if(typeof achievementUI!=='undefined')achievementUI.tick(dt);if(!paused){atmosphere.tick(dt);levelArt.tick(dt);accumulator=Math.min(accumulator+dt,.12);while(accumulator>=1/120){if(state==='playing')update(1/120);else if(state==='cutscene')updateCutscene(1/120);accumulator-=1/120;}}gameAudio.tick(dt,!paused&&state==='playing',player.ground&&Math.abs(player.vx)>0);draw();requestAnimationFrame(frame);}
+function frame(t){const dt=Math.min((t-last)/1000||0,.1);last=t;achievementSystem.tick(dt);if(typeof achievementUI!=='undefined')achievementUI.tick(dt);if(!paused){atmosphere.tick(dt);levelArt.tick(dt);accumulator=Math.min(accumulator+dt,.12);while(accumulator>=1/120){if(state==='playing')update(1/120);else if(state==='cutscene')updateCutscene(1/120);accumulator-=1/120;}}gameAudio.tick(dt,!paused&&!pageTurn.active&&state==='playing',player.ground&&Math.abs(player.vx)>0);draw();requestAnimationFrame(frame);}
 function resize(){canvas.width=960*Math.min(devicePixelRatio||1,2);canvas.height=510*Math.min(devicePixelRatio||1,2);}resize();window.addEventListener('resize',resize);
 const physicalKeys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyF:'attack',ArrowDown:'crouch',KeyS:'crouch'};
 const mapping={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',' ':'jump',ArrowUp:'jump',w:'jump',W:'jump',f:'attack',F:'attack',ArrowDown:'crouch',s:'crouch'};

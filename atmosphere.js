@@ -3,13 +3,14 @@ const atmosphere = (() => {
   const palette = {sky:'#080b16',far:'#141322',stone:'#22212b',red:'#B52239',moon:'#C8B9E8',fire:'#FF812B',green:'#86C44A',fog:'#827B9E'};
   const images = {};const textureCache=new Map();
   const assetNames = ['ska-palace','skyline','graveyard','web'];
+  const cemeteryBackdrop=new Image();cemeteryBackdrop.src='assets/environment/cemetery.png';
   const gothicArena=new Image();gothicArena.src='assets/environment/gothic-arena.png';
   const lightingImage=new Image();lightingImage.src='assets/environment/lighting-atlas.png';
   const lightingFrames={"candle":[{"x":0,"y":0,"w":248,"h":345,"pivotX":138,"pivotY":340},{"x":248,"y":0,"w":248,"h":345,"pivotX":379,"pivotY":340},{"x":496,"y":0,"w":248,"h":345,"pivotX":620,"pivotY":340},{"x":744,"y":0,"w":248,"h":345,"pivotX":864,"pivotY":340},{"x":992,"y":0,"w":247,"h":345,"pivotX":1101,"pivotY":340},{"x":1239,"y":0,"w":248,"h":345,"pivotX":1351,"pivotY":340},{"x":1487,"y":0,"w":248,"h":345,"pivotX":1595,"pivotY":340},{"x":1735,"y":0,"w":248,"h":345,"pivotX":1846,"pivotY":340}],"lantern":[{"x":0,"y":345,"w":248,"h":440,"pivotX":68,"pivotY":765},{"x":248,"y":345,"w":248,"h":440,"pivotX":310,"pivotY":765},{"x":496,"y":345,"w":248,"h":440,"pivotX":554,"pivotY":765},{"x":744,"y":345,"w":248,"h":440,"pivotX":799,"pivotY":765},{"x":992,"y":345,"w":247,"h":440,"pivotX":1043,"pivotY":765},{"x":1239,"y":345,"w":248,"h":440,"pivotX":1287,"pivotY":765},{"x":1487,"y":345,"w":248,"h":440,"pivotX":1534,"pivotY":765},{"x":1735,"y":345,"w":248,"h":440,"pivotX":1779,"pivotY":765}]},lightingScale={candle:.2,lantern:.36};
   const lightingSprites={candle:[],lantern:[]};
   const lightingReady=lightingImage.decode().then(prepareLightingSprites);
   let lightingLayout=[],lightingStats={original:0,target:0,actual:0};
-  const ready = Promise.all([lightingReady,gothicArena.decode(), ...assetNames.map(async name => {
+  const ready = Promise.all([lightingReady,gothicArena.decode(),cemeteryBackdrop.decode(), ...assetNames.map(async name => {
     const image = new Image(); image.src = `assets/environment/${name}.svg`;
     await image.decode();
     const raster = document.createElement('canvas');
@@ -78,7 +79,12 @@ const atmosphere = (() => {
   }
   function background(c,camera,zone=0,cameraY=0){
     c.fillStyle='#080b16';c.fillRect(0,0,960,510);
-    if(gothicArena.complete&&gothicArena.naturalWidth){
+    if(zone===1&&cemeteryBackdrop.complete&&cemeteryBackdrop.naturalWidth){
+      // Reference ground line stays near y=430; a slow pan has no wrap seam.
+      const height=600,width=height*cemeteryBackdrop.naturalWidth/cemeteryBackdrop.naturalHeight;
+      const drift=Math.sin((camera-12500)*.00012)*Math.max(0,(width-960)/2-8);
+      c.drawImage(cemeteryBackdrop,(960-width)/2-drift,-14-cameraY*.035,width,height);
+    }else if(gothicArena.complete&&gothicArena.naturalWidth){
       const height=640,width=height*gothicArena.naturalWidth/gothicArena.naturalHeight;
       const drift=Math.sin(camera*.00008)*45;
       c.drawImage(gothicArena,(960-width)/2-drift,-95-cameraY*.035,width,height);
