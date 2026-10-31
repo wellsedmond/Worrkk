@@ -40,7 +40,7 @@ for(const file of ['level1.js','relics.js','combat-geometry.js','inquisitor.js',
    js=js.replace("'assets/"+name+".png'",JSON.stringify(url));
   }
  }else if(file==='sound.js'){
-  js=js.replace("'assets/audio/background.mp3'",JSON.stringify('data:audio/mpeg;base64,'+(await readFile(new URL('assets/audio/background.mp3',root))).toString('base64')));
+  for(const name of ['background','boss'])js=js.replace("'assets/audio/"+name+".mp3'",JSON.stringify('data:audio/mpeg;base64,'+(await readFile(new URL('assets/audio/'+name+'.mp3',root))).toString('base64')));
  }else if(file==='game.js'){
   for(const [name,mime] of [['hero.png','image/png'],['garlic.svg','image/svg+xml']]){
    const url='data:'+mime+';base64,'+(await readFile(new URL('assets/'+name,root))).toString('base64');

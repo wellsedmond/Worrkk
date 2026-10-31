@@ -77,5 +77,5 @@ const LEVEL1 = (() => {
   checkpoints:[{id:'cemetery-end',x:29600,y:430},{id:'tower-base',x:48000,y:430},{id:'tower-top',x:52800,y:-290},{id:'arena',x:57200,y:430}],
   lever:{x:53000,y:-290},gate:{x:53500,y:-600,w:48,h:1030},
   timedSection:{start:50000,end:52500,seconds:24},escapeSeconds:45,
-  boss:{x:58650,y:310,w:72,h:140,hp:25,arenaStart:57500,arenaEnd:59900},exitX:59900});
+  boss:{x:58650,y:310,w:72,h:140,hp:25,arenaStart:57500,arenaEnd:58460},exitX:59900});
 })();

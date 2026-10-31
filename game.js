@@ -8,6 +8,7 @@ const keys={left:false,right:false,jump:false,attack:false,crouch:false};
 const toPlatform=p=>Object.assign([p.x,p.y,p.w,p.h],{id:p.id,kind:p.type,baseX:p.x,baseY:p.y,...p,active:true,collapse:-1,restore:0,dx:0,dy:0});
 let groundPlatforms=[],ledgePlatforms=[],platforms=[];
 let player,coins,enemies,traps,items,projectiles=[],boss,checkpoint,snapshot,coffinStates=[],statues=[];
+let bossPractice=false;
 let bossDifficulty=progressStore.load().bossDifficulty;
 let camera=0,cameraY=0,state='menu',score=0,last=0,clock=0,jumpHeld=false,attackHeld=false;
 let kills=0,sword=0,swordRewards=0,damageTaken=0,leverOpen=false,escapeLeft=0,towerTimer=null,towerPassed=false,zoneIndex=0;
@@ -43,6 +44,7 @@ function drawPageTurn(){
  const alpha=Math.min(1,t*12,(1-t)*12);ctx.globalAlpha=alpha;ctx.fillStyle='#100d16c9';ctx.fillRect(210,207,540,88);ctx.strokeStyle='#a98a60';ctx.strokeRect(214,211,532,80);
  ctx.fillStyle='#e8d5b0';ctx.textAlign='center';ctx.font='16px UpyrGothic, Georgia';ctx.fillText('СТРАНИЦА '+(pageTurn.to+1),480,237);ctx.font='30px UpyrGothic, Georgia';ctx.fillText(LEVEL1.zones[pageTurn.to].name,480,270,510);ctx.restore();
 }
+function emitAchievement(type,data={}){if(!bossPractice)achievementSystem.emit(type,data);}
 function notify(text,seconds=3){banner={text,left:seconds};}
 function makeWorld(){
  groundPlatforms=LEVEL1.ground.map(toPlatform);ledgePlatforms=LEVEL1.ledges.map(toPlatform);platforms=[...groundPlatforms,...ledgePlatforms];
@@ -63,30 +65,31 @@ function restoreRelics(saved){
  for(const s of statues)if(s.hp===0&&!items.some(i=>i.id==='blood-'+s.id))items.push(Relics.drop(s));
 }
 function resumeCheckpoint(){
- if(!assetsReady)return;clearPageTurn();safeIdle=0;achievementJump=false;jumpFires.clear();gameAudio.activate();const saved=snapshot;makeWorld();score=saved.score;kills=saved.kills;sword=saved.sword;swordRewards=saved.swordRewards;leverOpen=saved.leverOpen;restoreRelics(saved.statues);
+ if(!assetsReady)return;clearPageTurn();safeIdle=0;achievementJump=false;jumpFires.clear();gameAudio.activate(checkpoint.id==='inquisitor-entry');const saved=snapshot;makeWorld();score=saved.score;kills=saved.kills;sword=saved.sword;swordRewards=saved.swordRewards;leverOpen=saved.leverOpen;restoreRelics(saved.statues);
  for(const c of coins)c.taken=saved.coins.includes(c.id);for(const c of items)c.taken=saved.items.includes(c.id);for(const e of enemies)e.dead=saved.enemies.includes(e.id);
  Object.assign(player,{x:checkpoint.x,y:checkpoint.y-80,h:80,hp:3,vx:0,vy:0,ground:false,inv:2,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false});
  escapeLeft=leverOpen?LEVEL1.escapeSeconds:0;towerTimer=null;towerPassed=checkpoint.x>=LEVEL1.timedSection.end;projectiles=[];camera=Math.max(0,player.x-260);cameraY=Math.min(0,player.y-250);state='playing';paused=false;
- for(const k in keys)keys[k]=false;jumpHeld=false;attackHeld=false;atmosphere.reset();heroAnimator.reset();atmosphere.prepare(platforms,statues);overlay.hidden=true;if(checkpoint.id==='inquisitor-entry'){Inquisitor.engage(boss,true);player.x=boss.arenaStart+45;zoneIndex=4;camera=boss.arenaStart;}notify(checkpoint.id==='inquisitor-entry'?'ПОВТОРИТЬ БОЙ · ИНКВИЗИТОР':'Пробуждение у контрольной точки');
+ for(const k in keys)keys[k]=false;jumpHeld=false;attackHeld=false;atmosphere.reset();heroAnimator.reset();atmosphere.prepare(platforms,statues);overlay.hidden=true;if(checkpoint.id==='inquisitor-entry'){Inquisitor.engage(boss,true);player.x=boss.arenaStart+45;zoneIndex=4;camera=boss.arenaStart;cameraY=0;escapeLeft=0;}notify(checkpoint.id==='inquisitor-entry'?'ПОВТОРИТЬ БОЙ · ИНКВИЗИТОР':'Пробуждение у контрольной точки');
 }
-function start(){if(!assetsReady)return;progressStore.clearBossCheckpoint();configureBossMenu();menuReturnState=null;document.querySelector('#menu-resume').hidden=true;gameAudio.activate();reset();achievementSystem.start();achievementClock=0;safeIdle=0;deathNumber=0;projectileNumber=0;achievementJump=false;jumpFires.clear();state='playing';overlay.classList.remove('defeat');overlay.hidden=true;document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
+function start(){if(!assetsReady)return;bossPractice=false;progressStore.clearBossCheckpoint();configureBossMenu();menuReturnState=null;document.querySelector('#menu-resume').hidden=true;gameAudio.activate(false);reset();achievementSystem.start();achievementClock=0;safeIdle=0;deathNumber=0;projectileNumber=0;achievementJump=false;jumpFires.clear();state='playing';overlay.classList.remove('defeat');overlay.hidden=true;document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
 function finish(win){
  menuReturnState=null;document.querySelector('#menu-resume').hidden=true;
  if(state==='win'||state==='lost')return;
  if(!win&&checkpoint.id==='inquisitor-entry'){persistActiveBoss();Inquisitor.clear(boss);}
- achievementSystem.emit('player_moved',{x:player.x,safeSeconds:safeIdle});
- if(win)achievementSystem.emit('level_completed',{level:'level1'});else achievementSystem.emit('player_died',{id:'death-'+(++deathNumber),elapsed:clock});
- achievementSystem.emit('run_finished',{completed:win});achievementSystem.persist();
+ emitAchievement('player_moved',{x:player.x,safeSeconds:safeIdle});
+ if(win)emitAchievement('level_completed',{level:'level1'});else emitAchievement('player_died',{id:'death-'+(++deathNumber),elapsed:clock});
+ emitAchievement('run_finished',{completed:win});achievementSystem.persist();
  state=win?'win':'lost';banner.left=0;overlay.hidden=false;overlay.classList.toggle('defeat',!win);overlay.querySelector('.eyebrow').textContent=win?'LEVEL 1 — ПРОКЛЯТАЯ ДОРОГА К СКА АРЕНЕ':'НОЧЬ НЕ ПРОЩАЕТ ОШИБОК';overlay.querySelector('h2').textContent=win?'ОХОТА ОКОНЧЕНА':'ВАМПИР ПАЛ!';
  let text=(win?'ОХОТА ОКОНЧЕНА. ТЕПЕРЬ ОХОТНИК — ТЫ. ':'')+`Монеты: ${score}. Побеждено: ${kills}. `;
- if(win){const record=progressStore.save({time:victoryTime||clock,score,kills,damage:damageTaken});text+=`Время: ${formatTime(victoryTime||clock)}. LEVEL 2 — СКОРО.`;if(damageTaken===0)text+=' Достижение: НЕПРОКУСИМЫЙ!';if(!progressStore.available)text+=' Браузер запретил сохранение.';}
+ if(win&&bossPractice){text='Тренировочный бой завершён. Можно повторить его кнопкой «Босс».';}
+ else if(win){const record=progressStore.save({time:victoryTime||clock,score,kills,damage:damageTaken});text+=`Время: ${formatTime(victoryTime||clock)}. LEVEL 2 — СКОРО.`;if(damageTaken===0)text+=' Достижение: НЕПРОКУСИМЫЙ!';if(!progressStore.available)text+=' Браузер запретил сохранение.';}
  else text+=checkpoint.id==='inquisitor-entry'?'Повтори бой у входа на арену. Инквизитор восстановлен; вступление пропускается.':'Продолжи у гроба или начни новый забег.';
  overlay.querySelector('p').textContent=text;document.querySelector('#play').textContent='Повторить уровень';document.querySelector('#continue').textContent=checkpoint.id==='inquisitor-entry'?'ПОВТОРИТЬ БОЙ':'Продолжить у гроба';document.querySelector('#continue').hidden=win;configureBossMenu();document.querySelector('#main-menu').hidden=false;
 }
 let menuReturnState=null;
 function mainMenu(){if(state==='playing'||state==='cutscene')menuReturnState=state;document.querySelector('#menu-resume').hidden=!menuReturnState;state='menu';paused=false;overlay.hidden=false;overlay.classList.remove('defeat');overlay.querySelector('.eyebrow').textContent='КУБОК ВЕЧНОЙ НОЧИ ЖДЁТ';overlay.querySelector('h2').textContent='UPYR RUN';const p=progressStore.load();overlay.querySelector('p').textContent='Охотники украли Кубок Вечной Ночи. Пройди лес, кладбище, аллею и башню, чтобы открыть ворота СКА Арены.'+(p.completed?` Рекорд: ${p.maxScore}. Лучшее время: ${formatTime(p.bestTime)}.`:'');document.querySelector('#play').textContent='▶ Новая игра';document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
 function formatTime(t){return Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');}
-function hit(){if(player.inv>0||state!=='playing')return;damageTaken++;achievementSystem.emit('player_damaged');safeIdle=0;jumpFires.clear();player.hp--;gameAudio.effect('hurt');player.inv=1.6;atmosphere.burst(player.x+20,player.y+25,'sparks');player.vy=-330;if(player.hp<=0)finish(false);}
+function hit(){if(player.rage>0||player.inv>0||state!=='playing')return;damageTaken++;emitAchievement('player_damaged');safeIdle=0;jumpFires.clear();player.hp--;gameAudio.effect('hurt');player.inv=1.6;atmosphere.burst(player.x+20,player.y+25,'sparks');player.vy=-330;if(player.hp<=0)finish(false);}
 function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 function activeNear(x,range=1250){return Math.abs(x-player.x)<range;}
 function solidRects(){return [...groundPlatforms.filter(p=>activeNear(p[0]+p[2]/2,p[2]+160)).map(p=>({x:p[0],y:p[1],w:p[2],h:p[3]})),...(!leverOpen?[LEVEL1.gate]:[])];}
@@ -95,12 +98,12 @@ function updatePlatforms(dt){for(const p of ledgePlatforms){const oldX=p[0],oldY
  if(p.collapse>=0){p.collapse+=dt;if(p.collapse>=.8){p.active=false;p.restore+=dt;if(p.restore>4){p.active=true;p.collapse=-1;p.restore=0;}}}p.dx=p[0]-oldX;p.dy=p[1]-oldY;}}
 function attackBox(){const armed=player.attack>0?player.swingSword:sword>0;const reach=armed?96:63;return {x:player.face>0?player.x+player.w-5:player.x-reach+5,y:player.y+8,w:reach,h:Math.max(40,player.h-12)};}
 function recordKill(){kills++;if(kills%10===0){sword=5;swordRewards++;notify('Меч получен! Прочность: 5/5');}}
-function defeatEnemy(e){if(e.dead)return;e.dead=true;e.death=e.type==='helmet'?.8:.5;e.hurt=0;score+=e.type==='helmet'?3:1;achievementSystem.emit('enemy_killed',{id:e.id});if(e.type==='garlic')achievementSystem.emit('garlic_destroyed',{id:e.id});achievementSystem.emit('coin_collected',{id:'kill-'+e.id,amount:e.type==='helmet'?3:1});recordKill();atmosphere.burst(e.x+19,e.y+20,'garlic');}
+function defeatEnemy(e){if(e.dead)return;e.dead=true;e.death=e.type==='helmet'?.8:.5;e.hurt=0;score+=e.type==='helmet'?3:1;emitAchievement('enemy_killed',{id:e.id});if(e.type==='garlic')emitAchievement('garlic_destroyed',{id:e.id});emitAchievement('coin_collected',{id:'kill-'+e.id,amount:e.type==='helmet'?3:1});recordKill();atmosphere.burst(e.x+19,e.y+20,'garlic');}
 function hurtEnemy(e,damage){if(e.dead)return;e.hp-=damage;e.hurt=.3;if(e.hp<=0)defeatEnemy(e);}
-function swordHit(target){if(!player.swingSword||sword<=0)return false;sword--;score+=5;achievementSystem.emit('coin_collected',{id:'sword-'+target,amount:5});if(sword===0){player.swordBroke=true;atmosphere.burst(player.x+player.face*50,player.y+35,'sparks');}return true;}
+function swordHit(target){if(!player.swingSword||sword<=0)return false;sword--;score+=5;emitAchievement('coin_collected',{id:'sword-'+target,amount:5});if(sword===0){player.swordBroke=true;atmosphere.burst(player.x+player.face*50,player.y+35,'sparks');}return true;}
 function punch(){
  if(player.cooldown>0||player.h<80)return;
- player.attack=.36;player.swordBroke=false;player.swingSword=sword>0;heroAnimator.strike(player.swingSword,player.rage>0);achievementSystem.emit('player_attacked');safeIdle=0;gameAudio.effect('hit');player.cooldown=.42;tutorialDone.add('attack');const box=attackBox();
+ player.attack=.36;player.swordBroke=false;player.swingSword=sword>0;heroAnimator.strike(player.swingSword,player.rage>0);emitAchievement('player_attacked');safeIdle=0;gameAudio.effect('hit');player.cooldown=.42;tutorialDone.add('attack');const box=attackBox();
  atmosphere.burst(box.x+box.w/2,box.y+20,'sparks');
  for(const s of statues)if(s.hp>0&&overlap(box,Relics.body(s))&&Relics.strike(s)){atmosphere.burst(s.x+s.w/2,s.y-60,'sparks');if(s.hp===0){items.push(Relics.drop(s));notify('Статуэтка разрушена · забери кровь',2);}else notify('Статуэтка · прочность '+s.hp+'/5',.8);}
  for(const e of enemies)if(!e.dead&&CombatGeometry.touches(box,CombatGeometry.enemy(e,clock))){const armed=swordHit(e.id+'-'+e.hp);hurtEnemy(e,armed?2:e.type==='helmet'?1:player.rage>0?2:1);}
@@ -122,7 +125,7 @@ function updateTraps(dt){
   const contour=p.type==='stake'?CombatGeometry.bolt(p):null;
   if(player.attack>0&&(contour?CombatGeometry.touches(attackBox(),contour):overlap(attackBox(),p))){p.dead=true;atmosphere.burst(p.x+16,p.y+16,p.type==='garlic'?'garlic':'sparks');tutorialDone.add('attack');}
   else if(contour?CombatGeometry.touches(player.h===80?{x:player.x,y:player.y-12,w:player.w,h:player.h+12}:player,contour):overlap(player,p)){p.dead=true;hit();}
-  if(!p.dead&&p.type==='stake'&&Math.abs(p.y-player.y)<150){if(p.x<player.x+player.w&&p.x+p.w>player.x)p.dodgeCandidate=true;const passed=p.vx<0?beforeX+p.w>=player.x&&p.x+p.w<player.x:beforeX<=player.x+player.w&&p.x>player.x+player.w;if(passed&&p.dodgeCandidate&&!p.dodgeCounted){p.dodgeCounted=true;achievementSystem.emit('stake_dodged',{id:p.id});}}
+  if(!p.dead&&p.type==='stake'&&Math.abs(p.y-player.y)<150){if(p.x<player.x+player.w&&p.x+p.w>player.x)p.dodgeCandidate=true;const passed=p.vx<0?beforeX+p.w>=player.x&&p.x+p.w<player.x:beforeX<=player.x+player.w&&p.x>player.x+player.w;if(passed&&p.dodgeCandidate&&!p.dodgeCounted){p.dodgeCounted=true;emitAchievement('stake_dodged',{id:p.id});}}
  }
  projectiles=projectiles.filter(p=>!p.dead&&p.life<5&&Math.abs(p.x-player.x)<1400);
 }
@@ -136,21 +139,31 @@ function updateEnemies(dt,prevBottom){for(const e of enemies){e.hurt=Math.max(0,
  if(touching&&!e.stompProtected){if(player.vy>0&&prevBottom<body.y+12){e.stompProtected=true;if(e.type==='helmet')hurtEnemy(e,1);else defeatEnemy(e);player.y=Math.min(player.y,body.y-player.h);player.vy=-370;}else hit();}
 }}
 function saveBossEntry(){
+ if(bossPractice){checkpoint={id:"inquisitor-entry",x:57400,y:430};captureCheckpoint();return;}
  checkpoint={id:'inquisitor-entry',x:57400,y:430};captureCheckpoint();achievementSystem.persist();
  const saved=progressStore.saveBossCheckpoint({version:1,level:'level1',checkpoint,snapshot,clock,damage:damageTaken,difficulty:bossDifficulty,achievementRun:achievementSystem.runId,coffins:coffinStates.filter(c=>c.opened).map(c=>c.id)});
  player.hp=3;player.inv=Math.max(player.inv,1.5);notify(saved?'Контрольная точка достигнута':'Контрольная точка достигнута · хранилище недоступно, не закрывайте игру',4);configureBossMenu();
 }
 function persistActiveBoss(){
+ if(bossPractice)return;
  const saved=progressStore.load().bossCheckpoint;if(!saved||checkpoint.id!=='inquisitor-entry'||boss.dead)return;
  saved.clock=clock;saved.damage=damageTaken;achievementSystem.persist();progressStore.saveBossCheckpoint(saved);
 }
 function configureBossMenu(){
+ document.querySelector('#boss-test').disabled=!assetsReady;
  const p=progressStore.load();document.querySelector('#resume-boss').hidden=!p.bossCheckpoint;
  document.querySelector('#replay-boss').hidden=!p.boss.defeated;document.querySelector('#replay-boss').textContent='Инквизитор · '+Inquisitor.difficulties[bossDifficulty].label;document.querySelector('#boss-difficulty').value=bossDifficulty;
 }
+function startBossPractice(){
+ if(!assetsReady)return;reset();bossPractice=true;menuReturnState=null;
+ document.querySelector('#menu-resume').hidden=true;leverOpen=true;
+ checkpoint={id:'inquisitor-entry',x:57400,y:430};captureCheckpoint();resumeCheckpoint();escapeLeft=0;
+ overlay.classList.remove('defeat');document.querySelector('#main-menu').hidden=true;
+ notify('Тренировочный бой · Инквизитор',2);
+}
 function restoreBossEntry(replay=false,mode=null){
  if(!assetsReady)return;const p=progressStore.load(),entry=replay?p.bossEntry:p.bossCheckpoint;if(!entry)return;
- bossDifficulty=mode||bossDifficulty||entry.difficulty;progressStore.setBossDifficulty(bossDifficulty);reset();
+ bossPractice=false;bossDifficulty=mode||bossDifficulty||entry.difficulty;progressStore.setBossDifficulty(bossDifficulty);reset();
  checkpoint={...entry.checkpoint};snapshot=entry.snapshot;clock=entry.clock;damageTaken=entry.damage;
  for(const c of coffinStates)if(entry.coffins.includes(c.id)){c.opened=true;c.openTime=.8;}
  if(replay)achievementSystem.start();else achievementSystem.resume(entry.achievementRun);
@@ -158,9 +171,10 @@ function restoreBossEntry(replay=false,mode=null){
 }
 function recordBossVictory(){
  if(boss.rewardHandled)return;boss.rewardHandled=true;
+ if(bossPractice){victoryTime=clock;notify('Тренировочный бой завершён',3);return;}
  const claimed=achievementSystem.state.stats.inquisitorWins>0;
  const first=progressStore.completeBoss(boss.difficulty,claimed);if(first){score+=1000;bossDifficulty=progressStore.setBossDifficulty(boss.difficulty==='easy'?'normal':'hard');}
- achievementSystem.emit('enemy_killed',{id:'boss-inquisitor'});achievementSystem.emit('boss_defeated',{id:'hunter'});achievementSystem.emit('inquisitor_defeated',{difficulty:boss.difficulty});achievementSystem.emit('level_completed',{level:'level1'});achievementSystem.persist();
+ emitAchievement('enemy_killed',{id:'boss-inquisitor'});emitAchievement('boss_defeated',{id:'hunter'});emitAchievement('inquisitor_defeated',{difficulty:boss.difficulty});emitAchievement('level_completed',{level:'level1'});achievementSystem.persist();
  recordKill();victoryTime=clock;progressStore.save({time:clock,score,kills,damage:damageTaken});configureBossMenu();
  notify(first?'ИНКВИЗИТОР ПОВЕРЖЕН · +1000 МОНЕТ · ПОСЛЕДНИЙ УПЫРЬ':'ИНКВИЗИТОР ПОВЕРЖЕН · награда за первую победу уже получена',4);
 }
@@ -183,7 +197,7 @@ function updateEvents(dt){
    if(cp.spawnX>=checkpoint.x){checkpoint={id:cp.id,x:cp.spawnX,y:cp.y};captureCheckpoint();notify('ГРОБ ОТКРЫТ · ПРОБУЖДЕНИЕ СОХРАНЕНО');}
   }
  }
- for(const c of coins)if(!c.taken&&!(boss.engaged&&c.x>=boss.arenaStart&&c.x<boss.arenaEnd)&&activeNear(c.x)&&Math.hypot(player.x+20-c.x,player.y+player.h/2-c.y)<35){c.taken=true;score++;achievementSystem.emit('coin_collected',{id:'pickup-'+c.id,amount:1});}
+ for(const c of coins)if(!c.taken&&!(boss.engaged&&c.x>=boss.arenaStart&&c.x<boss.arenaEnd)&&activeNear(c.x)&&Math.hypot(player.x+20-c.x,player.y+player.h/2-c.y)<35){c.taken=true;score++;emitAchievement('coin_collected',{id:'pickup-'+c.id,amount:1});}
  for(const item of items)if(!item.taken&&activeNear(item.x)&&Math.hypot(player.x+20-item.x,player.y+player.h/2-item.y)<42){item.taken=true;player.rage=10;notify('КРОВАВАЯ ЯРОСТЬ — 10 секунд');}
  if(!towerPassed&&player.x>LEVEL1.timedSection.start&&player.x<LEVEL1.timedSection.end&&player.y<-150&&towerTimer===null){towerTimer=LEVEL1.timedSection.seconds;notify('Механизм запущен! Пройди галерею за 24 секунды.');}
  if(towerTimer!==null){towerTimer-=dt;if(player.x>=LEVEL1.timedSection.end){towerPassed=true;towerTimer=null;}else if(towerTimer<=0){damageTaken++;finish(false);}}
@@ -198,7 +212,7 @@ function update(dt){
  for(const s of statues)s.hurt=Math.max(0,s.hurt-dt);
  clock+=dt;banner.left=Math.max(0,banner.left-dt);player.inv=Math.max(0,player.inv-dt);player.rage=Math.max(0,player.rage-dt);player.attack=Math.max(0,player.attack-dt);player.cooldown=Math.max(0,player.cooldown-dt);
  updatePlatforms(dt);if(player.ground&&player.support){const p=platforms.find(p=>p.id===player.support);if(p?.active){player.x+=p.dx;player.y+=p.dy;}else{player.ground=false;player.support=null;}}
- setCrouch();const travelStartX=player.x;player.vx=(boss.state==='INTRO'?0:((keys.right?1:0)-(keys.left?1:0)))*(player.h<80?125:245);if(player.vx)player.face=Math.sign(player.vx);
+ setCrouch();const travelStartX=player.x;player.vx=(boss.state==='INTRO'?0:((keys.right?1:0)-(keys.left?1:0)))*(player.h<80?125:245)*(player.rage>0?1.25:1);if(player.vx)player.face=Math.sign(player.vx);
  if(boss.state!=='INTRO'&&keys.jump&&!jumpHeld&&player.ground&&!keys.crouch){achievementJump=true;jumpFires.clear();player.vy=-590;player.ground=false;player.support=null;}jumpHeld=keys.jump;
  if(boss.state!=='INTRO'&&keys.attack&&!attackHeld)punch();attackHeld=keys.attack;
  player.x=Math.max(0,Math.min(LEVEL1.width-player.w,player.x+player.vx*dt));
@@ -217,11 +231,11 @@ function trackAchievements(dt,startX,wasGrounded){
  const stationary=Math.abs(player.x-startX)<.001&&player.ground&&!keys.attack&&player.inv<=0;
  const safe=stationary&&!enemies.some(e=>!e.dead&&Math.abs(e.x-player.x)<260)&&!traps.some(t=>Math.abs(t.x-player.x)<300)&&!projectiles.some(p=>Math.abs(p.x-player.x)<350)&&boss.mode==='waiting';
  safeIdle=safe?safeIdle+dt:0;achievementClock+=dt;
- if(achievementClock>=1){achievementClock=0;achievementSystem.emit('player_moved',{x:player.x,safeSeconds:safeIdle});}
+ if(achievementClock>=1){achievementClock=0;emitAchievement('player_moved',{x:player.x,safeSeconds:safeIdle});}
  if(achievementJump&&!player.ground){for(const fire of traps)if(fire.type==='fire'&&fire.active){const b=CombatGeometry.bounds(CombatGeometry.fire(fire));if(player.x+player.w>b.x&&player.x<b.x+b.w&&player.y+player.h<b.y+3)jumpFires.add(fire.id);}}
- if(player.ground&&!wasGrounded){for(const id of jumpFires){const fire=traps.find(t=>t.id===id);if(fire&&player.x>=fire.x+fire.w)achievementSystem.emit('bonfire_jumped',{id});}jumpFires.clear();achievementJump=false;}
+ if(player.ground&&!wasGrounded){for(const id of jumpFires){const fire=traps.find(t=>t.id===id);if(fire&&player.x>=fire.x+fire.w)emitAchievement('bonfire_jumped',{id});}jumpFires.clear();achievementJump=false;}
 }
-function updateCamera(dt){camera=boss.engaged?Math.max(boss.arenaStart,Math.min(boss.arenaEnd-960,player.x-380)):Math.max(0,Math.min(LEVEL1.width-960,player.x-260));const target=Math.min(0,player.y-230);cameraY+=(target-cameraY)*Math.min(1,dt*7);}
+function updateCamera(dt){if(boss.engaged){camera=boss.arenaStart;cameraY=0;return;}camera=Math.max(0,Math.min(LEVEL1.width-960,player.x-260));const target=Math.min(0,player.y-230);cameraY+=(target-cameraY)*Math.min(1,dt*7);}
 function updateCutscene(dt){
  const startX=player.x;cutsceneTime+=dt;player.y=430-player.h;
  if(cutsceneTime>1&&cutsceneTime<4){const destination=boss.x-90;player.x+=(Math.sign(destination-player.x))*Math.min(Math.abs(destination-player.x),120*dt);}
@@ -269,7 +283,7 @@ function renderStatus(){
  const hint=hints.find(([key,text,a,b])=>!tutorialDone.has(key)&&player.x>=a&&player.x<b);ui.hint.textContent=hint?.[1]||'';ui.hint.hidden=!hint;
  ui.boss.hidden=!boss.engaged||state!=='playing';
  document.querySelector('#boss-health').max=boss.maxHp;document.querySelector('#boss-health').value=boss.hp;
- document.querySelector('#boss-health-value').textContent=`${boss.hp} / ${boss.maxHp} · ФАЗА ${boss.phase} · ${Inquisitor.difficulties[boss.difficulty].label}`;
+ document.querySelector('#boss-health-value').textContent=`${boss.hp} / ${boss.maxHp} · ФАЗА ${boss.phase} · ${Inquisitor.difficulties[boss.difficulty].label}${bossPractice?" · ТРЕНИРОВКА":""}`;
  document.querySelector('#boss-warning').textContent=Inquisitor.warning(boss);
  document.querySelector('#hunter-attention').value=boss.attention*100;document.querySelector('#hunter-attention-value').textContent=`ВНИМАНИЕ ОХОТНИКА ${Math.floor(boss.attention*100)}%`;
  ui.boss.dataset.vulnerable=String(Inquisitor.vulnerable(boss));
@@ -278,7 +292,7 @@ function renderStatus(){
  document.querySelector('#pause').textContent=paused?'Продолжить':'Пауза';
 }
 let accumulator=0;
-function frame(t){const dt=Math.min((t-last)/1000||0,.1);last=t;achievementSystem.tick(dt);if(typeof achievementUI!=='undefined')achievementUI.tick(dt);if(!paused){atmosphere.tick(dt);levelArt.tick(dt);accumulator=Math.min(accumulator+dt,.12);while(accumulator>=1/120){if(state==='playing')update(1/120);else if(state==='cutscene')updateCutscene(1/120);accumulator-=1/120;}}gameAudio.tick(dt,!paused&&!pageTurn.active&&state==='playing',player.ground&&Math.abs(player.vx)>0);draw();requestAnimationFrame(frame);}
+function frame(t){const dt=Math.min((t-last)/1000||0,.1);last=t;achievementSystem.tick(dt);if(typeof achievementUI!=='undefined')achievementUI.tick(dt);if(!paused){atmosphere.tick(dt);levelArt.tick(dt);accumulator=Math.min(accumulator+dt,.12);while(accumulator>=1/120){if(state==='playing')update(1/120);else if(state==='cutscene')updateCutscene(1/120);accumulator-=1/120;}}gameAudio.tick(dt,!paused&&state==='playing',!pageTurn.active&&player.ground&&Math.abs(player.vx)>0,boss.engaged);draw();requestAnimationFrame(frame);}
 function resize(){canvas.width=960*Math.min(devicePixelRatio||1,2);canvas.height=510*Math.min(devicePixelRatio||1,2);}resize();window.addEventListener('resize',resize);
 const physicalKeys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyF:'attack',ArrowDown:'crouch',KeyS:'crouch'};
 const mapping={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',' ':'jump',ArrowUp:'jump',w:'jump',W:'jump',f:'attack',F:'attack',ArrowDown:'crouch',s:'crouch'};
@@ -303,6 +317,7 @@ document.querySelector('#settings-sound').onclick=gameAudio.toggle;
 document.querySelector('#settings-panel').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSettings();}if(e.key==='Tab'){const controls=[...document.querySelector('#settings-panel').querySelectorAll('button,select')],first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
 
 window.addEventListener('pagehide',persistActiveBoss);
+document.querySelector('#boss-test').onclick=startBossPractice;
 document.querySelector('#resume-boss').onclick=()=>restoreBossEntry(false);
 document.querySelector('#replay-boss').onclick=()=>restoreBossEntry(true,bossDifficulty);
 document.querySelector('#boss-difficulty').value=bossDifficulty;

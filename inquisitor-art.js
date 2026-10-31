@@ -38,7 +38,7 @@ const InquisitorArt=(()=>{
   const image=images.arena;if(!image.complete)return;c.drawImage(image,0,0,image.naturalWidth,image.naturalHeight,0,-48,960,640);
   if(b.phase===3){c.fillStyle='#a52a1338';c.fillRect(0,0,960,510);for(let i=0;i<10;i++){const x=(i*173+time*18)%960,y=(time*38+i*57)%380;c.fillStyle='#e65e2333';c.fillRect(x,y,2+i%3,6+i%5);}}
  }
- function floor(c,b,camera){const x=Math.max(camera,b.arenaStart),w=Math.min(camera+960,b.arenaEnd)-x;if(w<=0)return;c.drawImage(images.arena,0,860,1536,164,x,430,w,82);if(b.phase===3){c.fillStyle='#b3381522';c.fillRect(x,430,w,80);}}
+ function floor(c,b){const x=b.arenaStart,w=b.arenaEnd-b.arenaStart;c.drawImage(images.arena,0,860,1536,164,x,430,w,82);if(b.phase===3){c.fillStyle='#b3381522';c.fillRect(x,430,w,80);}}
  function hazards(c,b){
   for(const z of b.zones){const warning=z.age<z.warning,active=z.age>=z.warning&&z.age<z.warning+z.activeTime;
    if(z.kind==='trap'){c.save();c.globalAlpha=warning?.5:1;object(c,active?2:1,z.x,z.y-16,z.w,38);c.restore();}
