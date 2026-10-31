@@ -64,7 +64,7 @@ function hurtEnemy(e,damage){if(e.dead)return;e.hp-=damage;e.hurt=.3;if(e.hp<=0)
 function swordHit(target){if(!player.swingSword||sword<=0)return false;sword--;score+=5;achievementSystem.emit('coin_collected',{id:'sword-'+target,amount:5});if(sword===0){player.swordBroke=true;atmosphere.burst(player.x+player.face*50,player.y+35,'sparks');}return true;}
 function punch(){
  if(player.cooldown>0||player.h<80)return;
- player.attack=.36;player.swordBroke=false;player.swingSword=sword>0;heroAnimator.strike(player.swingSword);achievementSystem.emit('player_attacked');safeIdle=0;gameAudio.effect('hit');player.cooldown=.42;tutorialDone.add('attack');const box=attackBox();
+ player.attack=.36;player.swordBroke=false;player.swingSword=sword>0;heroAnimator.strike(player.swingSword,player.rage>0);achievementSystem.emit('player_attacked');safeIdle=0;gameAudio.effect('hit');player.cooldown=.42;tutorialDone.add('attack');const box=attackBox();
  atmosphere.burst(box.x+box.w/2,box.y+20,'sparks');
  for(const e of enemies)if(!e.dead&&overlap(box,e)){const armed=swordHit(e.id+'-'+e.hp);hurtEnemy(e,armed?2:e.type==='helmet'?1:player.rage>0?2:1);}
  if(boss.mode==='reload'&&boss.inv<=0&&overlap(box,boss)){swordHit('boss-'+boss.hp);boss.hp--;boss.inv=1;atmosphere.burst(boss.x+36,boss.y+50,'sparks');if(boss.hp===0){boss.mode='defeated';boss.dead=true;boss.death=1.6;achievementSystem.emit('enemy_killed',{id:'boss-hunter'});achievementSystem.emit('boss_defeated',{id:'hunter'});recordKill();}else{boss.phase=4-boss.hp;boss.mode='attack';boss.shots=0;boss.timer=2.8;notify(`Охотник: фаза ${boss.phase}`);}}

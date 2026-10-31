@@ -145,7 +145,7 @@ test('run and jump sprite geometry stays uniformly scaled with valid frame crops
 
 test('attack reference poses play once and then return to locomotion',()=>{
  const run=game();run('heroAnimator.strike()');assert.equal(run('heroAnimator.pose().phase'),'attack');assert.equal(run('heroAnimator.pose().frame'),0);
- run('heroAnimator.update(.15,false,{ground:true,vy:0,travel:0})');assert.equal(run('heroAnimator.pose().frame'),5);
+ run('heroAnimator.update(.15,false,{ground:true,vy:0,travel:0})');assert.equal(run('heroAnimator.pose().frame'),3);
  run('heroAnimator.update(.25,false,{ground:true,vy:0,travel:0})');assert.equal(run('heroAnimator.pose().phase'),'stand');
 });
 test('old saved records migrate without the removed collectible field',()=>{
@@ -226,4 +226,16 @@ test('rage locomotion tracks sword inventory and expires cleanly; equipped idle 
  run('heroAnimator.setState({sword:false,rage:false})');assert.equal(run('heroAnimator.pose().clip'),null);
  run('heroAnimator.setState({sword:true,rage:true});heroAnimator.strike(true)');assert.equal(run('heroAnimator.pose().clip'),'sword');
  run('heroAnimator.reset()');assert.equal(run('heroAnimator.pose().clip'),null);
+});
+
+test('fist attacks play 8 normal or 10 rage frames once, preserving the selected attack and sword animation',()=>{
+ const run=game();
+ for(const [rage,count,clip] of [[false,8,'attack'],[true,10,'ragePunch']]){
+  run(`heroAnimator.reset();heroAnimator.strike(false,${rage})`);const frames=[];
+  for(let i=0;i<count;i++){assert.equal(run('heroAnimator.pose().clip'),clip);frames.push(run('heroAnimator.pose().frame'));run(`heroAnimator.update(${.36/count},false)`);}
+  assert.deepEqual(frames,Array.from({length:count},(_,i)=>i));run('heroAnimator.update(.01,false)');assert.equal(run('heroAnimator.pose().phase'),'stand');
+ }
+ run('heroAnimator.strike(false,true);heroAnimator.setState({sword:false,rage:false})');assert.equal(run('heroAnimator.pose().clip'),'ragePunch','finish the attack selected at its start');
+ run('heroAnimator.reset();heroAnimator.strike(true,true)');assert.equal(run('heroAnimator.pose().clip'),'sword');
+ run('heroAnimator.reset();sword=0;player.rage=10;player.cooldown=0;punch()');assert.equal(run('heroAnimator.pose().clip'),'ragePunch');assert.equal(run('player.cooldown'),.42);
 });
