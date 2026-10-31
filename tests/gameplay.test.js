@@ -203,3 +203,12 @@ test('coffins open and save once on first nearby pass, stay open on respawn, res
  run('start()');assert.equal(run('coffinStates.every(c=>!c.opened)'),true);
  run('player.y=350;updateEvents(0)');assert.equal(run('coffinStates[0].opened'),true);assert.equal(run('checkpoint.x'),70);
 });
+
+test('helmet garlic needs two ordinary hits even in rage, or one sword hit; a stomp cannot bypass armor',()=>{
+ const run=game();
+ run('const armored=enemies.find(e=>e.type==="helmet");player.x=armored.x-50;player.y=350;player.face=1;player.rage=10;punch()');
+ assert.equal(run('armored.hp'),1);assert.equal(run('armored.dead'),false);assert.ok(run('armored.hurt')>0);
+ run('player.cooldown=0;punch()');assert.equal(run('armored.dead'),true);assert.equal(run('armored.death'),.8);
+ run('start();const armedTarget=enemies.find(e=>e.type==="helmet");player.x=armedTarget.x-50;player.y=350;player.face=1;sword=5;punch()');assert.equal(run('armedTarget.dead'),true);assert.equal(run('sword'),4);
+ run('start();const stompTarget=enemies.find(e=>e.type==="helmet");enemies=[stompTarget];player.x=stompTarget.x;player.y=stompTarget.y-70;player.vy=200;updateEnemies(0,stompTarget.y-1)');assert.equal(run('stompTarget.hp'),1);assert.equal(run('stompTarget.dead'),false);assert.equal(run('player.vy'),-370);
+});

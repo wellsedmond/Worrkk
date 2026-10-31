@@ -1,11 +1,13 @@
 /* Extra actors reuse the Canvas renderer. SVGs are explicit replaceable art assets. */
 const levelArt=(()=>{
  const images={};const names=['helmet','hunter','coffin','stake','sword','gate','werewolf','tower'];
+ const helmetImage=new Image();helmetImage.src='assets/level1/helmet-garlic-atlas.png';
+ const helmetFrames={"idle":[{"x":20,"y":75,"w":218,"h":245,"pivotX":129.0,"pivotY":311},{"x":240,"y":75,"w":214,"h":245,"pivotX":347.0,"pivotY":311},{"x":460,"y":75,"w":215,"h":245,"pivotX":567.5,"pivotY":311},{"x":680,"y":75,"w":214,"h":245,"pivotX":787.0,"pivotY":311},{"x":900,"y":75,"w":192,"h":245,"pivotX":996.0,"pivotY":311},{"x":1095,"y":75,"w":217,"h":245,"pivotX":1203.5,"pivotY":311},{"x":1320,"y":75,"w":206,"h":245,"pivotX":1423.0,"pivotY":311},{"x":1532,"y":75,"w":226,"h":245,"pivotX":1645.0,"pivotY":311}],"move":[{"x":0,"y":375,"w":222,"h":194,"pivotX":140,"pivotY":560},{"x":222,"y":375,"w":222,"h":194,"pivotX":355,"pivotY":560},{"x":444,"y":375,"w":221,"h":194,"pivotX":576,"pivotY":560},{"x":665,"y":375,"w":222,"h":194,"pivotX":801,"pivotY":560},{"x":887,"y":375,"w":222,"h":194,"pivotX":1038,"pivotY":560},{"x":1109,"y":375,"w":221,"h":194,"pivotX":1257,"pivotY":560},{"x":1330,"y":375,"w":222,"h":194,"pivotX":1480,"pivotY":560},{"x":1552,"y":375,"w":222,"h":194,"pivotX":1698,"pivotY":560}],"damage":[{"x":10,"y":575,"w":220,"h":280,"pivotX":125,"pivotY":839},{"x":217,"y":575,"w":223,"h":280,"pivotX":330,"pivotY":839},{"x":438,"y":575,"w":214,"h":280,"pivotX":550,"pivotY":839},{"x":648,"y":575,"w":238,"h":280,"pivotX":765,"pivotY":839},{"x":884,"y":575,"w":212,"h":280,"pivotX":980,"pivotY":839},{"x":1090,"y":575,"w":225,"h":280,"pivotX":1200,"pivotY":839},{"x":1310,"y":575,"w":234,"h":280,"pivotX":1430,"pivotY":839},{"x":1530,"y":575,"w":244,"h":280,"pivotX":1650,"pivotY":839}]};
  const propsImage=new Image();propsImage.src='assets/level1/props-atlas.png';
  const propFrames={"fire":[{"x":5,"y":0,"w":207,"h":198},{"x":219,"y":0,"w":207,"h":198},{"x":432,"y":0,"w":207,"h":198},{"x":642,"y":0,"w":207,"h":198},{"x":852,"y":0,"w":207,"h":198},{"x":1065,"y":0,"w":207,"h":198},{"x":1273,"y":0,"w":207,"h":198}],"coin":[{"x":18,"y":199,"w":160,"h":155,"pivotX":98.5,"pivotY":276},{"x":201,"y":199,"w":160,"h":155,"pivotX":281,"pivotY":276},{"x":369,"y":199,"w":160,"h":155,"pivotX":449,"pivotY":276},{"x":534,"y":199,"w":160,"h":155,"pivotX":613.5,"pivotY":276},{"x":712,"y":199,"w":160,"h":155,"pivotX":792.5,"pivotY":276},{"x":896,"y":199,"w":160,"h":155,"pivotX":975.5,"pivotY":276},{"x":1080,"y":199,"w":160,"h":155,"pivotX":1159.5,"pivotY":276},{"x":1258,"y":199,"w":160,"h":155,"pivotX":1338,"pivotY":276},{"x":1438,"y":199,"w":160,"h":155,"pivotX":1518.5,"pivotY":276},{"x":1612,"y":199,"w":160,"h":155,"pivotX":1692,"pivotY":276},{"x":1796,"y":199,"w":160,"h":155,"pivotX":1875.5,"pivotY":276},{"x":1988,"y":199,"w":160,"h":155,"pivotX":2068,"pivotY":276}],"garlic":[{"x":10,"y":355,"w":163,"h":150,"pivotX":95,"pivotY":430},{"x":175,"y":355,"w":230,"h":150,"pivotX":326,"pivotY":430},{"x":405,"y":355,"w":241,"h":150,"pivotX":568,"pivotY":430},{"x":645,"y":355,"w":258,"h":150,"pivotX":827,"pivotY":430},{"x":905,"y":355,"w":252,"h":150,"pivotX":1083,"pivotY":430},{"x":1158,"y":355,"w":258,"h":150,"pivotX":1339,"pivotY":430}],"coffin":[{"x":16,"y":502,"w":164,"h":222,"pivotX":96,"pivotY":700},{"x":205,"y":502,"w":165,"h":222,"pivotX":287,"pivotY":700},{"x":391,"y":502,"w":160,"h":222,"pivotX":474,"pivotY":700},{"x":573,"y":502,"w":156,"h":222,"pivotX":655,"pivotY":700},{"x":741,"y":502,"w":177,"h":222,"pivotX":843,"pivotY":700},{"x":932,"y":502,"w":168,"h":222,"pivotX":1025,"pivotY":700},{"x":1108,"y":502,"w":174,"h":222,"pivotX":1203,"pivotY":700},{"x":1290,"y":502,"w":210,"h":222,"pivotX":1416,"pivotY":700}]};
  const crossbowImage=new Image();crossbowImage.src='assets/level1/crossbow-atlas.png';
  const crossbowFrames=[{"x":0,"y":160,"w":222,"h":356,"muzzleX":22,"muzzleY":270},{"x":222,"y":160,"w":222,"h":356,"muzzleX":242,"muzzleY":270},{"x":444,"y":160,"w":221,"h":356,"muzzleX":466,"muzzleY":270},{"x":665,"y":160,"w":222,"h":356,"muzzleX":688,"muzzleY":270},{"x":887,"y":160,"w":222,"h":356,"muzzleX":910,"muzzleY":270},{"x":1109,"y":160,"w":221,"h":356,"muzzleX":1128,"muzzleY":270},{"x":1330,"y":160,"w":222,"h":356,"muzzleX":1350,"muzzleY":270},{"x":1552,"y":160,"w":222,"h":356,"muzzleX":1564,"muzzleY":270}],boltFrames=[{"x":0,"y":695,"w":222,"h":74},{"x":222,"y":695,"w":222,"h":74},{"x":444,"y":695,"w":221,"h":74},{"x":665,"y":695,"w":222,"h":74},{"x":887,"y":695,"w":222,"h":74},{"x":1109,"y":695,"w":221,"h":74},{"x":1330,"y":695,"w":222,"h":74},{"x":1552,"y":695,"w":222,"h":74}];
- const ready=Promise.all([propsImage.decode(),crossbowImage.decode(),...names.map(async name=>{const img=new Image();img.src=`assets/level1/${name}.svg`;await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);images[name]=c;})]);
+ const ready=Promise.all([helmetImage.decode(),propsImage.decode(),crossbowImage.decode(),...names.map(async name=>{const img=new Image();img.src=`assets/level1/${name}.svg`;await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);images[name]=c;})]);
  let zoneNow=0,zoneBefore=0,fade=1;
  const visible=(x,camera,w=120)=>x+w>camera-80&&x<camera+1040;
  function sprite(c,name,x,y,w,h){if(images[name])c.drawImage(images[name],x,y,w,h);}
@@ -32,7 +34,18 @@ const levelArt=(()=>{
   if(fade<1){c.save();c.globalAlpha=1-fade;drawZone(c,zoneBefore,camera,cameraY,time,cinematic);c.restore();}
   c.save();c.globalAlpha=fade;drawZone(c,zone,camera,cameraY,time,cinematic);c.restore();
  }
- function enemy(c,e,time){c.save();if(e.dead){c.globalAlpha=e.death*2;c.translate(e.x+19,e.y+42);c.rotate((.5-e.death)*5);sprite(c,'helmet',-24,-46,48,46);}else sprite(c,'helmet',e.x-4,e.y-5,48,48);c.restore();}
+ function helmetPose(e,time){
+  if(e.dead)return {clip:'damage',frame:Math.min(7,Math.floor((.8-e.death)/.8*8+1e-7)),scale:.26};
+  if(e.hurt>0)return {clip:'damage',frame:Math.min(2,1+Math.floor((.3-e.hurt)/.15+1e-7)),scale:.26};
+  return {clip:'move',frame:Math.floor(time*12+e.origin*.01)%8,scale:.3};
+ }
+ function enemy(c,e,time){
+  if(!helmetImage.complete||!helmetImage.naturalWidth)return;
+  const pose=helmetPose(e,time),f=helmetFrames[pose.clip][pose.frame];
+  c.save();c.translate(e.x+e.w/2,e.y+e.h);if(e.dir<0)c.scale(-1,1);
+  c.drawImage(helmetImage,f.x,f.y,f.w,f.h,(f.x-f.pivotX)*pose.scale,(f.y-f.pivotY)*pose.scale,f.w*pose.scale,f.h*pose.scale);c.restore();
+ }
+
  function heroEffects(c,p,time,cinematic,state,sword){
   if(p.rage>0){glow(c,11,-61,20,'#ff203b70');oval(c,10,-62,2.6,1.8,'#ff243b');for(let i=0;i<4;i++)oval(c,25+Math.sin(time*8+i)*5,-30+Math.cos(time*7+i)*8,1.8,1.8,'#ff405a');}
   const pose=heroAnimator.pose();
@@ -89,5 +102,5 @@ const levelArt=(()=>{
   if(visible(LEVEL1.exitX,camera,250)){const openness=s.state==='cutscene'?Math.min(1,Math.max(0,(s.cutsceneTime-4)/4)):s.state==='win'?1:0;sprite(c,'gate',LEVEL1.exitX,180,220,250);c.fillStyle='#17112b';c.fillRect(LEVEL1.exitX+100-openness*65,290,openness*130,135);}
   if(s.state==='cutscene'&&s.cutsceneTime<4){const kx=s.cutsceneTime<2?boss.x+80:player.x+48,ky=s.cutsceneTime<2?420:player.y+40;oval(c,kx,ky,10,10,'#e9c36b');line(c,[[kx+7,ky],[kx+39,ky],[kx+39,ky+9]],'#e9c36b',5);}
  }
- return {ready,tick,background,world,enemy,heroEffects,crossbowFrame,coin,garlic,propFrame};
+ return {ready,tick,background,world,enemy,heroEffects,crossbowFrame,coin,garlic,propFrame,helmetPose};
 })();

@@ -17,7 +17,7 @@ function notify(text,seconds=3){banner={text,left:seconds};}
 function makeWorld(){
  groundPlatforms=LEVEL1.ground.map(toPlatform);ledgePlatforms=LEVEL1.ledges.map(toPlatform);platforms=[...groundPlatforms,...ledgePlatforms];
  coins=LEVEL1.coins.map(c=>({...c,taken:false}));items=LEVEL1.items.map(c=>({...c,taken:false}));
- enemies=LEVEL1.enemies.map(e=>({...e,origin:e.x,baseY:e.y,w:38,h:42,dir:1,hp:e.type==='helmet'?2:1,dead:false,death:0,vy:0}));
+ enemies=LEVEL1.enemies.map(e=>({...e,origin:e.x,baseY:e.y,w:38,h:42,dir:1,hp:e.type==='helmet'?2:1,dead:false,death:0,hurt:0,vy:0}));
  traps=LEVEL1.traps.map(t=>({...t,phase:0,active:t.type==='fire',warn:false,shotTime:-1}));
  boss={...LEVEL1.boss,mode:'waiting',phase:1,shots:0,timer:0,dead:false,death:0,inv:0,shotTime:-1,shotDir:-1,retreat:0,retreatStart:LEVEL1.boss.x,targetX:LEVEL1.boss.x};projectiles=[];
 }
@@ -59,13 +59,14 @@ function updatePlatforms(dt){for(const p of ledgePlatforms){const oldX=p[0],oldY
  if(p.collapse>=0){p.collapse+=dt;if(p.collapse>=.8){p.active=false;p.restore+=dt;if(p.restore>4){p.active=true;p.collapse=-1;p.restore=0;}}}p.dx=p[0]-oldX;p.dy=p[1]-oldY;}}
 function attackBox(){const armed=player.attack>0?player.swingSword:sword>0;const reach=armed?96:63;return {x:player.face>0?player.x+player.w-5:player.x-reach+5,y:player.y+8,w:reach,h:Math.max(40,player.h-12)};}
 function recordKill(){kills++;if(kills%10===0){sword=5;swordRewards++;notify('Меч получен! Прочность: 5/5');}}
-function defeatEnemy(e){if(e.dead)return;e.dead=true;e.death=.5;score+=e.type==='helmet'?3:1;achievementSystem.emit('enemy_killed',{id:e.id});if(e.type==='garlic')achievementSystem.emit('garlic_destroyed',{id:e.id});achievementSystem.emit('coin_collected',{id:'kill-'+e.id,amount:e.type==='helmet'?3:1});recordKill();atmosphere.burst(e.x+19,e.y+20,'garlic');}
+function defeatEnemy(e){if(e.dead)return;e.dead=true;e.death=e.type==='helmet'?.8:.5;e.hurt=0;score+=e.type==='helmet'?3:1;achievementSystem.emit('enemy_killed',{id:e.id});if(e.type==='garlic')achievementSystem.emit('garlic_destroyed',{id:e.id});achievementSystem.emit('coin_collected',{id:'kill-'+e.id,amount:e.type==='helmet'?3:1});recordKill();atmosphere.burst(e.x+19,e.y+20,'garlic');}
+function hurtEnemy(e,damage){if(e.dead)return;e.hp-=damage;e.hurt=.3;if(e.hp<=0)defeatEnemy(e);}
 function swordHit(target){if(!player.swingSword||sword<=0)return false;sword--;score+=5;achievementSystem.emit('coin_collected',{id:'sword-'+target,amount:5});if(sword===0){player.swordBroke=true;atmosphere.burst(player.x+player.face*50,player.y+35,'sparks');}return true;}
 function punch(){
  if(player.cooldown>0||player.h<80)return;
  player.attack=.36;player.swordBroke=false;player.swingSword=sword>0;heroAnimator.strike(player.swingSword);achievementSystem.emit('player_attacked');safeIdle=0;gameAudio.effect('hit');player.cooldown=.42;tutorialDone.add('attack');const box=attackBox();
  atmosphere.burst(box.x+box.w/2,box.y+20,'sparks');
- for(const e of enemies)if(!e.dead&&overlap(box,e)){const armed=swordHit(e.id+'-'+e.hp);e.hp-=armed||player.rage>0?2:1;if(e.hp<=0)defeatEnemy(e);}
+ for(const e of enemies)if(!e.dead&&overlap(box,e)){const armed=swordHit(e.id+'-'+e.hp);hurtEnemy(e,armed?2:e.type==='helmet'?1:player.rage>0?2:1);}
  if(boss.mode==='reload'&&boss.inv<=0&&overlap(box,boss)){swordHit('boss-'+boss.hp);boss.hp--;boss.inv=1;atmosphere.burst(boss.x+36,boss.y+50,'sparks');if(boss.hp===0){boss.mode='defeated';boss.dead=true;boss.death=1.6;achievementSystem.emit('enemy_killed',{id:'boss-hunter'});achievementSystem.emit('boss_defeated',{id:'hunter'});recordKill();}else{boss.phase=4-boss.hp;boss.mode='attack';boss.shots=0;boss.timer=2.8;notify(`Охотник: фаза ${boss.phase}`);}}
  if(player.swordBroke&&sword===0)notify(`Меч сломан. До следующего: ${10-kills%10} побед`);
 }
@@ -87,11 +88,11 @@ function updateTraps(dt){
  }
  projectiles=projectiles.filter(p=>!p.dead&&p.life<5&&Math.abs(p.x-player.x)<1400);
 }
-function updateEnemies(dt,prevBottom){for(const e of enemies){if(e.dead){e.death=Math.max(0,e.death-dt);continue;}if(!activeNear(e.origin))continue;
+function updateEnemies(dt,prevBottom){for(const e of enemies){e.hurt=Math.max(0,(e.hurt||0)-dt);if(e.dead){e.death=Math.max(0,e.death-dt);continue;}if(!activeNear(e.origin))continue;
  e.x+=e.dir*(e.type==='helmet'?75:65)*dt;if(Math.abs(e.x-e.origin)>e.range)e.dir*=-1;
  if(e.flying)e.y=e.baseY+Math.sin(clock*2.2+e.origin)*20;
  if(e.type==='helmet'){e.y=e.baseY-Math.max(0,Math.sin(clock*1.8+e.origin))*28;}
- if(overlap(player,e)){if(player.vy>0&&prevBottom<e.y+12){defeatEnemy(e);player.vy=-370;}else hit();}
+ if(overlap(player,e)){if(player.vy>0&&prevBottom<e.y+12){if(e.type==='helmet')hurtEnemy(e,1);else defeatEnemy(e);player.vy=-370;}else hit();}
 }}
 function updateBoss(dt){
  if(boss.shotTime>=0){boss.shotTime+=dt;if(boss.shotTime>=.6)boss.shotTime=-1;}
