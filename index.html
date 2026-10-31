@@ -52,13 +52,23 @@
       <h2>UPYR <span>RUN</span></h2>
       <div class="menu-subtitle">Проклятая дорога к СКА Арене</div><p>Кубок Вечной Ночи ждёт своего хозяина.</p>
       <button id="play" disabled><span aria-hidden="true">▶</span> Новая игра</button>
-      <button id="boss-test" disabled>Босс</button><button id="resume-boss" hidden>Продолжить у арены</button><button id="replay-boss" hidden>Инквизитор · Повторить бой</button><button id="menu-resume" hidden>▶ Продолжить</button><button id="continue" hidden>Продолжить у гроба</button><button id="main-menu" hidden>Главное меню</button>
+      <button id="boss-test" disabled><svg class="boss-lock" viewBox="0 0 20 24" aria-hidden="true"><path d="M5 10V6a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/><rect x="2" y="10" width="16" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 14v4" stroke="currentColor" stroke-width="2"/></svg> Босс</button><button id="resume-boss" hidden>Продолжить у арены</button><button id="replay-boss" hidden>Инквизитор · Повторить бой</button><button id="menu-resume" hidden>▶ Продолжить</button><button id="continue" hidden>Продолжить у гроба</button><button id="main-menu" hidden>Главное меню</button>
       <button id="achievements-open">♜ &nbsp; Достижения</button><button id="settings-open">⚙ &nbsp; Настройки</button><div class="menu-hero" aria-hidden="true"><img src="assets/hero.png" alt=""></div>
       <span class="menu-hint">Стрелки — движение · Пробел — прыжок · F — удар · ↓ — присесть</span>
     </div>
   </section>
   <footer><span>← → / A D — бег · Пробел — прыжок · F — удар · ↓ / S — присесть</span><span>ЧЕСНОК НЕ ДРЕМЛЕТ. ТЫ ТОЖЕ.</span></footer>
   <nav aria-label="Управление"><div><button data-key="left" aria-label="Влево">←</button><button data-key="right" aria-label="Вправо">→</button></div><div class="actions"><button data-key="crouch" aria-label="Присесть">Присесть</button><button data-key="attack" aria-label="Удар">Удар</button><button data-key="jump" aria-label="Прыжок">Прыжок <span aria-hidden="true">↑</span></button></div></nav>
+<section id="boss-access-panel" role="dialog" aria-modal="true" aria-labelledby="boss-access-title" aria-describedby="boss-access-note" hidden>
+  <form id="boss-access-form">
+    <h2 id="boss-access-title">Доступ к боссу</h2>
+    <p id="boss-access-note">Упс, если ты не разработчик, то пройди уровень и увидишь босса</p>
+    <label for="boss-password">Пароль</label>
+    <input id="boss-password" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="boss-password-error">
+    <p id="boss-password-error" role="alert" hidden>Неверный пароль</p>
+    <div class="boss-access-actions"><button type="submit" id="boss-access-submit">Войти</button><button type="button" id="boss-access-cancel">Отмена</button></div>
+  </form>
+</section>
 <section id="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden><div class="achievement-heading"><h2 id="settings-title">Настройки</h2><button id="settings-close">Закрыть ×</button></div><label class="difficulty-label" for="boss-difficulty">Сложность Инквизитора · следующая попытка</label><select id="boss-difficulty"><option value="easy">Легко · 18 HP</option><option value="normal" selected>Нормально · 25 HP</option><option value="hard">Сложно · 35 HP</option></select><p>Звуки ночи</p><button id="settings-sound">Переключить звук</button><p>← → / A D — движение<br>Пробел / ↑ / W — прыжок<br>F — удар · ↓ / S — присесть<br>Escape — пауза</p><small>Звук включается после нажатия. Ваш выбор сохраняется.</small></section>
 <section id="achievements-panel" role="dialog" aria-modal="true" aria-labelledby="achievements-title" hidden>
  <div class="achievement-heading"><div><small>ЛЕТОПИСЬ ВЕЧНОЙ НОЧИ</small><h2 id="achievements-title">Достижения</h2></div><button id="close-achievements" aria-label="Закрыть достижения">Закрыть ×</button></div>

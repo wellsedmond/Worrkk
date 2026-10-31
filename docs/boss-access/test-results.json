@@ -1,0 +1,17 @@
+{
+  "unitTests": 79,
+  "passed": 79,
+  "browser": {
+    "hosted": "passed",
+    "offline": "passed",
+    "lockIcon": true,
+    "notice": "Упс, если ты не разработчик, то пройди уровень и увидишь босса",
+    "wrongPasswordBlocked": true,
+    "correctPasswordStartsPractice": true,
+    "passwordCleared": true,
+    "enterEscapeFocusTrap": "passed",
+    "normalCampaignBossUnchanged": true,
+    "mobileWidth": 390
+  },
+  "staticArenaRegression": "passed"
+}

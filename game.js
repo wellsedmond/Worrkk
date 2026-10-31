@@ -154,12 +154,12 @@ function configureBossMenu(){
  const p=progressStore.load();document.querySelector('#resume-boss').hidden=!p.bossCheckpoint;
  document.querySelector('#replay-boss').hidden=!p.boss.defeated;document.querySelector('#replay-boss').textContent='Инквизитор · '+Inquisitor.difficulties[bossDifficulty].label;document.querySelector('#boss-difficulty').value=bossDifficulty;
 }
-function startBossPractice(){
- if(!assetsReady)return;reset();bossPractice=true;menuReturnState=null;
+function startBossPractice(password){
+ if(password!=='admin'||!assetsReady)return false;reset();bossPractice=true;menuReturnState=null;
  document.querySelector('#menu-resume').hidden=true;leverOpen=true;
  checkpoint={id:'inquisitor-entry',x:57400,y:430};captureCheckpoint();resumeCheckpoint();escapeLeft=0;
  overlay.classList.remove('defeat');document.querySelector('#main-menu').hidden=true;
- notify('Тренировочный бой · Инквизитор',2);
+ notify('Тренировочный бой · Инквизитор',2);return true;
 }
 function restoreBossEntry(replay=false,mode=null){
  if(!assetsReady)return;const p=progressStore.load(),entry=replay?p.bossEntry:p.bossCheckpoint;if(!entry)return;
@@ -297,7 +297,7 @@ function resize(){canvas.width=960*Math.min(devicePixelRatio||1,2);canvas.height
 const physicalKeys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyF:'attack',ArrowDown:'crouch',KeyS:'crouch'};
 const mapping={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',' ':'jump',ArrowUp:'jump',w:'jump',W:'jump',f:'attack',F:'attack',ArrowDown:'crouch',s:'crouch'};
 function releaseKeys(){for(const key in keys)keys[key]=false;}
-window.addEventListener('keydown',e=>{if(!document.querySelector('#achievements-panel').hidden||!document.querySelector('#settings-panel').hidden)return;if(e.target.matches?.('button,input,textarea')&&e.key===' ')return;const key=physicalKeys[e.code]||mapping[e.key];if(key){e.preventDefault();keys[key]=true;}if(e.code==='Escape'&&state==='playing')paused=!paused;});
+window.addEventListener('keydown',e=>{if(!document.querySelector('#achievements-panel').hidden||!document.querySelector('#settings-panel').hidden||!document.querySelector('#boss-access-panel').hidden)return;if(e.target.matches?.('button,input,textarea')&&e.key===' ')return;const key=physicalKeys[e.code]||mapping[e.key];if(key){e.preventDefault();keys[key]=true;}if(e.code==='Escape'&&state==='playing')paused=!paused;});
 window.addEventListener('keyup',e=>{const key=physicalKeys[e.code]||mapping[e.key];if(key)keys[key]=false;});
 window.addEventListener('blur',()=>{releaseKeys();if(state==='playing')paused=true;});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){persistActiveBoss();releaseKeys();if(state==='playing')paused=true;}});
@@ -317,7 +317,30 @@ document.querySelector('#settings-sound').onclick=gameAudio.toggle;
 document.querySelector('#settings-panel').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSettings();}if(e.key==='Tab'){const controls=[...document.querySelector('#settings-panel').querySelectorAll('button,select')],first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
 
 window.addEventListener('pagehide',persistActiveBoss);
-document.querySelector('#boss-test').onclick=startBossPractice;
+let bossAccessPaused=false;
+function openBossAccess(){
+ bossAccessPaused=paused;paused=true;releaseKeys();
+ document.querySelector('#boss-access-panel').hidden=false;
+ const input=document.querySelector('#boss-password');input.value='';input.setAttribute('aria-invalid','false');
+ document.querySelector('#boss-password-error').hidden=true;input.focus?.();
+}
+function closeBossAccess(restorePause=true){
+ document.querySelector('#boss-access-panel').hidden=true;document.querySelector('#boss-password').value='';
+ document.querySelector('#boss-password-error').hidden=true;if(restorePause)paused=bossAccessPaused;
+ releaseKeys();document.querySelector('#boss-test').focus?.();
+}
+document.querySelector('#boss-test').onclick=openBossAccess;
+document.querySelector('#boss-access-cancel').onclick=()=>closeBossAccess();
+document.querySelector('#boss-access-form').onsubmit=e=>{
+ e.preventDefault();const input=document.querySelector('#boss-password'),password=input.value;
+ if(password!=='admin'){document.querySelector('#boss-password-error').hidden=false;input.setAttribute('aria-invalid','true');input.focus?.();input.select?.();return;}
+ closeBossAccess(false);startBossPractice(password);
+};
+document.querySelector('#boss-password').addEventListener('input',()=>{document.querySelector('#boss-password-error').hidden=true;document.querySelector('#boss-password').setAttribute('aria-invalid','false');});
+document.querySelector('#boss-access-panel').addEventListener('keydown',e=>{
+ if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeBossAccess();}
+ if(e.key==='Tab'){const controls=[...document.querySelector('#boss-access-panel').querySelectorAll('input,button')],first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+});
 document.querySelector('#resume-boss').onclick=()=>restoreBossEntry(false);
 document.querySelector('#replay-boss').onclick=()=>restoreBossEntry(true,bossDifficulty);
 document.querySelector('#boss-difficulty').value=bossDifficulty;

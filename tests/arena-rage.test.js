@@ -1,12 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createGame} from './harness.js';
+test('direct boss practice requires the exact developer password',()=>{
+ const {run}=createGame();assert.equal(run('startBossPractice()'),false);assert.equal(run('startBossPractice("wrong")'),false);assert.equal(run('startBossPractice("ADMIN")'),false);assert.equal(run('bossPractice'),false);assert.equal(run('boss.engaged'),false);
+ assert.equal(run('startBossPractice("admin")'),true);assert.equal(run('bossPractice&&boss.engaged'),true);
+});
 test('boss camera and arena remain fixed when player crosses either side or jumps',()=>{
- const {run}=createGame();run('startBossPractice()');assert.equal(run('boss.arenaEnd-boss.arenaStart'),960);
+ const {run}=createGame();run('startBossPractice("admin")');assert.equal(run('boss.arenaEnd-boss.arenaStart'),960);
  for(const [dx,y] of [[50,350],[500,220],[880,350]]){run(`player.x=boss.arenaStart+${dx};player.y=${y};updateCamera(.1)`);assert.equal(run('camera'),run('boss.arenaStart'));assert.equal(run('cameraY'),0);}
 });
 test('boss practice preserves campaign checkpoint, records and achievements through retry and victory',()=>{
- const {run}=createGame();run('score=47;saveBossEntry();const savedProgress=JSON.stringify(progressStore.load());const savedStats=JSON.stringify(achievementSystem.state);startBossPractice();player.hp=1;player.inv=0;hit();resumeCheckpoint()');assert.equal(run('bossPractice'),true);assert.equal(run('player.hp'),3);
+ const {run}=createGame();run('score=47;saveBossEntry();const savedProgress=JSON.stringify(progressStore.load());const savedStats=JSON.stringify(achievementSystem.state);startBossPractice("admin");player.hp=1;player.inv=0;hit();resumeCheckpoint()');assert.equal(run('bossPractice'),true);assert.equal(run('player.hp'),3);
  run('boss.hp=0;Inquisitor.enter(boss,"VICTORY");completeBossBattle();updateCutscene(8);persistActiveBoss()');assert.equal(run('state'),'win');assert.equal(run('JSON.stringify(progressStore.load())'),run('savedProgress'));assert.equal(run('JSON.stringify(achievementSystem.state)'),run('savedStats'));
 });
 test('rage adds exactly 25 percent movement speed on ground, in air and when crouching',()=>{

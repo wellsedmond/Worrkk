@@ -25,6 +25,6 @@ test('projectiles start at their mirrored weapon or hand socket in both directio
  }
 });
 test('victory clears the last attack pose and hit transparency before the approach scene',()=>{
- const {run}=createGame();run('startBossPractice();player.attack=.3;player.inv=1;player.cooldown=.4;heroAnimator.strike(true);boss.hp=0;Inquisitor.enter(boss,"VICTORY");completeBossBattle()');
+ const {run}=createGame();run('startBossPractice("admin");player.attack=.3;player.inv=1;player.cooldown=.4;heroAnimator.strike(true);boss.hp=0;Inquisitor.enter(boss,"VICTORY");completeBossBattle()');
  assert.equal(run('state'),'cutscene');assert.equal(run('player.attack'),0);assert.equal(run('player.inv'),0);assert.equal(run('player.cooldown'),0);assert.notEqual(run('heroAnimator.pose().phase'),'attack');
 });

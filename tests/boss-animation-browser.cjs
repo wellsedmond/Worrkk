@@ -5,7 +5,7 @@ const server=spawn(process.execPath,['server.js'],{cwd:path.resolve(__dirname,'.
  browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const route of ['/','/Worrkk.html']){
   const context=await browser.newContext({viewport:{width:1280,height:960}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('https://telegram.org/**',r=>r.fulfill({body:''}));
-  await page.goto('http://127.0.0.1:3155'+route);await page.waitForFunction(()=>assetsReady);await page.click('#boss-test');await page.click('#pause');
+  await page.goto('http://127.0.0.1:3155'+route);await page.waitForFunction(()=>assetsReady);await page.click('#boss-test');await page.fill('#boss-password','admin');await page.click('#boss-access-submit');await page.click('#pause');
   const results=[];
   for(const dir of [-1,1])for(const [attack,at,slot]of [['volley',.85,'high'],['volley',1.95,'high'],['volley',3.05,'high'],['volley',.85,'low'],['combo',.8,'high'],['frenzy',2.05,'high'],['frenzy',2.8,'high'],['garlic',.65,'garlic'],['grenade',.7,'grenade'],['frenzy',3.55,'grenade'],['charge',4,'energy']]){
    const result=await page.evaluate(({dir,attack,at,slot})=>{
