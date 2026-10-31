@@ -20,10 +20,10 @@ function auth(token='test-token',id=123,when=Math.floor(Date.now()/1000)){
  const secret=createHmac('sha256','WebAppData').update(token).digest();p.set('hash',createHmac('sha256',secret).update(check).digest('hex'));return p.toString();
 }
 async function request(api,body,headers={}){const req=Readable.from([JSON.stringify(body)]);req.method='POST';req.headers={'content-type':'application/json',host:'localhost',...headers};let status,answer;const res={writeHead:s=>status=s,end:s=>answer=JSON.parse(s)};await api(req,res);return {status,answer};}
-test('24 configured achievements, 22 attainable, separate rewards and six exact coin tiers',()=>{
- assert.equal(c.definitions.length,24);assert.equal(c.definitions.filter(d=>d.active).length,22);
+test('25 configured achievements, 23 attainable, separate rewards and six exact coin tiers',()=>{
+ assert.equal(c.definitions.length,25);assert.equal(c.definitions.filter(d=>d.active).length,23);
  assert.deepEqual(c.definitions.filter(d=>d.category==='coins').map(d=>d.reward),[10,25,50,75,100,150]);
- assert.equal(new Set(c.definitions.map(d=>d.id)).size,24);
+ assert.equal(new Set(c.definitions.map(d=>d.id)).size,25);
 });
 test('coin journal counts lifetime awards, duplicate operations and retries exactly once across reload',()=>{
  const d=driver();d.send('run_started',{level:'level1'});const event=d.send('coin_collected',{id:'coin-a',amount:100}).event;

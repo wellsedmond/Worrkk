@@ -8,11 +8,13 @@
   <link rel="stylesheet" href="/style.css">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
   <script src="/level1.js" defer></script>
+  <script src="/inquisitor.js" defer></script>
   <script src="/progress.js" defer></script>
   <script src="/sound.js" defer></script>
   <script src="/parallax.js" defer></script>
   <script src="/atmosphere.js" defer></script>
   <script src="/level-art.js" defer></script>
+  <script src="/inquisitor-art.js" defer></script>
   <script src="/hero-animation.js" defer></script>
   <script src="/achievements-core.js" defer></script>
 <script src="/achievements.js" defer></script>
@@ -39,7 +41,7 @@
       <span class="hud-divider"></span><span class="stat"><small>ПОБЕЖДЕНО</small><b id="kill-count">0</b></span><span class="stat"><small>ВРЕМЯ</small><b id="time-count">0:00</b></span>
     </div>
     <div id="sword-hud" role="status">До меча: 10 врагов</div>
-    <div id="zone-name" class="stage-caption">1/5 · Пробуждение Упыря</div><div id="banner" role="status" hidden></div><div id="tutorial" hidden></div><div id="boss-hud" hidden></div><div id="rage-meter" hidden></div><div id="escape-timer"></div>
+    <div id="zone-name" class="stage-caption">1/5 · Пробуждение Упыря</div><div id="banner" role="status" hidden></div><div id="tutorial" hidden></div><div id="boss-hud" hidden role="group" aria-label="Здоровье Инквизитора"><strong>ИНКВИЗИТОР — ПОСЛЕДНИЙ ОХОТНИК</strong><span id="boss-health-value"></span><progress id="boss-health" max="25" value="25" aria-label="Здоровье босса"></progress><span id="boss-warning" role="status"></span><div class="attention-row"><small id="hunter-attention-value">ВНИМАНИЕ ОХОТНИКА</small><progress id="hunter-attention" max="100" value="0" aria-label="Внимание охотника"></progress></div></div><div id="rage-meter" hidden></div><div id="escape-timer"></div>
     <div id="achievement-toast" role="status" hidden></div>
     <div id="overlay">
       <div class="menu-emblem" aria-hidden="true"><span>✦</span>†<span>✦</span></div><svg class="menu-bat" aria-hidden="true"><use href="#bat-icon"/></svg>
@@ -47,17 +49,17 @@
       <h2>UPYR <span>RUN</span></h2>
       <div class="menu-subtitle">Проклятая дорога к СКА Арене</div><p>Кубок Вечной Ночи ждёт своего хозяина.</p>
       <button id="play" disabled><span aria-hidden="true">▶</span> Новая игра</button>
-      <button id="menu-resume" hidden>▶ Продолжить</button><button id="continue" hidden>Продолжить у гроба</button><button id="main-menu" hidden>Главное меню</button>
+      <button id="resume-boss" hidden>Продолжить у арены</button><button id="replay-boss" hidden>Инквизитор · Повторить бой</button><button id="menu-resume" hidden>▶ Продолжить</button><button id="continue" hidden>Продолжить у гроба</button><button id="main-menu" hidden>Главное меню</button>
       <button id="achievements-open">♜ &nbsp; Достижения</button><button id="settings-open">⚙ &nbsp; Настройки</button><div class="menu-hero" aria-hidden="true"><img src="assets/hero.png" alt=""></div>
       <span class="menu-hint">Стрелки — движение · Пробел — прыжок · F — удар · ↓ — присесть</span>
     </div>
   </section>
   <footer><span>← → / A D — бег · Пробел — прыжок · F — удар · ↓ / S — присесть</span><span>ЧЕСНОК НЕ ДРЕМЛЕТ. ТЫ ТОЖЕ.</span></footer>
   <nav aria-label="Управление"><div><button data-key="left" aria-label="Влево">←</button><button data-key="right" aria-label="Вправо">→</button></div><div class="actions"><button data-key="crouch" aria-label="Присесть">Присесть</button><button data-key="attack" aria-label="Удар">Удар</button><button data-key="jump" aria-label="Прыжок">Прыжок <span aria-hidden="true">↑</span></button></div></nav>
-<section id="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden><div class="achievement-heading"><h2 id="settings-title">Настройки</h2><button id="settings-close">Закрыть ×</button></div><p>Звуки ночи</p><button id="settings-sound">Переключить звук</button><p>← → / A D — движение<br>Пробел / ↑ / W — прыжок<br>F — удар · ↓ / S — присесть<br>Escape — пауза</p><small>Звук включается после нажатия. Ваш выбор сохраняется.</small></section>
+<section id="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden><div class="achievement-heading"><h2 id="settings-title">Настройки</h2><button id="settings-close">Закрыть ×</button></div><label class="difficulty-label" for="boss-difficulty">Сложность Инквизитора · следующая попытка</label><select id="boss-difficulty"><option value="easy">Легко · 18 HP</option><option value="normal" selected>Нормально · 25 HP</option><option value="hard">Сложно · 35 HP</option></select><p>Звуки ночи</p><button id="settings-sound">Переключить звук</button><p>← → / A D — движение<br>Пробел / ↑ / W — прыжок<br>F — удар · ↓ / S — присесть<br>Escape — пауза</p><small>Звук включается после нажатия. Ваш выбор сохраняется.</small></section>
 <section id="achievements-panel" role="dialog" aria-modal="true" aria-labelledby="achievements-title" hidden>
  <div class="achievement-heading"><div><small>ЛЕТОПИСЬ ВЕЧНОЙ НОЧИ</small><h2 id="achievements-title">Достижения</h2></div><button id="close-achievements" aria-label="Закрыть достижения">Закрыть ×</button></div>
- <p id="achievement-summary"></p><progress id="achievement-total" max="22" value="0"></progress><p id="achievement-sync" role="status"></p>
+ <p id="achievement-summary"></p><progress id="achievement-total" max="23" value="0"></progress><p id="achievement-sync" role="status"></p>
  <div id="achievement-tabs" aria-label="Категории достижений"></div><div id="achievement-list"></div>
 </section>
 </main>

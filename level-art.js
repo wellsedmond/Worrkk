@@ -104,13 +104,8 @@ const levelArt=(()=>{
   const l=LEVEL1.lever;if(visible(l.x,camera)){c.fillStyle='#69526d';c.fillRect(l.x,l.y-20,40,20);line(c,[[l.x+20,l.y-18],[l.x+(s.leverOpen?40:1),l.y-65]],'#b5a0ae',7);oval(c,l.x+(s.leverOpen?40:1),l.y-65,8,8,'#c73d59');}
   if(visible(LEVEL1.gate.x,camera))sprite(c,'gate',LEVEL1.gate.x-35,-520,s.leverOpen?65:120,950);
   if(s.escapeLeft>0){for(let i=0;i<8;i++){const x=camera+(i*153+clock*75)%960,y=cameraY+((clock*150+i*73)%540)-30;c.save();c.translate(x,y);c.rotate(clock+i);c.fillStyle='#a08a9d';c.beginPath();c.moveTo(-5,-4);c.lineTo(6,-2);c.lineTo(3,7);c.closePath();c.fill();c.restore();}}
-  if(visible(boss.x,camera,180)&&boss.mode!=='waiting'){
-   c.save();if(boss.dead){c.translate(boss.x+36,430);c.rotate(-Math.min(1.45,(1.6-Math.max(0,boss.death))));sprite(c,'hunter',-38,-120,78,122);}else{if(boss.mode==='reload')glow(c,boss.x+36,boss.y+55,75,'#ff812b25');sprite(c,'hunter',boss.x-4,boss.y-5,80,125);}c.restore();
-   if(!boss.dead&&boss.phase!==2)crossbow(c,boss.x+36,LEVEL1.stakeY,{shotTime:boss.shotTime,warn:boss.mode==='attack'&&boss.timer<.9,phase:.9,warning:.9},boss.shotDir);
-   if(boss.dead){sprite(c,'stake',boss.x+70,421,40,10);line(c,[[boss.x+78,410],[boss.x+100,421]],'#c6b0b9',3);}
-  }
+  InquisitorArt.drawWorld(c,s);
   if(visible(LEVEL1.exitX,camera,250)){const openness=s.state==='cutscene'?Math.min(1,Math.max(0,(s.cutsceneTime-4)/4)):s.state==='win'?1:0;sprite(c,'gate',LEVEL1.exitX,180,220,250);c.fillStyle='#17112b';c.fillRect(LEVEL1.exitX+100-openness*65,290,openness*130,135);}
-  if(s.state==='cutscene'&&s.cutsceneTime<4){const kx=s.cutsceneTime<2?boss.x+80:player.x+48,ky=s.cutsceneTime<2?420:player.y+40;oval(c,kx,ky,10,10,'#e9c36b');line(c,[[kx+7,ky],[kx+39,ky],[kx+39,ky+9]],'#e9c36b',5);}
  }
  return {ready,tick,background,world,enemy,heroEffects,crossbowFrame,coin,garlic,propFrame,helmetPose,bonfireGeometry,bloodDropFrame};
 })();

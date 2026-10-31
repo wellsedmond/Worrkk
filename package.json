@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check parallax.js && node --check hero-animation.js && node --check level1.js && node --check level-art.js && node --check progress.js && node --check sound.js && node --check game.js && node --check atmosphere.js && node --check server.js && node --check scripts/build-standalone.js && node --check achievements-core.js && node --check achievements.js && node --check achievements-ui.js && node --check achievement-server.js",
+    "check": "node --check parallax.js && node --check hero-animation.js && node --check level1.js && node --check level-art.js && node --check progress.js && node --check sound.js && node --check game.js && node --check atmosphere.js && node --check server.js && node --check scripts/build-standalone.js && node --check achievements-core.js && node --check achievements.js && node --check achievements-ui.js && node --check achievement-server.js && node --check inquisitor.js && node --check inquisitor-art.js",
     "build": "node scripts/build-standalone.js",
-    "test": "node tests/gameplay.test.js && node tests/achievements.test.js"
+    "test": "node tests/gameplay.test.js && node tests/achievements.test.js && node tests/inquisitor.test.js"
   }
 }

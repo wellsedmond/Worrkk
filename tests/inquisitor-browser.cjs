@@ -1,0 +1,26 @@
+const {chromium}=require('playwright-core'),{spawn}=require('node:child_process'),path=require('node:path'),assert=require('node:assert/strict');
+const server=spawn(process.execPath,['server.js'],{cwd:path.resolve(__dirname,'..'),env:{...process.env,PORT:'3148'}});
+(async()=>{let browser;try{
+ for(let i=0;i<70;i++){try{if((await fetch('http://127.0.0.1:3148/')).ok)break;}catch{}await new Promise(r=>setTimeout(r,100));}
+ browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const errors=[];
+ for(const route of ['/','/Worrkk.html']){
+  const context=await browser.newContext({viewport:{width:1280,height:960}}),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.route('https://telegram.org/**',r=>r.fulfill({body:''}));
+  await page.goto('http://127.0.0.1:3148'+route);await page.waitForFunction(()=>assetsReady);await page.click('#play');
+  const saved=await page.evaluate(()=>{paused=true;score=123;kills=7;coins[0].taken=true;sword=3;leverOpen=true;player.x=57400;player.y=350;player.h=80;player.ground=true;updateEvents(0);const entry=progressStore.load().bossCheckpoint;player.x=57500;updateBoss(0);updateCamera(0);draw();return entry;});
+  assert.equal(saved.level,'level1');assert.equal(saved.snapshot.score,123);assert.equal(await page.evaluate(()=>boss.state),'INTRO');assert.equal(await page.locator('#boss-health').getAttribute('max'),'25');await page.screenshot({path:`/tmp/upyr-inquisitor-${route==='/'?'hosted':'offline'}-intro.png`});
+  const clips=await page.evaluate(()=>Object.fromEntries(Object.entries(InquisitorArt.clips).map(([name,c])=>[name,c.frames.length])));assert.deepEqual(clips,{idle:4,walk:6,run:6,jump:5,fall:4,hit:4,death:7,crossbow:8,volley:8,garlic:7,trap:6,grenade:8,dash:8,combo:9,beam:8,rain:8,charge:9,crouch:6,feint:7,recovery:5});
+  for(const [phase,kind,elapsed] of [[1,'volley',.9],[2,'dash',.65],[3,'beam',1.3]]){
+   await page.evaluate(({phase,kind,elapsed})=>{player.x=boss.x-300;player.y=350;boss.phase=phase;boss.hp=phase===1?25:phase===2?17:8;Inquisitor.clear(boss);Inquisitor.beginAttack(boss,kind,player);player.x-=250;Inquisitor.step(boss,elapsed,{player,inputs:keys,attackBox:attackBox(),hit,notify});draw();},{phase,kind,elapsed});await page.screenshot({path:`/tmp/upyr-inquisitor-${route==='/'?'hosted':'offline'}-phase${phase}.png`});
+  }
+  await page.evaluate(()=>{player.hp=1;player.inv=0;hit();});assert.equal(await page.locator('#continue').textContent(),'ПОВТОРИТЬ БОЙ');await page.click('#continue');await page.evaluate(()=>paused=true);
+  const retry=await page.evaluate(()=>({hp:boss.hp,phase:boss.phase,intro:boss.state==='INTRO',projectiles:boss.projectiles.length,zones:boss.zones.length,playerHp:player.hp,score,sword}));assert.deepEqual(retry,{hp:25,phase:1,intro:false,projectiles:0,zones:0,playerHp:3,score:123,sword:3});
+  await page.reload();await page.waitForFunction(()=>assetsReady);assert.equal(await page.locator('#resume-boss').isVisible(),true);await page.click('#resume-boss');await page.evaluate(()=>paused=true);assert.equal(await page.evaluate(()=>score),123);assert.equal(await page.evaluate(()=>coins[0].taken),true);assert.ok(['IDLE','MOVE'].includes(await page.evaluate(()=>boss.state)));
+  const win=await page.evaluate(()=>{sword=0;boss.hp=1;boss.inv=0;Inquisitor.enter(boss,'RECOVERY',3);player.x=boss.x-50;player.y=350;player.h=80;player.face=1;player.cooldown=0;punch();paused=false;updateBoss(1.8);paused=true;const result={hp:boss.hp,state,balance:score,checkpoint:progressStore.load().bossCheckpoint,achievement:!!achievementSystem.state.unlocked.lastvampire};updateCutscene(8);draw();return result;});
+  assert.deepEqual(win,{hp:0,state:'cutscene',balance:1123,checkpoint:null,achievement:true});assert.equal(await page.locator('#overlay h2').textContent(),'ОХОТА ОКОНЧЕНА');await page.screenshot({path:`/tmp/upyr-inquisitor-${route==='/'?'hosted':'offline'}-victory.png`});
+  const lifetime=await page.evaluate(()=>achievementSystem.state.stats.coins);await page.click('#replay-boss');await page.evaluate(()=>paused=true);assert.equal(await page.evaluate(()=>boss.maxHp),35);assert.equal(await page.evaluate(()=>player.hp),3);
+  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>draw());assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:`/tmp/upyr-inquisitor-${route==='/'?'hosted':'offline'}-mobile.png`});
+  await page.click('#menu-open');await page.click('#settings-open');await page.selectOption('#boss-difficulty','easy');await page.click('#settings-close');await page.click('#resume-boss');await page.evaluate(()=>paused=true);assert.equal(await page.evaluate(()=>boss.maxHp),18);
+  const again=await page.evaluate(()=>{boss.hp=0;Inquisitor.enter(boss,'VICTORY');completeBossBattle();return {coins:achievementSystem.state.stats.coins,balance:score};});assert.equal(again.coins,lifetime);assert.equal(again.balance,123);assert.deepEqual(errors,[]);console.log(route,'arena save/reload/retry, phases/art/HUD, victory, one reward, hard replay and mobile easy selection passed');await context.close();
+ }
+ console.log('No browser errors');
+ }finally{if(browser)await browser.close();server.kill();}})().catch(e=>{console.error(e);process.exitCode=1});

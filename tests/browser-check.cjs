@@ -42,7 +42,7 @@ let browser;process.on('exit',()=>server.kill());
  await page.addScriptTag({content:fs.readFileSync(path.join(root,'tests/route-agent.js'),'utf8')});
  const route=await page.evaluate(()=>{start();return driveLevel(60000)});
  assert.equal(route.state,'win');assert.ok(route.kills>=10);assert.ok(route.swordRewards>=1);assert.equal(route.continues,0);assert.equal(route.visited.length,5);assert.equal(route.bossHp,0);assert.ok(route.seconds>=270&&route.seconds<=420);
- assert.equal(await page.locator('#overlay h2').textContent(),'LEVEL COMPLETE!');assert.equal(await page.locator('#continue').isVisible(),false);assert.ok((await page.locator('#overlay p').textContent()).includes('LEVEL 2 — СКОРО'));
+ assert.equal(await page.locator('#overlay h2').textContent(),'ОХОТА ОКОНЧЕНА');assert.equal(await page.locator('#continue').isVisible(),false);assert.ok((await page.locator('#overlay p').textContent()).includes('LEVEL 2 — СКОРО'));
  await page.screenshot({path:'/tmp/upyr-level1-complete.png'});
  const record=await page.evaluate(()=>progressStore.load());assert.equal(record.completed,true);assert.ok(record.maxKills>=10);assert.equal('fangs' in record,false);
  await page.reload();await page.waitForFunction(()=>assetsReady);assert.equal(await page.evaluate(()=>progressStore.load().maxScore),record.maxScore);assert.equal(await page.evaluate(()=>audioContexts),0);

@@ -14,6 +14,7 @@ const achievementSystem=(()=>{
  function persist(){try{localStorage.setItem(key,JSON.stringify({model,pending}));dirty=false;}catch{status='Хранилище недоступно — не закрывайте игру';}}
  function emit(type,data={}){if(!run&&type!=='run_started')return;const e={stream,seq:++sequence,run,type,data};const opened=core.apply(model,e);if(initData)pending.push(e);dirty=true;opened.forEach(id=>{toastQueue.push(id);onUnlock(id);});if(type!=='player_moved'||opened.length)persist();onChange();}
  function start(){run=uid();serial=0;emit('run_started',{level:'level1',x:70});}
+ function resume(savedRun){if(typeof savedRun==='string'&&model.runs[savedRun]&&!model.runs[savedRun].completed){run=savedRun;serial=0;return true;}start();return false;}
  function unique(prefix){return prefix+'-'+(++serial);}
  async function sync(){
   if(!initData||inflight||typeof fetch!=='function')return;inflight=true;
@@ -26,5 +27,5 @@ const achievementSystem=(()=>{
  function tick(dt){timer+=dt;if(timer>=2){timer=0;if(dirty)persist();if(initData)sync();}}
  if(typeof window.addEventListener==='function'){window.addEventListener('online',sync);window.addEventListener('pagehide',persist);}
  if(!stored)persist();
- return {start,emit,unique,tick,sync,persist,toastQueue,get state(){return model;},get status(){return status;},get points(){return core.points(model);},set onChange(fn){onChange=fn;},set onUnlock(fn){onUnlock=fn;}};
+ return {start,resume,get runId(){return run;},emit,unique,tick,sync,persist,toastQueue,get state(){return model;},get status(){return status;},get points(){return core.points(model);},set onChange(fn){onChange=fn;},set onUnlock(fn){onUnlock=fn;}};
 })();

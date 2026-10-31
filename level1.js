@@ -6,7 +6,7 @@ const LEVEL1 = (() => {
   {id:'cemetery',name:'Кладбище забытых игроков',start:12500,end:30000,tint:'#453651'},
   {id:'alley',name:'Аллея охотников',start:30000,end:47500,tint:'#613341'},
   {id:'tower',name:'Часовая башня',start:47500,end:57000,tint:'#39435c'},
-  {id:'boss',name:'Главный охотник',start:57000,end:60300,tint:'#6a3049'}
+  {id:'boss',name:'Инквизитор — Последний охотник',start:57000,end:60300,tint:'#6a3049'}
  ];
  const ground=[],ledges=[],enemies=[],traps=[],coins=[],items=[];
  let nextId=0;
@@ -56,5 +56,5 @@ const LEVEL1 = (() => {
   checkpoints:[{id:'cemetery-end',x:29600,y:430},{id:'tower-base',x:48000,y:430},{id:'tower-top',x:52800,y:-290},{id:'arena',x:57200,y:430}],
   lever:{x:53000,y:-290},gate:{x:53500,y:-600,w:48,h:1030},
   timedSection:{start:50000,end:52500,seconds:24},escapeSeconds:45,
-  boss:{x:58650,y:310,w:72,h:120,hp:3,arenaStart:57500,arenaEnd:59900},exitX:59900});
+  boss:{x:58650,y:310,w:72,h:140,hp:25,arenaStart:57500,arenaEnd:59900},exitX:59900});
 })();

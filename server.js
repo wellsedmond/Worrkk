@@ -11,6 +11,8 @@ const files = {
   '/assets/environment/lighting-atlas.png': ['assets/environment/lighting-atlas.png', 'image/png'],
   '/assets/hero-punch.png': ['assets/hero-punch.png', 'image/png'],
   '/assets/level1/blood-drop-atlas.png': ['assets/level1/blood-drop-atlas.png', 'image/png'],
+  '/inquisitor.js': ['inquisitor.js', 'text/javascript'],
+  '/inquisitor-art.js': ['inquisitor-art.js', 'text/javascript'],
   '/': ['index.html', 'text/html'],
   '/atmosphere.js': ['atmosphere.js', 'text/javascript'],
   '/Worrkk.html': ['Worrkk.html', 'text/html'],
@@ -31,6 +33,7 @@ for (const name of ['ska-palace', 'skyline', 'graveyard', 'web']) {
 }
 for (const name of ['level1','progress','sound','level-art','parallax','achievements-core','achievements','achievements-ui'])files['/'+name+'.js']=[name+'.js','text/javascript'];
 for(const name of ['helmet','hunter','coffin','stake','sword','gate','werewolf','tower'])files['/assets/level1/'+name+'.svg']=['assets/level1/'+name+'.svg','image/svg+xml'];
+for(const name of ['body-a','body-b','body-c','body-d','body-e','effects','arena'])files['/assets/inquisitor/'+name+'.png']=['assets/inquisitor/'+name+'.png','image/png'];
 http.createServer(async (req, res) => {
   if(new URL(req.url,'http://localhost').pathname==='/api/achievements')return achievementApi(req,res);
   const file = files[new URL(req.url, 'http://localhost').pathname];

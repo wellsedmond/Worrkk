@@ -55,8 +55,8 @@ test('ten unique enemy kills award a five-hit sword and every tenth kill renews 
 test('sword misses and invulnerable boss contacts spend nothing; each enemy hit adds five coins',()=>{
  const run=game();run('sword=5;punch()');assert.equal(run('sword'),5);assert.equal(run('score'),0);
  run('const e=enemies.find(e=>e.type==="helmet");player.x=e.x-70;player.y=350;player.face=1;player.cooldown=0;punch()');assert.equal(run('e.dead'),true);assert.equal(run('sword'),4);assert.equal(run('score'),8);
- run('player.x=boss.x-50;player.cooldown=0;boss.mode="attack";punch()');assert.equal(run('sword'),4);assert.equal(run('boss.hp'),3);
- run('player.cooldown=0;boss.mode="reload";boss.inv=0;punch()');assert.equal(run('sword'),3);assert.equal(run('score'),13);assert.equal(run('boss.hp'),2);
+ run('player.x=boss.x-50;player.cooldown=0;Inquisitor.enter(boss,"ATTACK",5);boss.attack="volley";punch()');assert.equal(run('sword'),4);assert.equal(run('boss.hp'),25);
+ run('player.cooldown=0;Inquisitor.enter(boss,"RECOVERY",5);boss.inv=0;punch()');assert.equal(run('sword'),3);assert.equal(run('score'),13);assert.equal(run('boss.hp'),23);
 });
 test('sword breaks after five successful enemy hits; projectiles give no coins or wear',()=>{
  const run=game();run('sword=5;for(const e of enemies.slice(0,5)){player.cooldown=0;player.x=e.x-50;player.y=e.y;player.face=1;punch()}');assert.equal(run('sword'),0);assert.equal(run('kills'),5);
@@ -73,14 +73,13 @@ test('tower lever requires height, opens gate and starts generous escape timer',
  run('player.y=-370;updateEvents(0)');assert.equal(run('leverOpen'),true);assert.equal(run('escapeLeft'),45);
  run('player.x=57100;updateEvents(0)');assert.equal(run('escapeLeft'),0);
 });
-test('boss fires three shots per phase; rage cannot bypass reload windows',()=>{
- const run=game();run('player.x=58000;updateBoss(0);updateBoss(3.1);updateBoss(2.1)');assert.equal(run('boss.shots'),1);assert.equal(run('projectiles[0].type'),'stake');
- run('for(let i=0;i<10&&boss.mode!=="reload";i++)updateBoss(6.1)');assert.equal(run('boss.mode'),'reload');
- for(let hp=2;hp>=0;hp--){
-  run('player.x=boss.x-50;player.y=350;player.face=1;player.rage=10;player.cooldown=0;punch()');assert.equal(run('boss.hp'),hp);
-  if(hp){run('player.cooldown=0;punch()');assert.equal(run('boss.hp'),hp);run('boss.timer=0;updateBoss(0)');assert.equal(run('projectiles.at(-1).type'),hp===2?'garlic':'stake');run('for(let i=0;i<10&&boss.mode!=="reload";i++)updateBoss(6.1)');assert.equal(run('boss.mode'),'reload');}
- }
- assert.equal(run('boss.mode'),'defeated');run('updateBoss(2)');assert.equal(run('state'),'cutscene');run('updateCutscene(12)');assert.equal(run('state'),'win');
+test('Inquisitor telegraphs a three-bolt volley and exposes a real recovery window',()=>{
+ const run=game();run('player.x=58000;player.y=350;updateBoss(0)');assert.equal(run('boss.state'),'INTRO');
+ run('updateBoss(2.1);updateBoss(3.6)');assert.equal(run('boss.attack'),'volley');assert.equal(run('boss.projectiles.length'),0);
+ run('updateBoss(.9)');assert.equal(run('boss.projectiles.length'),1);assert.equal(run('boss.projectiles[0].kind'),'bolt');
+ run('updateBoss(1.1);updateBoss(1.1);updateBoss(.2)');assert.equal(run('boss.state'),'RECOVERY');assert.equal(run('boss.shots'),3);
+ run('player.x=boss.x-50;player.y=350;player.face=1;player.rage=10;player.cooldown=0;sword=0;punch()');assert.equal(run('boss.hp'),24);
+ run('player.cooldown=0;punch()');assert.equal(run('boss.hp'),24,'invulnerability rejects repeated same-frame hits');
 });
 test('progress persists across sessions, sanitizes malformed data and handles blocked storage',()=>{
  const storage=new Map();const first=createGame(storage);first.run('progressStore.save({time:350,score:100,kills:30,damage:0})');const second=createGame(storage);assert.equal(second.run('progressStore.load().completed'),true);assert.equal(second.run('progressStore.load().maxKills'),30);assert.equal(second.run('progressStore.load().achievements[0]'),'НЕПРОКУСИМЫЙ');second.run('progressStore.save({time:390,score:90,kills:10,damage:3})');assert.equal(second.run('progressStore.load().bestTime'),350);
@@ -96,10 +95,11 @@ test('tower gate cannot be bypassed before lever, pause does not advance physics
  run('const beforeTime=clock;const beforeX=player.x;paused=true;for(let i=0;i<120;i++)update(1/120)');assert.equal(run('clock'),run('beforeTime'));assert.equal(run('player.x'),run('beforeX'));
 });
 
-test('phase-three retreat is an animated backward jump',()=>{
- const run=game();run('player.x=58000;boss.mode="attack";boss.phase=3;boss.timer=0;updateBoss(0);const initialBossX=boss.x;updateBoss(.25)');assert.ok(run('boss.x')>run('initialBossX'));assert.ok(run('boss.y')<310);run('updateBoss(.4)');assert.equal(run('boss.y'),310);
+test('Inquisitor retreat jump keeps a bounded arc and returns to the floor',()=>{
+ const run=game();run('player.x=58080;player.y=350;boss.x=58150;boss.phase=3;Inquisitor.engage(boss,true);updateBoss(.1)');
+ assert.ok(run('boss.jumpLeft')>0);assert.ok(run('boss.y')<290);const x=run('boss.x');run('updateBoss(.15)');assert.ok(run('boss.x')>x);
+ run('updateBoss(.4)');assert.equal(run('boss.y'),290);
 });
-
 test('crouch animation descends, holds, rises and reverses without changing physics',()=>{
  const run=game();run('for(let i=0;i<120;i++)update(1/120);const feet=player.y+player.h;keys.crouch=true;update(1/120)');assert.equal(run('heroAnimator.pose().phase'),'down');assert.equal(run('player.h'),44);assert.equal(run('player.y+player.h'),run('feet'));
  run('for(let i=0;i<60;i++)update(1/120)');assert.equal(run('heroAnimator.pose().phase'),'hold');

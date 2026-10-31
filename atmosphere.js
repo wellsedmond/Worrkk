@@ -143,7 +143,7 @@ const atmosphere = (() => {
   const intersects=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
   function lightingBounds(object){return object.kind==='lantern'?{x:object.x-26,y:273,w:100,h:159}:{x:object.x-25,y:362,w:50,h:70};}
   function lightingObstacles(){
-    const boxes=[];
+    const boxes=[{x:LEVEL1.boss.arenaStart,y:0,w:LEVEL1.boss.arenaEnd-LEVEL1.boss.arenaStart,h:440}];
     for(const p of LEVEL1.ledges){const ax=p.type==='moving'&&p.axis==='x'?p.amplitude:0,ay=p.type==='moving'&&p.axis==='y'?p.amplitude:0;boxes.push({x:p.x-ax-12,y:p.y-ay-8,w:p.w+ax*2+24,h:p.h+ay*2+16});}
     for(const t of LEVEL1.traps)if(t.type==='stake')boxes.push({x:t.x-15,y:290,w:115,h:145});else if(t.type==='fire')boxes.push({x:t.x-24,y:360,w:95,h:76});
     for(const cp of [{x:30,y:430},...LEVEL1.checkpoints])boxes.push({x:cp.x-55,y:cp.y-110,w:145,h:116});

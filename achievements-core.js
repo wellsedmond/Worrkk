@@ -22,7 +22,8 @@
  add('sleep','Не трогайте, я сплю','Провести 60 секунд подряд без движения в безопасной зоне','secret','idleBest',60,'secret');
  add('early5','Опять двадцать пять','Погибнуть в первые 5 секунд забега 5 раз','secret','earlyDeaths',5,'secret');
  [100,500,1000,5000,10000,50000].forEach((n,i)=>add('coins'+n,['Первая добыча','Карманы полны','Ночной грабитель','Сокровища Упыря','Золотой упырь','Кровавый миллионер'][i],`Собрать суммарно ${n.toLocaleString('ru-RU')} монет`,'coins','coins',n,['common','rare','epic','epic','legendary','legendary'][i],[10,25,50,75,100,150][i]));
- const types=new Set(['run_started','run_finished','enemy_killed','garlic_destroyed','coin_collected','player_died','player_damaged','level_completed','boss_defeated','bonfire_jumped','stake_dodged','player_moved','player_attacked']);
+ add('lastvampire','Последний упырь','Победить Инквизитора — Последнего охотника','journey','inquisitorWins',1,'legendary');
+ const types=new Set(['run_started','run_finished','enemy_killed','garlic_destroyed','coin_collected','player_died','player_damaged','level_completed','boss_defeated','bonfire_jumped','stake_dodged','player_moved','player_attacked','inquisitor_defeated']);
  const num=n=>Number.isFinite(n)?Math.max(0,n):0;
  function empty(){return {version:1,stats:{},unlocked:{},streams:{},runs:{},levelDeaths:{},campaigns:{}};}
  function normalize(s){if(!s||s.version!==1)return empty();for(const k of ['stats','unlocked','streams','runs','levelDeaths','campaigns'])if(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k]))s[k]={};for(const [id,date] of Object.entries(s.unlocked))if(!definitions.some(d=>d.id===id)||typeof date!=='string'||!Number.isFinite(Date.parse(date)))delete s.unlocked[id];return s;}
@@ -44,6 +45,7 @@
     case 'stake_dodged':if(once('stake',d.id))inc('stakes');break;
     case 'bonfire_jumped':if(once('fire',d.id))inc('fires');break;
     case 'player_moved':{const x=Math.min(1000000,num(d.x));if(x>r.maxX){inc('distance',x-r.maxX);r.maxX=x;}best('idleBest',Math.min(60,num(d.safeSeconds)));break;}
+    case 'inquisitor_defeated':if(!stats.inquisitorWins){stats.inquisitorWins=1;inc('coins',1000);}break;
     case 'boss_defeated':if(once('boss',d.id)){r.bosses[d.id]=true;const campaign=s.campaigns[r.campaign];campaign.bosses[d.id]=true;const level=levels.find(l=>l.id===r.level);const bosses=levels.filter(l=>l.chapter===level?.chapter).flatMap(l=>l.bosses);if(bosses.length&&bosses.every(id=>campaign.bosses[id]))best('chapterBosses',1);}break;
     case 'level_completed':if(!r.completed){r.completed=true;inc('wins');if(r.damage===0&&r.deaths===0)best('unhurt',1);if(r.attacks===0)best('noattack',1);const campaign=s.campaigns[r.campaign];campaign.levels[r.level]=true;if(campaign.deaths===0&&levels.every(l=>campaign.levels[l.id]))best('legend',1);}break;
    }
