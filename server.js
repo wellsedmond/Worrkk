@@ -3,6 +3,8 @@ import {createAchievementApi} from './achievement-server.js';
 const achievementApi=createAchievementApi();
 import { readFile } from 'node:fs/promises';
 const files = {
+  '/combat-geometry.js': ['combat-geometry.js', 'text/javascript'],
+  '/assets/audio/background.mp3': ['assets/audio/background.mp3', 'audio/mpeg'],
   '/assets/environment/clock-tower.png': ['assets/environment/clock-tower.png', 'image/png'],
   '/assets/environment/hunters-alley.png': ['assets/environment/hunters-alley.png', 'image/png'],
   '/assets/environment/cemetery.png': ['assets/environment/cemetery.png', 'image/png'],

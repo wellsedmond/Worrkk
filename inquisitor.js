@@ -49,9 +49,10 @@ const Inquisitor=(()=>{
   }
   b.zones=b.zones.filter(z=>!z.dead&&z.age<z.warning+z.activeTime+.3);
   for(const p of b.projectiles){p.age+=dt;p.x+=p.vx*dt;p.vy+=(p.gravity||0)*dt;p.y+=p.vy*dt;
-   if(['bolt','garlic'].includes(p.kind)&&ctx.player.attack>0&&ctx.attackBox&&overlap(ctx.attackBox,p)){p.dead=true;ctx.burst?.(p.x,p.y,p.kind==='garlic'?'garlic':'sparks');continue;}
+   const contour=['bolt','rain'].includes(p.kind)?CombatGeometry.bolt(p):null;
+   if(['bolt','garlic'].includes(p.kind)&&ctx.player.attack>0&&ctx.attackBox&&(contour?CombatGeometry.touches(ctx.attackBox,contour):overlap(ctx.attackBox,p))){p.dead=true;ctx.burst?.(p.x,p.y,p.kind==='garlic'?'garlic':'sparks');continue;}
    const target=p.kind==='bolt'&&ctx.player.h===80?{...ctx.player,y:ctx.player.y-12,h:ctx.player.h+12}:ctx.player;
-   if(p.kind!=='grenade'&&overlap(p,target)){p.dead=true;ctx.hit();}
+   if(p.kind!=='grenade'&&(contour?CombatGeometry.touches(target,contour):overlap(p,target))){p.dead=true;ctx.hit();}
    if(p.y+p.h>=b.groundY&&['garlic','grenade','rain'].includes(p.kind)){p.dead=true;if(p.kind==='grenade')zone(b,'uv',p.x-75,150,1.1,3);ctx.burst?.(p.x,b.groundY,'sparks');}
   }
   b.projectiles=b.projectiles.filter(p=>!p.dead&&p.age<9&&p.x>b.arenaStart-200&&p.x<b.arenaEnd+200&&p.y<500);

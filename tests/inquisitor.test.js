@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {createGame} from './harness.js';
 function machine(mode='normal'){
- const c={};vm.createContext(c);vm.runInContext(readFileSync(new URL('../inquisitor.js',import.meta.url),'utf8'),c);const api=vm.runInContext('Inquisitor',c),b=api.create({},mode);let hits=0;
+ const c={};vm.createContext(c);vm.runInContext(readFileSync(new URL('../combat-geometry.js',import.meta.url),'utf8'),c);vm.runInContext(readFileSync(new URL('../inquisitor.js',import.meta.url),'utf8'),c);const api=vm.runInContext('Inquisitor',c),b=api.create({},mode);let hits=0;
  const player={x:57600,y:350,w:40,h:80,attack:0};const ctx={player,inputs:{},hit:()=>hits++};api.engage(b,true);
  return {api,b,player,ctx,get hits(){return hits;},step(n){for(let i=0;i<Math.ceil(n*120);i++)api.step(b,1/120,ctx);}};
 }

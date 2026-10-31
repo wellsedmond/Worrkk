@@ -1,0 +1,508 @@
+{
+  "unitTests": 60,
+  "unitPassed": 60,
+  "browserRoute": {
+    "route": {
+      "state": "win",
+      "steps": 40460,
+      "seconds": 326.03333333320114,
+      "continues": 0,
+      "visited": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "kills": 30,
+      "sword": 5,
+      "swordRewards": 3,
+      "hp": 1,
+      "bossHp": 0,
+      "leverOpen": true,
+      "trace": [
+        {
+          "x": 70,
+          "y": 330,
+          "hp": 3,
+          "t": 0,
+          "boss": "waiting",
+          "kills": 0,
+          "sword": 0
+        },
+        {
+          "x": 2416,
+          "y": 350,
+          "hp": 3,
+          "t": 10,
+          "boss": "waiting",
+          "kills": 1,
+          "sword": 0
+        },
+        {
+          "x": 4866,
+          "y": 350,
+          "hp": 3,
+          "t": 20,
+          "boss": "waiting",
+          "kills": 3,
+          "sword": 0
+        },
+        {
+          "x": 7316,
+          "y": 350,
+          "hp": 3,
+          "t": 30,
+          "boss": "waiting",
+          "kills": 5,
+          "sword": 0
+        },
+        {
+          "x": 9766,
+          "y": 350,
+          "hp": 3,
+          "t": 40,
+          "boss": "waiting",
+          "kills": 5,
+          "sword": 0
+        },
+        {
+          "x": 12216,
+          "y": 350,
+          "hp": 3,
+          "t": 50,
+          "boss": "waiting",
+          "kills": 6,
+          "sword": 0
+        },
+        {
+          "x": 14443,
+          "y": 350,
+          "hp": 3,
+          "t": 59,
+          "boss": "waiting",
+          "kills": 7,
+          "sword": 0
+        },
+        {
+          "x": 16893,
+          "y": 350,
+          "hp": 3,
+          "t": 69,
+          "boss": "waiting",
+          "kills": 9,
+          "sword": 0
+        },
+        {
+          "x": 19343,
+          "y": 350,
+          "hp": 3,
+          "t": 79,
+          "boss": "waiting",
+          "kills": 10,
+          "sword": 5
+        },
+        {
+          "x": 21793,
+          "y": 350,
+          "hp": 3,
+          "t": 89,
+          "boss": "waiting",
+          "kills": 14,
+          "sword": 1
+        },
+        {
+          "x": 24243,
+          "y": 350,
+          "hp": 3,
+          "t": 99,
+          "boss": "waiting",
+          "kills": 14,
+          "sword": 1
+        },
+        {
+          "x": 26693,
+          "y": 350,
+          "hp": 3,
+          "t": 109,
+          "boss": "waiting",
+          "kills": 15,
+          "sword": 0
+        },
+        {
+          "x": 29143,
+          "y": 154,
+          "hp": 3,
+          "t": 119,
+          "boss": "waiting",
+          "kills": 17,
+          "sword": 0
+        },
+        {
+          "x": 31267,
+          "y": 350,
+          "hp": 3,
+          "t": 128,
+          "boss": "waiting",
+          "kills": 18,
+          "sword": 0
+        },
+        {
+          "x": 33614,
+          "y": 243,
+          "hp": 3,
+          "t": 138,
+          "boss": "waiting",
+          "kills": 19,
+          "sword": 0
+        },
+        {
+          "x": 36062,
+          "y": 386,
+          "hp": 3,
+          "t": 148,
+          "boss": "waiting",
+          "kills": 20,
+          "sword": 5
+        },
+        {
+          "x": 38411,
+          "y": 350,
+          "hp": 3,
+          "t": 158,
+          "boss": "waiting",
+          "kills": 22,
+          "sword": 3
+        },
+        {
+          "x": 40756,
+          "y": 350,
+          "hp": 3,
+          "t": 168,
+          "boss": "waiting",
+          "kills": 22,
+          "sword": 3
+        },
+        {
+          "x": 43101,
+          "y": 350,
+          "hp": 3,
+          "t": 178,
+          "boss": "waiting",
+          "kills": 23,
+          "sword": 2
+        },
+        {
+          "x": 45446,
+          "y": 350,
+          "hp": 3,
+          "t": 188,
+          "boss": "waiting",
+          "kills": 25,
+          "sword": 0
+        },
+        {
+          "x": 47569,
+          "y": 350,
+          "hp": 3,
+          "t": 197,
+          "boss": "waiting",
+          "kills": 27,
+          "sword": 0
+        },
+        {
+          "x": 50020,
+          "y": -370,
+          "hp": 3,
+          "t": 207,
+          "boss": "waiting",
+          "kills": 27,
+          "sword": 0
+        },
+        {
+          "x": 52470,
+          "y": -370,
+          "hp": 1,
+          "t": 217,
+          "boss": "waiting",
+          "kills": 27,
+          "sword": 0
+        },
+        {
+          "x": 54920,
+          "y": 350,
+          "hp": 1,
+          "t": 227,
+          "boss": "waiting",
+          "kills": 27,
+          "sword": 0
+        },
+        {
+          "x": 57147,
+          "y": 350,
+          "hp": 1,
+          "t": 236,
+          "boss": "waiting",
+          "kills": 29,
+          "sword": 0
+        }
+      ]
+    },
+    "progress": {
+      "version": 2,
+      "completed": true,
+      "bestTime": 324.3333333332027,
+      "maxKills": 30,
+      "achievements": [
+        "Последний упырь"
+      ],
+      "maxScore": 1186,
+      "boss": {
+        "defeated": true,
+        "firstRewardClaimed": true,
+        "difficulties": [
+          "normal"
+        ]
+      },
+      "bossDifficulty": "hard",
+      "bossCheckpoint": null,
+      "bossEntry": {
+        "version": 1,
+        "level": "level1",
+        "checkpoint": {
+          "id": "inquisitor-entry",
+          "x": 57400,
+          "y": 430
+        },
+        "snapshot": {
+          "score": 186,
+          "kills": 29,
+          "sword": 0,
+          "swordRewards": 2,
+          "coins": [
+            "c252",
+            "c253",
+            "c255",
+            "c256",
+            "c257",
+            "c258",
+            "c259",
+            "c261",
+            "c262",
+            "c264",
+            "c266",
+            "c267",
+            "c268",
+            "c270",
+            "c271",
+            "c272",
+            "c274",
+            "c276",
+            "c278",
+            "c280",
+            "c281",
+            "c282",
+            "c283",
+            "c284",
+            "c286",
+            "c287",
+            "c290",
+            "c291",
+            "c292",
+            "c293",
+            "c294",
+            "c296",
+            "c297",
+            "c298",
+            "c300",
+            "c301",
+            "c302",
+            "c309",
+            "c310",
+            "c311",
+            "c316",
+            "c318",
+            "c320",
+            "c322",
+            "c323",
+            "c324",
+            "c326",
+            "c328",
+            "c330",
+            "c332",
+            "c334",
+            "c336",
+            "c338",
+            "c340",
+            "c341",
+            "c342",
+            "c343",
+            "c344",
+            "c346",
+            "c348",
+            "c350",
+            "c351",
+            "c352",
+            "c353",
+            "c354",
+            "c355",
+            "c356",
+            "c357",
+            "c358",
+            "c359",
+            "c360",
+            "c361",
+            "c362",
+            "c363",
+            "c364",
+            "c365",
+            "c366",
+            "c367",
+            "c368",
+            "c369",
+            "c370",
+            "c371",
+            "c372",
+            "c373",
+            "c374",
+            "c375",
+            "c376",
+            "c377",
+            "c378",
+            "c379",
+            "c380"
+          ],
+          "items": [
+            "rage-alley"
+          ],
+          "enemies": [
+            "e198",
+            "e199",
+            "e201",
+            "e202",
+            "e203",
+            "e204",
+            "e205",
+            "e206",
+            "e207",
+            "e208",
+            "e209",
+            "e210",
+            "e211",
+            "e233",
+            "e234",
+            "e235",
+            "e236",
+            "e237",
+            "e238",
+            "e239",
+            "e240",
+            "e243",
+            "e244",
+            "e245",
+            "e246",
+            "e247",
+            "e248",
+            "e250",
+            "e251"
+          ],
+          "leverOpen": true
+        },
+        "clock": 237,
+        "damage": 2,
+        "difficulty": "normal",
+        "achievementRun": "2e2eebeb-9f35-4f44-81dd-1319de90e3d4",
+        "coffins": [
+          "start",
+          "cemetery-end",
+          "tower-base",
+          "tower-top",
+          "arena"
+        ]
+      }
+    },
+    "performanceResults": [
+      {
+        "zone": 1,
+        "medianMs": 16.69999999999891,
+        "p95Ms": 16.700000000000728
+      },
+      {
+        "zone": 2,
+        "medianMs": 16.69999999999891,
+        "p95Ms": 16.700000000000728
+      },
+      {
+        "zone": 4,
+        "medianMs": 16.69999999999891,
+        "p95Ms": 16.799999999999272
+      },
+      {
+        "zone": 5,
+        "medianMs": 16.700000000000728,
+        "p95Ms": 16.700000000000728
+      }
+    ],
+    "seamDiffs": [
+      {
+        "camera": 4571.428571428571,
+        "zone": 1,
+        "meanDifference": 0.0005201525054466231
+      },
+      {
+        "camera": 1454.5454545454545,
+        "zone": 1,
+        "meanDifference": 0.0009592864923747276
+      },
+      {
+        "camera": 4909.090909090909,
+        "zone": 2,
+        "meanDifference": 0.00010348583877995642
+      },
+      {
+        "camera": 1302.3255813953488,
+        "zone": 2,
+        "meanDifference": 0.00011097494553376906
+      },
+      {
+        "camera": 622.2222222222222,
+        "zone": 4,
+        "meanDifference": 0.0001082516339869281
+      },
+      {
+        "camera": 2500,
+        "zone": 4,
+        "meanDifference": 0.003764297385620915
+      }
+    ],
+    "errors": [],
+    "checks": "F attack input, sword rewards and bonus, background seams, hosted assets, run cycle, jump sprites, crouch sprite frames, fixed feet, Telegram stub, audio gesture, full route, sword rewards, 3 boss phases, cutscene, persistence, checkpoint, multi-touch, pause, offline, restart counts"
+  },
+  "hitboxBrowser": {
+    "hosted": "passed",
+    "offline": "passed",
+    "models": [
+      "bonfire",
+      "crossbow bolt",
+      "garlic",
+      "helmet garlic"
+    ],
+    "mobileWidth": 390
+  },
+  "musicBrowser": {
+    "hosted": "passed",
+    "offline": "passed",
+    "durationSeconds": 188.630204,
+    "loop": true,
+    "volume": 0.32,
+    "checks": [
+      "gesture",
+      "pause/resume",
+      "loop ending",
+      "mute",
+      "stored preference",
+      "pagehide",
+      "embedded offline MP3"
+    ]
+  }
+}

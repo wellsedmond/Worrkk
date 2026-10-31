@@ -60,7 +60,7 @@ function driveLevel(maxSteps=100000){
   const danger=projectiles.some(p=>p.type==='stake'&&p.x+48>player.x-30&&p.x<player.x+230&&Math.abs(p.y-(player.y+player.h-73))<25);
   const readyStake=fighting&&boss.mode!=='reload'&&(boss.phase===1||boss.phase===3&&boss.shots%2===0&&boss.timer<1.3);
   keys.crouch=player.ground&&(danger||readyStake);
-  keys.attack=player.cooldown<=0&&(enemies.some(e=>!e.dead&&overlap(box,e))||projectiles.some(p=>overlap(box,p))||boss.mode==='reload'&&overlap(box,boss));
+  keys.attack=player.cooldown<=0&&(enemies.some(e=>!e.dead&&CombatGeometry.touches(box,CombatGeometry.enemy(e,clock)))||projectiles.some(p=>overlap(box,p))||boss.mode==='reload'&&overlap(box,boss));
   if(!fighting){
    const floor=groundPlatforms.find(p=>player.x>=p[0]&&player.x<p[0]+p[2]);
    const end=floor?floor[0]+floor[2]:0;

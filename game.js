@@ -96,14 +96,14 @@ function punch(){
  if(player.cooldown>0||player.h<80)return;
  player.attack=.36;player.swordBroke=false;player.swingSword=sword>0;heroAnimator.strike(player.swingSword,player.rage>0);achievementSystem.emit('player_attacked');safeIdle=0;gameAudio.effect('hit');player.cooldown=.42;tutorialDone.add('attack');const box=attackBox();
  atmosphere.burst(box.x+box.w/2,box.y+20,'sparks');
- for(const e of enemies)if(!e.dead&&overlap(box,e)){const armed=swordHit(e.id+'-'+e.hp);hurtEnemy(e,armed?2:e.type==='helmet'?1:player.rage>0?2:1);}
+ for(const e of enemies)if(!e.dead&&CombatGeometry.touches(box,CombatGeometry.enemy(e,clock))){const armed=swordHit(e.id+'-'+e.hp);hurtEnemy(e,armed?2:e.type==='helmet'?1:player.rage>0?2:1);}
  if(Inquisitor.vulnerable(boss)&&overlap(box,boss)){const armed=swordHit('inquisitor-'+boss.hp);const result=Inquisitor.strike(boss,armed?2:1);if(result.killed)recordBossVictory();if(result.phaseChanged)notify(Inquisitor.warning(boss));if(result.interrupted)notify('АТАКА ПРЕРВАНА · ИНКВИЗИТОР ОГЛУШЁН',3);}
  if(player.swordBroke&&sword===0)notify(`Меч сломан. До следующего: ${10-kills%10} побед`);
 }
 function spawnProjectile(type,x,y,dir=-1,source='trap'){if(projectiles.length>=48)projectiles.shift();projectiles.push({id:'projectile-'+(++projectileNumber),type,x,y,w:type==='stake'?48:32,h:type==='stake'?8:32,vx:dir*(source==='boss'?210:230),life:0,source});}
 function updateTraps(dt){
  for(const t of traps){if(!activeNear(t.x))continue;
-  if(t.type==='fire'){t.active=!t.cycle||(clock%t.cycle)<t.cycle*.55;if(t.active&&overlap(player,t))hit();}
+  if(t.type==='fire'){t.active=!t.cycle||(clock%t.cycle)<t.cycle*.55;if(t.active&&CombatGeometry.touches(player,CombatGeometry.fire(t)))hit();}
   if(t.type==='stake'){
    if(t.shotTime>=0){t.shotTime+=dt;if(t.shotTime>=.6)t.shotTime=-1;}
    const previous=t.phase;t.phase=(t.phase+dt)%t.period;t.warn=t.phase<t.warning;
@@ -112,8 +112,9 @@ function updateTraps(dt){
   if(t.type==='pendulum'){t.headX=t.x+Math.sin(clock*Math.PI*2/t.period)*145;t.headY=t.y+Math.cos(Math.sin(clock*Math.PI*2/t.period)*.6)*t.length;const box={x:t.headX-t.radius,y:t.headY-t.radius,w:t.radius*2,h:t.radius*2};if(overlap(player,box))hit();}
  }
  for(const p of projectiles){const beforeX=p.x;p.life+=dt;p.x+=p.vx*dt;if(p.type==='garlic')p.y+=Math.sin(p.life*5)*14*dt;
-  if(player.attack>0&&overlap(attackBox(),p)){p.dead=true;atmosphere.burst(p.x+16,p.y+16,p.type==='garlic'?'garlic':'sparks');tutorialDone.add('attack');}
-  else if(overlap(p.type==='stake'&&player.h===80?{x:player.x,y:player.y-12,w:player.w,h:player.h+12}:player,p)){p.dead=true;hit();}
+  const contour=p.type==='stake'?CombatGeometry.bolt(p):null;
+  if(player.attack>0&&(contour?CombatGeometry.touches(attackBox(),contour):overlap(attackBox(),p))){p.dead=true;atmosphere.burst(p.x+16,p.y+16,p.type==='garlic'?'garlic':'sparks');tutorialDone.add('attack');}
+  else if(contour?CombatGeometry.touches(player.h===80?{x:player.x,y:player.y-12,w:player.w,h:player.h+12}:player,contour):overlap(player,p)){p.dead=true;hit();}
   if(!p.dead&&p.type==='stake'&&Math.abs(p.y-player.y)<150){if(p.x<player.x+player.w&&p.x+p.w>player.x)p.dodgeCandidate=true;const passed=p.vx<0?beforeX+p.w>=player.x&&p.x+p.w<player.x:beforeX<=player.x+player.w&&p.x>player.x+player.w;if(passed&&p.dodgeCandidate&&!p.dodgeCounted){p.dodgeCounted=true;achievementSystem.emit('stake_dodged',{id:p.id});}}
  }
  projectiles=projectiles.filter(p=>!p.dead&&p.life<5&&Math.abs(p.x-player.x)<1400);
@@ -122,7 +123,8 @@ function updateEnemies(dt,prevBottom){for(const e of enemies){e.hurt=Math.max(0,
  e.x+=e.dir*(e.type==='helmet'?75:65)*dt;if(Math.abs(e.x-e.origin)>e.range)e.dir*=-1;
  if(e.flying)e.y=e.baseY+Math.sin(clock*2.2+e.origin)*20;
  if(e.type==='helmet'){e.y=e.baseY-Math.max(0,Math.sin(clock*1.8+e.origin))*28;}
- if(overlap(player,e)){if(player.vy>0&&prevBottom<e.y+12){if(e.type==='helmet')hurtEnemy(e,1);else defeatEnemy(e);player.vy=-370;}else hit();}
+ const contour=CombatGeometry.enemy(e,clock),body=CombatGeometry.bounds(contour);
+ if(CombatGeometry.touches(player,contour)){if(player.vy>0&&prevBottom<body.y+12){if(e.type==='helmet')hurtEnemy(e,1);else defeatEnemy(e);player.vy=-370;}else hit();}
 }}
 function saveBossEntry(){
  checkpoint={id:'inquisitor-entry',x:57400,y:430};captureCheckpoint();achievementSystem.persist();
@@ -206,7 +208,7 @@ function trackAchievements(dt,startX,wasGrounded){
  const safe=stationary&&!enemies.some(e=>!e.dead&&Math.abs(e.x-player.x)<260)&&!traps.some(t=>Math.abs(t.x-player.x)<300)&&!projectiles.some(p=>Math.abs(p.x-player.x)<350)&&boss.mode==='waiting';
  safeIdle=safe?safeIdle+dt:0;achievementClock+=dt;
  if(achievementClock>=1){achievementClock=0;achievementSystem.emit('player_moved',{x:player.x,safeSeconds:safeIdle});}
- if(achievementJump&&!player.ground){for(const fire of traps)if(fire.type==='fire'&&fire.active&&player.x+player.w>fire.x&&player.x<fire.x+fire.w&&player.y+player.h<fire.y+3)jumpFires.add(fire.id);}
+ if(achievementJump&&!player.ground){for(const fire of traps)if(fire.type==='fire'&&fire.active){const b=CombatGeometry.bounds(CombatGeometry.fire(fire));if(player.x+player.w>b.x&&player.x<b.x+b.w&&player.y+player.h<b.y+3)jumpFires.add(fire.id);}}
  if(player.ground&&!wasGrounded){for(const id of jumpFires){const fire=traps.find(t=>t.id===id);if(fire&&player.x>=fire.x+fire.w)achievementSystem.emit('bonfire_jumped',{id});}jumpFires.clear();achievementJump=false;}
 }
 function updateCamera(dt){camera=boss.engaged?Math.max(boss.arenaStart,Math.min(boss.arenaEnd-960,player.x-380)):Math.max(0,Math.min(LEVEL1.width-960,player.x-260));const target=Math.min(0,player.y-230);cameraY+=(target-cameraY)*Math.min(1,dt*7);}
@@ -234,10 +236,9 @@ function character(){
  ctx.restore();
 }
 function drawGarlic(e){
- ctx.save();ctx.translate(e.x+19,e.y+42);
- const stride=Math.sin(clock*9+e.origin)*2;
- ellipse(0,-1,23,4,'#100b2080');ctx.rotate(stride*.025);
- levelArt.garlic(ctx,-24,-50+stride,48,50,clock,e.dir);
+ const pose=CombatGeometry.garlicPose(e,clock);
+ ctx.save();ctx.translate(pose.x,pose.y);ctx.rotate(pose.angle);
+ levelArt.garlic(ctx,-24,-25,48,50,clock,e.dir);
  ctx.restore();
 }
 function draw(){
@@ -248,7 +249,7 @@ function draw(){
  levelArt.world(ctx,{player,camera,cameraY,clock,traps,projectiles,items,checkpoint,coffins:coffinStates,leverOpen,escapeLeft,boss,state,cutsceneTime});
  for(const c of coins){if(c.taken||boss.engaged&&c.x>=boss.arenaStart&&c.x<boss.arenaEnd||c.x<camera-30||c.x>camera+990)continue;const y=c.y+Math.sin(clock*4+c.x)*3;levelArt.coin(ctx,c.x,y,clock);}
  for(const e of enemies)if(activeNear(e.x,1200)&&(!e.dead||e.death>0)){if(e.type==='helmet')levelArt.enemy(ctx,e,clock);else if(!e.dead)drawGarlic(e);}
- character();ctx.restore();atmosphere.effects(ctx,camera);ctx.restore();
+ character();if(window.debugHitboxes){for(const e of enemies)if(!e.dead&&activeNear(e.x))CombatGeometry.draw(ctx,CombatGeometry.enemy(e,clock),'#7aff82');for(const t of traps)if(t.type==='fire'&&t.active)CombatGeometry.draw(ctx,CombatGeometry.fire(t),'#ffdf5d');for(const p of [...projectiles,...boss.projectiles])if(p.type==='stake'||p.kind==='bolt'||p.kind==='rain')CombatGeometry.draw(ctx,CombatGeometry.bolt(p),'#5deaff');}ctx.restore();atmosphere.effects(ctx,camera);ctx.restore();
  atmosphere.hud(hud,player,score,state==='win'?100:Math.min(100,Math.floor(player.x/LEVEL1.width*100)));renderStatus();drawPageTurn();
 }
 function renderStatus(){

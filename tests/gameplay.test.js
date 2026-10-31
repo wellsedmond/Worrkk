@@ -3,6 +3,23 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createGame} from './harness.js';
 const game=()=>createGame().run;
+test('flame contact follows tall visible fire and excludes ground glow and cold embers',()=>{
+ const run=game();run('const flame=traps.find(t=>t.type==="fire");traps=[flame];enemies=[];player.w=2;player.h=2;player.x=flame.x+20;player.y=flame.y-12;player.inv=0;updateTraps(0)');assert.equal(run('player.hp'),2);
+ run('player.inv=0;player.x=flame.x-15;player.y=415;updateTraps(0)');assert.equal(run('player.hp'),2);
+ run('flame.cycle=4;clock=3;player.x=flame.x+20;player.y=410;updateTraps(0)');assert.equal(run('player.hp'),2);
+});
+test('arrow contour includes visible feathers but excludes the glowing trail',()=>{
+ const run=game();run('traps=[];enemies=[];player.w=2;player.h=2;player.x=512;player.y=337;spawnProjectile("stake",500,338,0);updateTraps(0)');assert.equal(run('player.hp'),2);
+ run('player.inv=0;player.x=546;player.y=341;projectiles=[];spawnProjectile("stake",500,338,0);updateTraps(0)');assert.equal(run('player.hp'),2);assert.equal(run('projectiles.length'),1);
+});
+test('enemy body outside the old rectangle hurts, smoke and empty corners do not',()=>{
+ const run=game();run('const target=enemies.find(e=>e.type==="garlic");enemies=[target];clock=0;target.origin=0;target.flying=false;target.x=500;target.y=350;target.range=999;target.dir=1;player.x=496;player.y=360;player.w=2;player.h=2;player.vy=0;updateEnemies(0,362)');assert.equal(run('player.hp'),2);
+ run('player.inv=0;player.x=465;player.y=365;updateEnemies(0,367)');assert.equal(run('player.hp'),2);
+});
+test('armored garlic still needs two stomps or one sword hit with model contours',()=>{
+ const run=game();run('const target=enemies.find(e=>e.type==="helmet");enemies=[target];clock=0;target.x=500;target.y=388;target.baseY=388;target.origin=0;target.range=999;player.x=500;player.y=315;player.vy=100;updateEnemies(0,385)');assert.equal(run('target.hp'),1);assert.equal(run('player.hp'),3);
+ run('player.y=315;player.vy=100;updateEnemies(0,385)');assert.equal(run('target.dead'),true);
+});
 test('map has five continuous zones, safe gaps and all mandatory events',()=>{
  const run=game();assert.equal(run('LEVEL1.zones.length'),5);assert.equal(run('LEVEL1.items.every(i=>i.type==="rage")'),true);assert.ok(run('LEVEL1.enemies.length')>=30);
  assert.equal(run('LEVEL1.zones.every((z,i)=>!i||z.start===LEVEL1.zones[i-1].end)'),true);

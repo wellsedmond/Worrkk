@@ -104,5 +104,5 @@ const levelArt=(()=>{
   InquisitorArt.drawWorld(c,s);
   if(visible(LEVEL1.exitX,camera,250)){const openness=s.state==='cutscene'?Math.min(1,Math.max(0,(s.cutsceneTime-4)/4)):s.state==='win'?1:0;sprite(c,'gate',LEVEL1.exitX,180,220,250);c.fillStyle='#17112b';c.fillRect(LEVEL1.exitX+100-openness*65,290,openness*130,135);}
  }
- return {ready,tick,background,world,enemy,heroEffects,crossbowFrame,coin,garlic,propFrame,helmetPose,bonfireGeometry,bloodDropFrame};
+ return {ready,tick,flyingBolt,background,world,enemy,heroEffects,crossbowFrame,coin,garlic,propFrame,helmetPose,bonfireGeometry,bloodDropFrame};
 })();
