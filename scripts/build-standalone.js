@@ -11,10 +11,10 @@ html=html.replaceAll('assets/environment/gothic-arena.png',gothicUrl);
 html=html.replace('src="assets/hero.png"','src="data:image/png;base64,'+(await readFile(new URL('assets/hero.png',root))).toString('base64')+'"');
 // Offline edition does not fetch Telegram SDK. Hosted Mini App keeps its SDK.
 html=html.replace(/\s*<script src="https:\/\/telegram.org\/js\/telegram-web-app.js" defer><\/script>/,'');
-for(const file of ['level1.js','relics.js','combat-geometry.js','inquisitor.js','progress.js','sound.js','parallax.js','atmosphere.js','level-art.js','inquisitor-art.js','hero-animation.js','achievements-core.js','achievements.js','game.js','achievements-ui.js']){
+for(const file of ['level1.js','relics.js','combat-geometry.js','inquisitor-sockets.js','inquisitor.js','progress.js','sound.js','parallax.js','atmosphere.js','level-art.js','inquisitor-art.js','hero-animation.js','achievements-core.js','achievements.js','game.js','achievements-ui.js']){
  let js=await read(file);
  if(file==='inquisitor-art.js'){
-  const urls={};for(const name of ['body-a','body-b','body-c','body-d','body-e','effects','arena'])urls[name]='data:image/png;base64,'+(await readFile(new URL('assets/inquisitor/'+name+'.png',root))).toString('base64');
+  const urls={};for(const name of ['body-a','body-b','body-c','body-d','body-e','body-f','effects','arena'])urls[name]='data:image/png;base64,'+(await readFile(new URL('assets/inquisitor/'+name+'.png',root))).toString('base64');
   js=js.replace('`assets/inquisitor/${name}.png`',`(${JSON.stringify(urls)})[name]`);
  }else if(file==='atmosphere.js'){
   js=js.replace("'assets/environment/clock-tower.png'",JSON.stringify('data:image/png;base64,'+(await readFile(new URL('assets/environment/clock-tower.png',root))).toString('base64')));

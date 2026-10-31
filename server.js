@@ -3,6 +3,7 @@ import {createAchievementApi} from './achievement-server.js';
 const achievementApi=createAchievementApi();
 import { readFile } from 'node:fs/promises';
 const files = {
+  '/inquisitor-sockets.js': ['inquisitor-sockets.js', 'text/javascript'],
   '/assets/audio/boss.mp3': ['assets/audio/boss.mp3', 'audio/mpeg'],
   '/assets/level1/relic-statue.png': ['assets/level1/relic-statue.png', 'image/png'],
   '/relics.js': ['relics.js', 'text/javascript'],
@@ -42,7 +43,7 @@ for (const name of ['ska-palace', 'skyline', 'graveyard', 'web']) {
 }
 for (const name of ['level1','progress','sound','level-art','parallax','achievements-core','achievements','achievements-ui'])files['/'+name+'.js']=[name+'.js','text/javascript'];
 for(const name of ['helmet','hunter','coffin','stake','sword','gate','werewolf','tower'])files['/assets/level1/'+name+'.svg']=['assets/level1/'+name+'.svg','image/svg+xml'];
-for(const name of ['body-a','body-b','body-c','body-d','body-e','effects','arena'])files['/assets/inquisitor/'+name+'.png']=['assets/inquisitor/'+name+'.png','image/png'];
+for(const name of ['body-a','body-b','body-c','body-d','body-e','body-f','effects','arena'])files['/assets/inquisitor/'+name+'.png']=['assets/inquisitor/'+name+'.png','image/png'];
 http.createServer(async (req, res) => {
   if(new URL(req.url,'http://localhost').pathname==='/api/achievements')return achievementApi(req,res);
   const file = files[new URL(req.url, 'http://localhost').pathname];

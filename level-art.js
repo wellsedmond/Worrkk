@@ -51,7 +51,6 @@ const levelArt=(()=>{
    const handX=extended&&g?g.dx+g.dw-6:18,handY=extended&&g?g.dy+g.dh*.43-heroAnimator.effectOffset():-32;
    c.save();c.translate(handX,handY);c.rotate(extended?-.2:-1.1);sprite(c,'sword',-9,-8,70,18);c.restore();
   }
-  if(state==='cutscene'&&cinematic>2&&cinematic<5){line(c,[[17,-35],[13,-72],[4,-75]],'#dbb38d',7);}
  }
  function crossbowFrame(t){return t.shotTime>=0?Math.min(7,2+Math.floor(t.shotTime/.1)):t.warn&&t.phase>=t.warning*.65?1:0;}
  function crossbow(c,muzzleX,boltY,t,dir=-1){

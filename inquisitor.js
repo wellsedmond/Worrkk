@@ -10,18 +10,25 @@ const Inquisitor=(()=>{
   difficulty=difficulties[difficulty]?difficulty:'normal';const d=difficulties[difficulty];
   return {...config,arenaStart:config.arenaStart||57500,arenaEnd:config.arenaEnd||(config.arenaStart||57500)+960,x:(config.arenaStart||57500)+650,y:290,w:72,h:140,groundY:430,difficulty,maxHp:d.hp,hp:d.hp,phase:1,state:'WAITING',mode:'waiting',engaged:false,dead:false,death:0,inv:0,timer:0,stateTime:0,time:0,attack:null,actionIndex:0,shots:0,dir:-1,projectiles:[],zones:[],serial:0,attention:0,lastPlayerX:null,lastKeys:{},lastAction:'',repeated:0,forced:false,transitionCount:0,shotAt:-100,jumpLeft:0,moveX:0,hitReturn:null,victoryHandled:false};
  }
- function clear(b){b.projectiles=[];b.zones=[];b.attack=null;b.fired=new Set();b.dashDistance=0;b.jumpLeft=0;b.y=290;}
+ function clear(b){b.projectiles=[];b.zones=[];b.attack=null;b.fired=new Set();b.dashDistance=0;b.jumpLeft=0;b.y=290;b.lastRelease=null;}
  function enter(b,state,duration=0){if(state==='IDLE')b.didLeap=false;b.state=state;b.timer=duration;b.stateTime=0;b.mode=state==='WAITING'?'waiting':state==='INTRO'?'intro':['RECOVERY','STUNNED','HIT'].includes(state)?'reload':['DEATH','VICTORY'].includes(state)?'defeated':state==='PHASE_TRANSITION'?'transition':'attack';b.dead=state==='DEATH'||state==='VICTORY';}
  function engage(b,skipIntro=false){b.engaged=true;clear(b);enter(b,skipIntro?'IDLE':'INTRO',skipIntro?interval(b):2);}
  function interval(b){return ({1:3.5,2:2.5,3:1.6}[b.phase])*difficulties[b.difficulty].interval;}
  function emit(b,kind,x,y,vx,vy=0,extra={}){if(b.projectiles.length>=32)b.projectiles.shift();b.projectiles.push({id:'inquisitor-'+(++b.serial),kind,x,y,vx,vy,w:kind==='bolt'?48:kind==='rain'?10:kind==='energy'?120:30,h:kind==='bolt'?8:kind==='rain'?48:kind==='energy'?54:30,age:0,...extra});}
  function zone(b,kind,x,w,warning,activeTime,extra={}){if(b.zones.length>=16)b.zones.shift();b.zones.push({id:'zone-'+(++b.serial),kind,x:clamp(x,b.arenaStart+12,b.arenaEnd-w-12),y:kind==='beam'?0:410,w,h:kind==='beam'?430:20,warning,activeTime,age:0,...extra});}
- function bolt(b,y=338){const dir=b.dir;b.shotAt=b.time;b.shots++;emit(b,'bolt',b.x+36+dir*56+(dir<0?-48:0),y,dir*260);}
- function garlic(b){const distance=b.targetX-(b.x+36);emit(b,'garlic',b.x+36+b.dir*35,330,clamp(distance/1.05,-360,360),-265,{gravity:700});}
- function grenade(b){const distance=b.targetX-(b.x+36);emit(b,'grenade',b.x+36+b.dir*35,330,clamp(distance/1.12,-420,420),-300,{gravity:700});}
+ function release(b,kind){const point=InquisitorSockets.point(b,kind);b.lastRelease={...point,kind,at:b.time};return point;}
+ function bolt(b,y=338){const dir=b.dir;b.shotAt=b.time;b.shots++;const point=release(b,y>360?'low':'high');emit(b,'bolt',point.x-(dir<0?48*.94:48*.06),point.y-4,dir*260);}
+ function garlic(b){const p=release(b,'garlic'),distance=b.targetX-p.x;emit(b,'garlic',p.x-15,p.y-15,b.dir*clamp(Math.abs(distance)/1.05,80,360),-265,{gravity:700});}
+ function grenade(b){const p=release(b,'grenade'),distance=b.targetX-p.x;emit(b,'grenade',p.x-15,p.y-15,b.dir*clamp(Math.abs(distance)/1.12,80,420),-300,{gravity:700});}
+ function shootingFrame(t,times,count=8){
+  let fired=-1;for(const at of times)if(t>=at)fired=at;
+  if(fired<0)return Math.min(2,Math.floor(Math.max(0,t)/times[0]*3));
+  const age=t-fired;if(age<.12)return 3;if(age<.24)return 4;if(age<.42)return 5;return count===6?2:age<.65?6:7;
+ }
+ function throwingFrame(t,releaseAt,total,count,startAt=0){if(t<releaseAt)return Math.min(2,Math.floor(Math.max(0,t-startAt)/(releaseAt-startAt)*3));return Math.min(count-1,3+Math.floor((t-releaseAt)/(total-releaseAt)*(count-3)));}
  function once(b,id,at,fn){if(b.stateTime>=at&&!b.fired.has(id)){b.fired.add(id);fn();}}
  function beginAttack(b,kind,player){
-  b.jumpLeft=0;b.y=290;b.attack=kind;b.dir=player.x+player.w/2<b.x+36?-1:1;b.targetX=player.x+player.w/2;b.fired=new Set();b.dashDistance=0;b.shots=0;b.lane=b.actionIndex%2?338:400;
+  b.jumpLeft=0;b.y=290;b.attack=kind;b.dir=player.x+player.w/2<b.x+36?-1:1;b.targetX=player.x+player.w/2;b.fired=new Set();b.dashDistance=0;b.shots=0;b.lastRelease=null;b.lane=b.actionIndex%2?338:400;
   enter(b,'ATTACK',attacks[kind]);
   if(kind==='trap')zone(b,'trap',b.x+(b.dir<0?-120:100),64,.85,5,{oneShot:true});
   if(kind==='grenade')zone(b,'grenade-mark',b.targetX-80,160,1.4,.3,{harmless:true});
@@ -39,7 +46,7 @@ const Inquisitor=(()=>{
   if(kind==='combo'){once(b,'bolt',.8,()=>bolt(b));dash(2.3,2.9);}
   if(kind==='feint'&&t>=1.9&&t<2.2){const box={x:b.x+(b.dir<0?-100:50),y:350,w:120,h:80};if(overlap(box,ctx.player))ctx.hit();}
   if(kind==='frenzy'){dash(.8,1.4);once(b,'a',2.05,()=>bolt(b));once(b,'b',2.8,()=>bolt(b));once(b,'grenade',3.55,()=>grenade(b));}
-  if(kind==='charge')once(b,'energy',4,()=>{emit(b,'energy',b.x+36+(b.dir<0?-120:0),366,b.dir*220);b.shotAt=b.time;});
+  if(kind==='charge')once(b,'energy',4,()=>{const p=release(b,'energy');emit(b,'energy',p.x-(b.dir<0?120:0),p.y-27,b.dir*220);b.shotAt=b.time;});
   if(b.timer<=0){const duration=['dash','combo','feint'].includes(kind)?1.5:kind==='charge'?1.6:2;recover(b,ctx,duration);}
  }
  function updateHazards(b,dt,ctx){
@@ -103,5 +110,5 @@ const Inquisitor=(()=>{
   if(b.state==='ATTACK'){const detail=b.attack==='volley'?(b.lane<360?' · ПРИСЯДЬ':' · ПРЫГАЙ'):['dash','frenzy'].includes(b.attack)?' · ПЕРЕПРЫГНИ':b.attack==='beam'||b.attack==='rain'?' · УЙДИ С МЕТОК':b.attack==='feint'?' · ЖДИ НАСТОЯЩИЙ УДАР':'';return (b.forced?'ОХОТНИК ЗАМЕТИЛ ПРИВЫЧКУ · ':'')+names[b.attack]+detail;}
   return 'Двигайся и чередуй действия';
  }
- return {create,engage,step,strike,vulnerable,warning,beginAttack,enter,clear,difficulties,attacks,lists,overlap};
+ return {create,engage,shootingFrame,throwingFrame,step,strike,vulnerable,warning,beginAttack,enter,clear,difficulties,attacks,lists,overlap};
 })();

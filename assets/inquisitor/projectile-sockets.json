@@ -1,0 +1,42 @@
+{
+  "high": {
+    "clip": "crossbow",
+    "frame": 3,
+    "sourceX": 751,
+    "sourceY": 89,
+    "x": 72.91428571428571,
+    "y": -88.0
+  },
+  "low": {
+    "clip": "crouch",
+    "frame": 3,
+    "sourceX": 879,
+    "sourceY": 431,
+    "x": 82.58823529411764,
+    "y": -26.0
+  },
+  "garlic": {
+    "clip": "garlic",
+    "frame": 3,
+    "sourceX": 899,
+    "sourceY": 544,
+    "x": 89.28,
+    "y": -93.6
+  },
+  "grenade": {
+    "clip": "grenade",
+    "frame": 3,
+    "sourceX": 900,
+    "sourceY": 748,
+    "x": 93.6,
+    "y": -89.28
+  },
+  "energy": {
+    "clip": "crouch",
+    "frame": 3,
+    "sourceX": 879,
+    "sourceY": 431,
+    "x": 82.58823529411764,
+    "y": -26.0
+  }
+}

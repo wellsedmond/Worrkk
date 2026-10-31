@@ -179,7 +179,7 @@ function recordBossVictory(){
  notify(first?'ИНКВИЗИТОР ПОВЕРЖЕН · +1000 МОНЕТ · ПОСЛЕДНИЙ УПЫРЬ':'ИНКВИЗИТОР ПОВЕРЖЕН · награда за первую победу уже получена',4);
 }
 function completeBossBattle(){
- if(boss.victoryHandled)return;boss.victoryHandled=true;recordBossVictory();Inquisitor.clear(boss);projectiles=[];state='cutscene';cutsceneTime=0;
+ if(boss.victoryHandled)return;boss.victoryHandled=true;recordBossVictory();Inquisitor.clear(boss);projectiles=[];player.attack=0;player.cooldown=0;player.inv=0;player.swingSword=false;heroAnimator.reset();heroAnimator.update(0,false,{ground:true,vy:0,travel:0,sword:sword>0,rage:player.rage>0});state='cutscene';cutsceneTime=0;
 }
 function updateBoss(dt){
  if(boss.state==='WAITING'&&player.x>=boss.arenaStart){if(checkpoint.id!=='inquisitor-entry')saveBossEntry();Inquisitor.engage(boss);player.x=Math.max(player.x,boss.arenaStart+45);notify(progressStore.available?'Контрольная точка достигнута · бой сохранён':'Контрольная точка в памяти · хранилище недоступно',2);}

@@ -12,10 +12,11 @@ function fightInquisitor(){
   if((p.kind==='bolt'||p.type==='stake')&&p.y<360)crouch=true;
   if((p.kind==='bolt'&&p.y>=360||p.kind==='energy')&&Math.abs(p.x-center)<180)jump=true;
  }
- if(b.state==='ATTACK'&&b.attack==='volley'&&b.lane>360){for(const t of [.85,1.95,3.05]){const time=t-b.stateTime,travel=Math.max(0,Math.abs((b.x+36+b.dir*56)-center)/260);if(time+travel>.06&&time+travel<.25)jump=true;}}
+ if(b.state==='ATTACK'&&b.attack==='volley'&&b.lane>360){for(const t of [.85,1.95,3.05]){const time=t-b.stateTime,travel=Math.max(0,(Math.abs(InquisitorSockets.point(b,'low').x-center)-40-player.w/2)/260);if(time+travel>.06&&time+travel<.25)jump=true;}}
  const dashNow=b.state==='ATTACK'&&(b.attack==='dash'&&b.stateTime>=1&&b.stateTime<1.6||b.attack==='combo'&&b.stateTime>=2.3&&b.stateTime<2.9||b.attack==='frenzy'&&b.stateTime>=.8&&b.stateTime<1.4);
  if(dashNow&&Math.abs(b.x-player.x)<240)jump=true;
- if(b.projectiles.some(p=>p.kind==='garlic'&&Math.abs(p.x-center)<300))target=player.x;
+ const incomingGarlic=b.projectiles.find(p=>p.kind==='garlic'&&Math.abs(p.x-center)<300);
+ if(incomingGarlic){target=player.x+(Math.sign(incomingGarlic.x+incomingGarlic.w/2-center)||1)*8;if(incomingGarlic.age>.6&&Math.abs(incomingGarlic.x-center)<150)jump=true;}
  const dangerous=b.zones.filter(z=>z.age<z.warning+z.activeTime+.2&&['beam','rain','uv','trap'].includes(z.kind));
  for(const z of dangerous){
   if(z.kind==='beam'||z.kind==='rain'){
@@ -26,11 +27,20 @@ function fightInquisitor(){
   }else if(z.kind==='uv'){
    if(player.x+player.w<=z.x)target=Math.min(target,z.x-player.w-15);
    else if(player.x>=z.x+z.w)target=Math.max(target,z.x+z.w+15);
-   else target=center<z.x+z.w/2?z.x-player.w-25:z.x+z.w+25;
+   else {const exits=[z.x-player.w-25,z.x+z.w+25].filter(x=>x>=b.arenaStart+15&&x<=b.arenaEnd-player.w-15);exits.sort((a,c)=>Math.abs(a-player.x)-Math.abs(c-player.x));if(exits.length)target=exits[0];jump=true;}
   }else if(Math.abs(center-(z.x+z.w/2))<90&&(target>player.x+5&&z.x+z.w>player.x||target<player.x-5&&z.x<player.x+player.w)){
    jump=true;const predicted={x:player.x+Math.sign(target-player.x)*18,y:player.y,w:player.w,h:player.h};
    if(overlap(predicted,z)&&player.y+player.h>z.y-4&&player.vy<=0)target=player.x;
   }
+ }
+ // Keep a safe corridor while marks are visible, rather than repeatedly crossing their edge.
+ const marked=dangerous.filter(z=>['beam','rain','uv'].includes(z.kind));
+ const blocked=(x,z)=>x+player.w>z.x-16&&x<z.x+z.w+16;
+ const pathBlocked=marked.some(z=>Math.max(player.x,target)+player.w>z.x-16&&Math.min(player.x,target)<z.x+z.w+16);
+ if(marked.length&&pathBlocked){
+  const spots=[player.x,b.arenaStart+25,b.arenaEnd-player.w-25,...marked.flatMap(z=>[z.x-player.w-24,z.x+z.w+24])].filter(x=>x>=b.arenaStart+15&&x<=b.arenaEnd-player.w-15&&!marked.some(z=>blocked(x,z)));
+  spots.sort((a,c)=>Math.abs(a-player.x)+Math.abs(a-target)*.02-Math.abs(c-player.x)-Math.abs(c-target)*.02);
+  if(spots.length)target=spots[0];
  }
  if(b.state==='ATTACK'&&b.attack==='charge')crouch=false;
  keys.right=player.x<target-3;keys.left=player.x>target+3;
