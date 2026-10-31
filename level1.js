@@ -1,5 +1,6 @@
 /* Level data only. Distances use the existing 245 px/s run speed and 90 px tiers. */
 const LEVEL1 = (() => {
+ const stakeY=338; // Head-height bolt lane; full crouch artwork stays below it.
  const zones=[
   {id:'forest',name:'Пробуждение Упыря',start:0,end:12500,tint:'#283c3c'},
   {id:'cemetery',name:'Кладбище забытых игроков',start:12500,end:30000,tint:'#453651'},
@@ -36,7 +37,7 @@ const LEVEL1 = (() => {
  fire(2150);fire(7800,4);fire(17200,4);fire(26300,4);
  // Stakes travel at head height: crouching leaves 8px clearance. Telegraph lasts 0.9s.
  for(const [i,x]of [2500,31700,33900,36700,39200,41800,43900,46500].entries()){
-  traps.push({id:'t'+nextId++,type:'stake',x,y:357,w:48,h:12,period:i?5.5:7,warning:.9,travel:470,speed:230});
+  traps.push({id:'t'+nextId++,type:'stake',x,y:stakeY,w:48,h:12,period:i?5.5:7,warning:.9,travel:470,speed:230});
   if(i>0)fire(x-260,i%2?4.8:0);
  }
  for(const x of [50100,51800])traps.push({id:'t'+nextId++,type:'pendulum',x,y:-600,length:260,radius:23,period:4.5});
@@ -51,7 +52,7 @@ const LEVEL1 = (() => {
  items.push({id:'rage-forest',type:'rage',x:5600,y:385},{id:'rage-alley',type:'rage',x:38200,y:385});
  for(const p of ground){if(p.x%1000<500&&p.x>300)coins.push({id:'c'+nextId++,x:p.x+Math.min(180,p.w/2),y:390});}
  for(const p of ledges)if(p.w>=150)coins.push({id:'c'+nextId++,x:p.x+p.w/2,y:p.y-40});
- return Object.freeze({id:'level1',name:'Проклятая дорога к СКА Арене',width:60300,zones,ground,ledges,enemies,traps,coins,items,
+ return Object.freeze({id:'level1',name:'Проклятая дорога к СКА Арене',width:60300,stakeY,zones,ground,ledges,enemies,traps,coins,items,
   checkpoints:[{id:'cemetery-end',x:29600,y:430},{id:'tower-base',x:48000,y:430},{id:'tower-top',x:52800,y:-290},{id:'arena',x:57200,y:430}],
   lever:{x:53000,y:-290},gate:{x:53500,y:-600,w:48,h:1030},
   timedSection:{start:50000,end:52500,seconds:24},escapeSeconds:45,

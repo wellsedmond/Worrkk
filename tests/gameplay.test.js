@@ -176,3 +176,18 @@ test('sword locomotion follows equipment, direction and physics without replacin
  run('heroAnimator.strike(true)');assert.equal(run('heroAnimator.pose().clip'),'sword');
  run('heroAnimator.reset()');assert.equal(run('heroAnimator.pose().phase'),'stand');
 });
+
+test('crossbows launch head-height bolts at release and crouched artwork clears the flight lane',()=>{
+ const run=game();
+ run('enemies=[];player.x=2200;const bow=traps.find(t=>t.type==="stake");traps=[bow];bow.phase=bow.warning-1/120;updateTraps(1/120)');
+ assert.equal(run('bow.shotTime'),0);assert.equal(run('projectiles.length'),1);
+ assert.equal(run('projectiles[0].y'),run('LEVEL1.stakeY'));
+ assert.ok(run('projectiles[0].x+projectiles[0].w<=bow.x'));
+ for(const armed of [false,true]){
+  run(`player.x=500;player.y=350;player.h=80;player.ground=true;player.hp=3;player.inv=0;keys.crouch=true;setCrouch();heroAnimator.reset();heroAnimator.update(.4,true,{ground:true,vy:0,travel:0,sword:${armed}});traps=[];projectiles=[];spawnProjectile('stake',player.x,LEVEL1.stakeY,0)`);
+  assert.ok(run('projectiles[0].y+projectiles[0].h/2+8 < player.y+player.h+heroAnimator.geometry().dy'),'complete arrow artwork clears crouched head');
+  run('updateTraps(0)');assert.equal(run('player.hp'),3);
+ }
+ run("projectiles=[];keys.crouch=false;setCrouch();player.inv=0;spawnProjectile('stake',player.x,LEVEL1.stakeY,0);updateTraps(0)");assert.equal(run('player.hp'),2,'standing visible head is vulnerable');
+ run('makeWorld()');assert.equal(run('traps.filter(t=>t.type==="stake").every(t=>t.shotTime===-1)'),true);
+});

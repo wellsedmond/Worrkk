@@ -18,8 +18,8 @@ function makeWorld(){
  groundPlatforms=LEVEL1.ground.map(toPlatform);ledgePlatforms=LEVEL1.ledges.map(toPlatform);platforms=[...groundPlatforms,...ledgePlatforms];
  coins=LEVEL1.coins.map(c=>({...c,taken:false}));items=LEVEL1.items.map(c=>({...c,taken:false}));
  enemies=LEVEL1.enemies.map(e=>({...e,origin:e.x,baseY:e.y,w:38,h:42,dir:1,hp:e.type==='helmet'?2:1,dead:false,death:0,vy:0}));
- traps=LEVEL1.traps.map(t=>({...t,phase:0,active:t.type==='fire',warn:false}));
- boss={...LEVEL1.boss,mode:'waiting',phase:1,shots:0,timer:0,dead:false,death:0,inv:0,retreat:0,retreatStart:LEVEL1.boss.x,targetX:LEVEL1.boss.x};projectiles=[];
+ traps=LEVEL1.traps.map(t=>({...t,phase:0,active:t.type==='fire',warn:false,shotTime:-1}));
+ boss={...LEVEL1.boss,mode:'waiting',phase:1,shots:0,timer:0,dead:false,death:0,inv:0,shotTime:-1,shotDir:-1,retreat:0,retreatStart:LEVEL1.boss.x,targetX:LEVEL1.boss.x};projectiles=[];
 }
 function reset(){
  atmosphere.reset();heroAnimator.reset();makeWorld();player={x:70,y:330,w:40,h:80,vx:0,vy:0,ground:false,hp:3,inv:0,face:1,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false};
@@ -69,16 +69,20 @@ function punch(){
  if(boss.mode==='reload'&&boss.inv<=0&&overlap(box,boss)){swordHit('boss-'+boss.hp);boss.hp--;boss.inv=1;atmosphere.burst(boss.x+36,boss.y+50,'sparks');if(boss.hp===0){boss.mode='defeated';boss.dead=true;boss.death=1.6;achievementSystem.emit('enemy_killed',{id:'boss-hunter'});achievementSystem.emit('boss_defeated',{id:'hunter'});recordKill();}else{boss.phase=4-boss.hp;boss.mode='attack';boss.shots=0;boss.timer=2.8;notify(`Охотник: фаза ${boss.phase}`);}}
  if(player.swordBroke&&sword===0)notify(`Меч сломан. До следующего: ${10-kills%10} побед`);
 }
-function spawnProjectile(type,x,y,dir=-1,source='trap'){if(projectiles.length>=48)projectiles.shift();projectiles.push({id:'projectile-'+(++projectileNumber),type,x,y,w:type==='stake'?48:32,h:type==='stake'?12:32,vx:dir*(source==='boss'?210:230),life:0,source});}
+function spawnProjectile(type,x,y,dir=-1,source='trap'){if(projectiles.length>=48)projectiles.shift();projectiles.push({id:'projectile-'+(++projectileNumber),type,x,y,w:type==='stake'?48:32,h:type==='stake'?8:32,vx:dir*(source==='boss'?210:230),life:0,source});}
 function updateTraps(dt){
  for(const t of traps){if(!activeNear(t.x))continue;
   if(t.type==='fire'){t.active=!t.cycle||(clock%t.cycle)<t.cycle*.55;if(t.active&&overlap(player,t))hit();}
-  if(t.type==='stake'){const previous=t.phase;t.phase=(t.phase+dt)%t.period;t.warn=t.phase<t.warning;if(previous<t.warning&&t.phase>=t.warning)spawnProjectile('stake',t.x,t.y,-1);}
+  if(t.type==='stake'){
+   if(t.shotTime>=0){t.shotTime+=dt;if(t.shotTime>=.6)t.shotTime=-1;}
+   const previous=t.phase;t.phase=(t.phase+dt)%t.period;t.warn=t.phase<t.warning;
+   if(previous<t.warning&&t.phase>=t.warning){t.shotTime=0;spawnProjectile('stake',t.x-48,t.y,-1);}
+  }
   if(t.type==='pendulum'){t.headX=t.x+Math.sin(clock*Math.PI*2/t.period)*145;t.headY=t.y+Math.cos(Math.sin(clock*Math.PI*2/t.period)*.6)*t.length;const box={x:t.headX-t.radius,y:t.headY-t.radius,w:t.radius*2,h:t.radius*2};if(overlap(player,box))hit();}
  }
  for(const p of projectiles){const beforeX=p.x;p.life+=dt;p.x+=p.vx*dt;if(p.type==='garlic')p.y+=Math.sin(p.life*5)*14*dt;
   if(player.attack>0&&overlap(attackBox(),p)){p.dead=true;atmosphere.burst(p.x+16,p.y+16,p.type==='garlic'?'garlic':'sparks');tutorialDone.add('attack');}
-  else if(overlap(player,p)){p.dead=true;hit();}
+  else if(overlap(p.type==='stake'&&player.h===80?{x:player.x,y:player.y-12,w:player.w,h:player.h+12}:player,p)){p.dead=true;hit();}
   if(!p.dead&&p.type==='stake'&&Math.abs(p.y-player.y)<150){if(p.x<player.x+player.w&&p.x+p.w>player.x)p.dodgeCandidate=true;const passed=p.vx<0?beforeX+p.w>=player.x&&p.x+p.w<player.x:beforeX<=player.x+player.w&&p.x>player.x+player.w;if(passed&&p.dodgeCandidate&&!p.dodgeCounted){p.dodgeCounted=true;achievementSystem.emit('stake_dodged',{id:p.id});}}
  }
  projectiles=projectiles.filter(p=>!p.dead&&p.life<5&&Math.abs(p.x-player.x)<1400);
@@ -90,6 +94,7 @@ function updateEnemies(dt,prevBottom){for(const e of enemies){if(e.dead){e.death
  if(overlap(player,e)){if(player.vy>0&&prevBottom<e.y+12){defeatEnemy(e);player.vy=-370;}else hit();}
 }}
 function updateBoss(dt){
+ if(boss.shotTime>=0){boss.shotTime+=dt;if(boss.shotTime>=.6)boss.shotTime=-1;}
  if(boss.mode==='waiting'&&player.x>=LEVEL1.boss.arenaStart){boss.mode='intro';boss.timer=3;notify('ТЕБЕ ТУДА НЕЛЬЗЯ, УПЫРЬ!',3);}
  if(boss.mode==='waiting')return;
  boss.inv=Math.max(0,boss.inv-dt);
@@ -100,7 +105,7 @@ function updateBoss(dt){
  if(boss.mode==='intro'&&boss.timer<=0){boss.mode='attack';boss.timer=2;}
  if(boss.mode==='attack'&&boss.timer<=0){
   if(boss.shots>=3){boss.mode='reload';boss.timer=6;notify('Перезарядка! Подойди и ударь охотника!',3);}
-  else{const type=boss.phase===1?'stake':boss.phase===2?'garlic':boss.shots%2?'garlic':'stake';const dir=player.x<boss.x?-1:1;spawnProjectile(type,boss.x+36,boss.phase===2||type==='garlic'?363:357,dir,'boss');boss.shots++;boss.timer=boss.phase===3?5:6;if(boss.phase===3){boss.retreatStart=boss.x;boss.targetX=Math.min(LEVEL1.boss.arenaEnd-150,boss.x+65);boss.retreat=.55;}}
+  else{const type=boss.phase===1?'stake':boss.phase===2?'garlic':boss.shots%2?'garlic':'stake';const dir=player.x<boss.x?-1:1;spawnProjectile(type,boss.x+36+(type==='stake'&&dir<0?-48:0),boss.phase===2||type==='garlic'?363:LEVEL1.stakeY,dir,'boss');if(type==='stake'){boss.shotTime=0;boss.shotDir=dir;}boss.shots++;boss.timer=boss.phase===3?5:6;if(boss.phase===3){boss.retreatStart=boss.x;boss.targetX=Math.min(LEVEL1.boss.arenaEnd-150,boss.x+65);boss.retreat=.55;}}
  }
  if(!boss.dead&&overlap(player,boss)&&boss.mode!=='reload')hit();
 }

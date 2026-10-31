@@ -1,7 +1,9 @@
 /* Extra actors reuse the Canvas renderer. SVGs are explicit replaceable art assets. */
 const levelArt=(()=>{
  const images={};const names=['helmet','hunter','coffin','stake','sword','gate','werewolf','tower'];
- const ready=Promise.all(names.map(async name=>{const img=new Image();img.src=`assets/level1/${name}.svg`;await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);images[name]=c;}));
+ const crossbowImage=new Image();crossbowImage.src='assets/level1/crossbow-atlas.png';
+ const crossbowFrames=[{"x":0,"y":160,"w":222,"h":356,"muzzleX":22,"muzzleY":270},{"x":222,"y":160,"w":222,"h":356,"muzzleX":242,"muzzleY":270},{"x":444,"y":160,"w":221,"h":356,"muzzleX":466,"muzzleY":270},{"x":665,"y":160,"w":222,"h":356,"muzzleX":688,"muzzleY":270},{"x":887,"y":160,"w":222,"h":356,"muzzleX":910,"muzzleY":270},{"x":1109,"y":160,"w":221,"h":356,"muzzleX":1128,"muzzleY":270},{"x":1330,"y":160,"w":222,"h":356,"muzzleX":1350,"muzzleY":270},{"x":1552,"y":160,"w":222,"h":356,"muzzleX":1564,"muzzleY":270}],boltFrames=[{"x":0,"y":695,"w":222,"h":74},{"x":222,"y":695,"w":222,"h":74},{"x":444,"y":695,"w":221,"h":74},{"x":665,"y":695,"w":222,"h":74},{"x":887,"y":695,"w":222,"h":74},{"x":1109,"y":695,"w":221,"h":74},{"x":1330,"y":695,"w":222,"h":74},{"x":1552,"y":695,"w":222,"h":74}];
+ const ready=Promise.all([crossbowImage.decode(),...names.map(async name=>{const img=new Image();img.src=`assets/level1/${name}.svg`;await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);images[name]=c;})]);
  let zoneNow=0,zoneBefore=0,fade=1;
  const visible=(x,camera,w=120)=>x+w>camera-80&&x<camera+1040;
  function sprite(c,name,x,y,w,h){if(images[name])c.drawImage(images[name],x,y,w,h);}
@@ -40,13 +42,25 @@ const levelArt=(()=>{
   if(p.attack>0&&pose.clip==='attack'&&pose.frame>=3&&pose.frame<=6){c.strokeStyle=p.swingSword?'#e6d4f8':'#ed4765';c.lineWidth=2;c.beginPath();c.arc(23,-38,p.swingSword?58:35,-1.1,1);c.stroke();}
   if(state==='cutscene'&&cinematic>2&&cinematic<5){line(c,[[17,-35],[13,-72],[4,-75]],'#dbb38d',7);}
  }
+ function crossbowFrame(t){return t.shotTime>=0?Math.min(7,2+Math.floor(t.shotTime/.1)):t.warn&&t.phase>=t.warning*.65?1:0;}
+ function crossbow(c,muzzleX,boltY,t,dir=-1){
+  if(!crossbowImage.complete||!crossbowImage.naturalWidth)return;
+  const f=crossbowFrames[crossbowFrame(t)],scale=88/244;
+  c.save();c.translate(muzzleX,boltY+4);if(dir>0)c.scale(-1,1);
+  c.drawImage(crossbowImage,f.x,f.y,f.w,f.h,(f.x-f.muzzleX)*scale,(f.y-f.muzzleY)*scale,f.w*scale,f.h*scale);c.restore();
+ }
+ function flyingBolt(c,p){
+  const f=boltFrames[Math.min(7,Math.floor(p.life*24))];
+  c.save();c.translate(p.x+(p.vx>0?p.w:0),p.y+p.h/2);if(p.vx>0)c.scale(-1,1);
+  c.drawImage(crossbowImage,f.x,f.y,f.w,f.h,0,-8,p.w,16);c.restore();
+ }
  function world(c,s){const {camera,cameraY,clock,player,boss}=s;
   for(const trap of s.traps){if(!visible(trap.x,camera,200))continue;
    if(trap.type==='fire'){oval(c,trap.x+21,trap.y+31,28,6,'#342733');for(let i=0;i<4;i++)oval(c,trap.x+5+i*11,trap.y+29,7,4,trap.active?'#ab4935':'#4b3a48');if(trap.active)flame(c,trap.x+21,trap.y+31,clock,.9);else glow(c,trap.x+21,trap.y+28,25,'#ff812b15');}
-   if(trap.type==='stake'){c.fillStyle='#221a2b';c.beginPath();c.roundRect(trap.x+22,trap.y-10,20,35,5);c.fill();line(c,[[trap.x+22,trap.y-10],[trap.x+42,trap.y-10],[trap.x+42,trap.y+25]],trap.warn?'#e87b70':'#736079',4);if(trap.warn)glow(c,trap.x+30,trap.y+5,35,Math.sin(clock*16)>0?'#ff3e5870':'#ff3e5820');}
+   if(trap.type==='stake'){crossbow(c,trap.x,trap.y,trap);if(trap.warn)glow(c,trap.x+30,trap.y+4,30,Math.sin(clock*16)>0?'#ff3e5840':'#ff3e5815');}
    if(trap.type==='pendulum'&&Number.isFinite(trap.headX)){line(c,[[trap.x,trap.y],[trap.headX,trap.headY]],'#ab97ac',4);oval(c,trap.headX,trap.headY,trap.radius,trap.radius,'#8c728e');oval(c,trap.headX,trap.headY,trap.radius-7,trap.radius-7,'#48354f');line(c,[[trap.headX-12,trap.headY],[trap.headX+12,trap.headY]],'#e4c2c6',2);}
   }
-  for(const p of s.projectiles){if(!visible(p.x,camera))continue;if(p.type==='stake'){c.save();c.translate(p.x+(p.vx>0?48:0),p.y);if(p.vx>0)c.scale(-1,1);sprite(c,'stake',0,0,48,12);c.restore();}else if(garlicImage.complete)c.drawImage(garlicImage,p.x,p.y,32,32);}
+  for(const p of s.projectiles){if(!visible(p.x,camera))continue;if(p.type==='stake'){flyingBolt(c,p);}else if(garlicImage.complete)c.drawImage(garlicImage,p.x,p.y,32,32);}
   for(const item of s.items){if(item.taken||!visible(item.x,camera))continue;const y=item.y+Math.sin(clock*3)*4;glow(c,item.x,y,30,'#b5223970');c.fillStyle='#b52239';c.beginPath();c.moveTo(item.x,y-18);c.bezierCurveTo(item.x-30,y+16,item.x+30,y+16,item.x,y-18);c.fill();line(c,[[item.x-3,y-5],[item.x-6,y+4]],'#ffb8b0',2);}
   const coffins=[{id:'start',x:30,y:430},...LEVEL1.checkpoints];
   for(const cp of coffins){if(!visible(cp.x,camera))continue;const active=cp.id===s.checkpoint.id;glow(c,cp.x+20,cp.y-35,65,active?'#cb526b40':'#8268ae25');sprite(c,'coffin',cp.x-10,cp.y-88,56,84);if(cp.id==='start'){c.save();c.translate(cp.x-12,cp.y);c.rotate(-.35);sprite(c,'coffin',-40,-84,48,78);c.restore();}}
@@ -55,10 +69,11 @@ const levelArt=(()=>{
   if(s.escapeLeft>0){for(let i=0;i<8;i++){const x=camera+(i*153+clock*75)%960,y=cameraY+((clock*150+i*73)%540)-30;c.save();c.translate(x,y);c.rotate(clock+i);c.fillStyle='#a08a9d';c.beginPath();c.moveTo(-5,-4);c.lineTo(6,-2);c.lineTo(3,7);c.closePath();c.fill();c.restore();}}
   if(visible(boss.x,camera,180)&&boss.mode!=='waiting'){
    c.save();if(boss.dead){c.translate(boss.x+36,430);c.rotate(-Math.min(1.45,(1.6-Math.max(0,boss.death))));sprite(c,'hunter',-38,-120,78,122);}else{if(boss.mode==='reload')glow(c,boss.x+36,boss.y+55,75,'#ff812b25');sprite(c,'hunter',boss.x-4,boss.y-5,80,125);}c.restore();
+   if(!boss.dead&&boss.phase!==2)crossbow(c,boss.x+36,LEVEL1.stakeY,{shotTime:boss.shotTime,warn:boss.mode==='attack'&&boss.timer<.9,phase:.9,warning:.9},boss.shotDir);
    if(boss.dead){sprite(c,'stake',boss.x+70,421,40,10);line(c,[[boss.x+78,410],[boss.x+100,421]],'#c6b0b9',3);}
   }
   if(visible(LEVEL1.exitX,camera,250)){const openness=s.state==='cutscene'?Math.min(1,Math.max(0,(s.cutsceneTime-4)/4)):s.state==='win'?1:0;sprite(c,'gate',LEVEL1.exitX,180,220,250);c.fillStyle='#17112b';c.fillRect(LEVEL1.exitX+100-openness*65,290,openness*130,135);}
   if(s.state==='cutscene'&&s.cutsceneTime<4){const kx=s.cutsceneTime<2?boss.x+80:player.x+48,ky=s.cutsceneTime<2?420:player.y+40;oval(c,kx,ky,10,10,'#e9c36b');line(c,[[kx+7,ky],[kx+39,ky],[kx+39,ky+9]],'#e9c36b',5);}
  }
- return {ready,tick,background,world,enemy,heroEffects};
+ return {ready,tick,background,world,enemy,heroEffects,crossbowFrame};
 })();
