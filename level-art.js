@@ -47,9 +47,9 @@ const levelArt=(()=>{
  }
 
  function heroEffects(c,p,time,cinematic,state,sword){
-  if(p.rage>0){glow(c,11,-61,20,'#ff203b70');oval(c,10,-62,2.6,1.8,'#ff243b');for(let i=0;i<4;i++)oval(c,25+Math.sin(time*8+i)*5,-30+Math.cos(time*7+i)*8,1.8,1.8,'#ff405a');}
+  if(p.rage>0&&!heroAnimator.pose().clip?.startsWith('rage')){glow(c,11,-61,20,'#ff203b70');oval(c,10,-62,2.6,1.8,'#ff243b');for(let i=0;i<4;i++)oval(c,25+Math.sin(time*8+i)*5,-30+Math.cos(time*7+i)*8,1.8,1.8,'#ff405a');}
   const pose=heroAnimator.pose();
-  if(p.attack<=0&&sword>0&&!['swordRun','swordJump','swordCrouch'].includes(pose.clip)){
+  if(p.attack<=0&&sword>0&&!['swordRun','swordJump','swordCrouch','swordIdle','rageSwordRun','rageSwordJump','rageSwordCrouch'].includes(pose.clip)){
    const g=heroAnimator.geometry(),extended=pose.clip==='attack'&&pose.frame>=3&&pose.frame<=6;
    const handX=extended&&g?g.dx+g.dw-6:18,handY=extended&&g?g.dy+g.dh*.43-heroAnimator.effectOffset():-32;
    c.save();c.translate(handX,handY);c.rotate(extended?-.2:-1.1);sprite(c,'sword',-9,-8,70,18);c.restore();

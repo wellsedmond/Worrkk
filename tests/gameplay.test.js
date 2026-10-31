@@ -212,3 +212,18 @@ test('helmet garlic needs two ordinary hits even in rage, or one sword hit; a st
  run('start();const armedTarget=enemies.find(e=>e.type==="helmet");player.x=armedTarget.x-50;player.y=350;player.face=1;sword=5;punch()');assert.equal(run('armedTarget.dead'),true);assert.equal(run('sword'),4);
  run('start();const stompTarget=enemies.find(e=>e.type==="helmet");enemies=[stompTarget];player.x=stompTarget.x;player.y=stompTarget.y-70;player.vy=200;updateEnemies(0,stompTarget.y-1)');assert.equal(run('stompTarget.hp'),1);assert.equal(run('stompTarget.dead'),false);assert.equal(run('player.vy'),-370);
 });
+
+test('rage locomotion tracks sword inventory and expires cleanly; equipped idle holds one sword',()=>{
+ const run=game();
+ for(const armed of [false,true]){
+  run(`heroAnimator.reset();heroAnimator.update(.1,false,{ground:true,vy:0,travel:25,sword:${armed},rage:true})`);
+  assert.equal(run('heroAnimator.pose().clip'),armed?'rageSwordRun':'rageRun');
+  run(`heroAnimator.update(.1,false,{ground:false,vy:-500,travel:2,sword:${armed},rage:true})`);assert.equal(run('heroAnimator.pose().clip'),armed?'rageSwordJump':'rageJump');
+  run(`heroAnimator.update(.4,true,{ground:true,vy:0,travel:0,sword:${armed},rage:true})`);assert.equal(run('heroAnimator.pose().clip'),armed?'rageSwordCrouch':'rageCrouch');
+  run(`heroAnimator.update(.01,true,{ground:true,vy:0,travel:0,sword:${armed},rage:false})`);assert.equal(run('heroAnimator.pose().clip'),armed?'swordCrouch':'crouch');
+ }
+ run('heroAnimator.reset();heroAnimator.setState({sword:true,rage:false})');assert.equal(run('heroAnimator.pose().phase'),'stand');assert.equal(run('heroAnimator.pose().clip'),'swordIdle');assert.ok(run('heroAnimator.geometry().dw')>0);
+ run('heroAnimator.setState({sword:false,rage:false})');assert.equal(run('heroAnimator.pose().clip'),null);
+ run('heroAnimator.setState({sword:true,rage:true});heroAnimator.strike(true)');assert.equal(run('heroAnimator.pose().clip'),'sword');
+ run('heroAnimator.reset()');assert.equal(run('heroAnimator.pose().clip'),null);
+});
