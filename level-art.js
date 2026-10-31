@@ -23,11 +23,8 @@ const levelArt=(()=>{
    for(const tile of parallax.tiles(camera,.35,190)){const x=tile.x;c.save();c.translate(x,440);c.fillStyle='#090c15';c.beginPath();c.moveTo(-12,0);c.lineTo(-4,-165);c.lineTo(-40,-215);c.lineTo(-15,-200);c.lineTo(6,-150);c.lineTo(35,-245);c.lineTo(29,-175);c.lineTo(62,-203);c.lineTo(30,-150);c.lineTo(14,0);c.fill();c.restore();}
   }
   c.globalAlpha=1;
-  if(zone===2){for(const tile of parallax.tiles(camera,.4,235)){const x=tile.x;line(c,[[x,460],[x,225],[x+60,145],[x+120,225],[x+120,460]],'#32222e',16);c.fillStyle='#92283c';c.beginPath();c.moveTo(x+20,233);c.lineTo(x+85,233);c.lineTo(x+85,313);c.lineTo(x+53,295);c.lineTo(x+20,313);c.fill();line(c,[[x+20,232],[x+85,232]],'#a28b98',3);}}
-  if(zone===3){
-   if(images.tower)parallax.repeatX(c,images.tower,camera,.4,1000,-650-cameraY*.7,1100);
-   for(const tile of parallax.tiles(camera,.45,280)){const i=tile.index,x=tile.x+100,y=100-cameraY*.15+(Math.abs(i)%2)*130;c.save();c.translate(x,y);c.rotate(time*(i%2?.15:-.15));c.strokeStyle='#5d5059';c.lineWidth=10;c.beginPath();c.arc(0,0,51,0,Math.PI*2);c.stroke();for(let a=0;a<12;a++){c.rotate(Math.PI/6);line(c,[[40,0],[62,0]],'#60525b',10);}line(c,[[-40,0],[40,0]],'#2b2530',7);line(c,[[0,-40],[0,40]],'#2b2530',7);c.restore();}
-  }
+  // Hunters alley columns and banners are painted into its dedicated backdrop.
+  // The clock tower uses the illustrated gears and clock face in its backdrop.
   if(zone===4&&cinematic>7){const alpha=Math.min(1,(cinematic-7)*2)*Math.max(0,1-(cinematic-9.3));c.globalAlpha=alpha;sprite(c,'werewolf',parallax.palaceX(camera)+265,147,44,56);c.globalAlpha=1;}
  }
  function tick(dt){fade=Math.min(1,fade+dt/.9);}

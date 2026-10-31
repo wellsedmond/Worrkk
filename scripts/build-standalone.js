@@ -16,6 +16,8 @@ for(const file of ['level1.js','inquisitor.js','progress.js','sound.js','paralla
   const urls={};for(const name of ['body-a','body-b','body-c','body-d','body-e','effects','arena'])urls[name]='data:image/png;base64,'+(await readFile(new URL('assets/inquisitor/'+name+'.png',root))).toString('base64');
   js=js.replace('`assets/inquisitor/${name}.png`',`(${JSON.stringify(urls)})[name]`);
  }else if(file==='atmosphere.js'){
+  js=js.replace("'assets/environment/clock-tower.png'",JSON.stringify('data:image/png;base64,'+(await readFile(new URL('assets/environment/clock-tower.png',root))).toString('base64')));
+  js=js.replace("'assets/environment/hunters-alley.png'",JSON.stringify('data:image/png;base64,'+(await readFile(new URL('assets/environment/hunters-alley.png',root))).toString('base64')));
   js=js.replace("'assets/environment/cemetery.png'",JSON.stringify('data:image/png;base64,'+(await readFile(new URL('assets/environment/cemetery.png',root))).toString('base64')));
   js=js.replace("'assets/environment/lighting-atlas.png'",JSON.stringify('data:image/png;base64,'+(await readFile(new URL('assets/environment/lighting-atlas.png',root))).toString('base64')));
   js=js.replace("'assets/environment/gothic-arena.png'",JSON.stringify(gothicUrl));

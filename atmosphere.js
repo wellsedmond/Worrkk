@@ -3,6 +3,8 @@ const atmosphere = (() => {
   const palette = {sky:'#080b16',far:'#141322',stone:'#22212b',red:'#B52239',moon:'#C8B9E8',fire:'#FF812B',green:'#86C44A',fog:'#827B9E'};
   const images = {};const textureCache=new Map();
   const assetNames = ['ska-palace','skyline','graveyard','web'];
+  const towerBackdrop=new Image();towerBackdrop.src='assets/environment/clock-tower.png';
+  const alleyBackdrop=new Image();alleyBackdrop.src='assets/environment/hunters-alley.png';
   const cemeteryBackdrop=new Image();cemeteryBackdrop.src='assets/environment/cemetery.png';
   const gothicArena=new Image();gothicArena.src='assets/environment/gothic-arena.png';
   const lightingImage=new Image();lightingImage.src='assets/environment/lighting-atlas.png';
@@ -10,7 +12,7 @@ const atmosphere = (() => {
   const lightingSprites={candle:[],lantern:[]};
   const lightingReady=lightingImage.decode().then(prepareLightingSprites);
   let lightingLayout=[],lightingStats={original:0,target:0,actual:0};
-  const ready = Promise.all([lightingReady,gothicArena.decode(),cemeteryBackdrop.decode(), ...assetNames.map(async name => {
+  const ready = Promise.all([lightingReady,gothicArena.decode(),cemeteryBackdrop.decode(),alleyBackdrop.decode(),towerBackdrop.decode(), ...assetNames.map(async name => {
     const image = new Image(); image.src = `assets/environment/${name}.svg`;
     await image.decode();
     const raster = document.createElement('canvas');
@@ -79,11 +81,13 @@ const atmosphere = (() => {
   }
   function background(c,camera,zone=0,cameraY=0){
     c.fillStyle='#080b16';c.fillRect(0,0,960,510);
-    if(zone===1&&cemeteryBackdrop.complete&&cemeteryBackdrop.naturalWidth){
-      // Reference ground line stays near y=430; a slow pan has no wrap seam.
-      const height=600,width=height*cemeteryBackdrop.naturalWidth/cemeteryBackdrop.naturalHeight;
-      const drift=Math.sin((camera-12500)*.00012)*Math.max(0,(width-960)/2-8);
-      c.drawImage(cemeteryBackdrop,(960-width)/2-drift,-14-cameraY*.035,width,height);
+    const zoneBackdrop=zone===1?cemeteryBackdrop:zone===2?alleyBackdrop:zone===3?towerBackdrop:null;
+    if(zoneBackdrop?.complete&&zoneBackdrop.naturalWidth){
+      // Align each illustrated ground ledge with y=430, without a repeating seam.
+      const height=600,width=height*zoneBackdrop.naturalWidth/zoneBackdrop.naturalHeight;
+      const drift=Math.sin((camera-(zone===1?12500:zone===2?30000:47500))*.00012)*Math.max(0,(width-960)/2-8);
+      const top=zone===1?-14:zone===2?-2:-8;
+      c.drawImage(zoneBackdrop,(960-width)/2-drift,Math.min(-1,top-cameraY*.035),width,height);
     }else if(gothicArena.complete&&gothicArena.naturalWidth){
       const height=640,width=height*gothicArena.naturalWidth/gothicArena.naturalHeight;
       const drift=Math.sin(camera*.00008)*45;
