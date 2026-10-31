@@ -161,3 +161,18 @@ test('parallax keeps visible tiles and unique objects continuous across old wrap
  }
  for(const boundary of [160/.035,160/.11,320/.035]){assert.ok(Math.abs(run(`parallax.moonX(${boundary}+.01)-parallax.moonX(${boundary}-.01)`))<.01);assert.ok(Math.abs(run(`parallax.palaceX(${boundary}+.01)-parallax.palaceX(${boundary}-.01)`))<.01);}
 });
+
+test('sword locomotion follows equipment, direction and physics without replacing unarmed clips',()=>{
+ const run=game();
+ run('heroAnimator.reset();heroAnimator.update(.1,false,{ground:true,vy:0,travel:30,sword:false})');
+ assert.equal(run('heroAnimator.pose().clip'),'run');
+ run('heroAnimator.update(.1,false,{ground:true,vy:0,travel:30,sword:true})');
+ assert.equal(run('heroAnimator.pose().clip'),'swordRun');
+ const frames=new Set();for(let i=0;i<8;i++){run('heroAnimator.update(.01,false,{ground:true,vy:0,travel:24.5,sword:true})');frames.add(run('heroAnimator.pose().frame'));}assert.equal(frames.size,8);
+ run('heroAnimator.update(.1,false,{ground:false,vy:-500,travel:2,sword:true})');assert.equal(run('heroAnimator.pose().clip'),'swordJump');
+ run('heroAnimator.update(.1,false,{ground:false,vy:200,travel:2,sword:false})');assert.equal(run('heroAnimator.pose().clip'),'jump');
+ run('heroAnimator.update(.4,true,{ground:true,vy:0,travel:0,sword:true})');assert.equal(run('heroAnimator.pose().clip'),'swordCrouch');
+ run('heroAnimator.update(.01,true,{ground:true,vy:0,travel:0,sword:false})');assert.equal(run('heroAnimator.pose().clip'),'crouch');
+ run('heroAnimator.strike(true)');assert.equal(run('heroAnimator.pose().clip'),'sword');
+ run('heroAnimator.reset()');assert.equal(run('heroAnimator.pose().phase'),'stand');
+});

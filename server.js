@@ -6,6 +6,7 @@ const files = {
   '/': ['index.html', 'text/html'],
   '/atmosphere.js': ['atmosphere.js', 'text/javascript'],
   '/Worrkk.html': ['Worrkk.html', 'text/html'],
+  '/assets/hero-sword-movement.png': ['assets/hero-sword-movement.png', 'image/png'],
   '/hero-animation.js': ['hero-animation.js', 'text/javascript'],
   '/assets/hero-sword.png': ['assets/hero-sword.png', 'image/png'],
   '/assets/hero-attack.png': ['assets/hero-attack.png', 'image/png'],

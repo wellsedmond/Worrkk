@@ -129,7 +129,7 @@ function update(dt){
   if(landing){player.y=landingY-player.h;player.vy=0;player.ground=true;player.support=landing.id;if(landing.kind==='crumble'&&landing.collapse<0)landing.collapse=0;if(!wasGrounded)atmosphere.burst(player.x+20,landingY,'landing');}
  }else{for(const r of solidRects())if(overlap(player,r)){player.y=r.y+r.h;player.vy=0;}}
  updateEnemies(dt,prevBottom);updateTraps(dt);if(state!=='playing')return;updateEvents(dt);updateBoss(dt);
- if(player.y>600){damageTaken++;finish(false);}trackAchievements(dt,travelStartX,wasGrounded);heroAnimator.update(dt,player.h<80,{ground:player.ground,vy:player.vy,travel:player.x-travelStartX});updateCamera(dt);
+ if(player.y>600){damageTaken++;finish(false);}trackAchievements(dt,travelStartX,wasGrounded);heroAnimator.update(dt,player.h<80,{ground:player.ground,vy:player.vy,travel:player.x-travelStartX,sword:sword>0});updateCamera(dt);
 }
 function trackAchievements(dt,startX,wasGrounded){
  if(state!=='playing')return;
@@ -150,7 +150,7 @@ function updateCutscene(dt){
  else if(cutsceneTime<7)notify('«Ну что, доигрались? Теперь моя очередь!»',.2);
  else notify('На крыше — оборотень с красной звездой…',.2);
  const target=LEVEL1.width-960;camera+=(target-camera)*Math.min(1,dt*1.5);cameraY+=(0-cameraY)*Math.min(1,dt*5);
- heroAnimator.update(dt,false,{ground:true,vy:0,travel:player.x-travelStartX});if(cutsceneTime>11)finish(true);
+ heroAnimator.update(dt,false,{ground:true,vy:0,travel:player.x-travelStartX,sword:sword>0});if(cutsceneTime>11)finish(true);
 }
 function shape(path,fill,stroke='#485346',width=2){ctx.fillStyle=fill;ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.fill(path);if(stroke)ctx.stroke(path);}
 function rounded(x,y,w,h,r,fill,stroke){const path=new Path2D();path.roundRect(x,y,w,h,r);shape(path,fill,stroke,2);}
