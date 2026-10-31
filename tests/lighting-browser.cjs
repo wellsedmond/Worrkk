@@ -20,9 +20,9 @@ const server=spawn(process.execPath,['server.js'],{cwd:path.resolve(__dirname,'.
    const boxes=report.objects.map(atmosphere.lightingBounds);
    const grounded=boxes.every(b=>groundPlatforms.some(p=>b.x>=p[0]&&b.x+b.w<=p[0]+p[2]));
    const clear=boxes.every((b,i)=>!report.obstacles.some(o=>overlap(b,o))&&!boxes.some((other,j)=>j!==i&&overlap(b,other)));
-   return {staticPixels,motionPixels,actualFrames:{candle:recorded.candle.size,lantern:recorded.lantern.size},original:report.original,target:report.target,actual:report.actual,grounded,clear};
+   return {staticPixels,motionPixels,actualFrames:{candle:recorded.candle.size,lantern:recorded.lantern.size},original:report.original,target:report.target,actual:report.actual,baseTarget:report.baseTarget,openingBefore:report.openingBefore,openingAfter:report.openingAfter,grounded,clear};
   });
-  assert.deepEqual(results.staticPixels,{candle:0,lantern:0});assert.ok(results.motionPixels.candle>0&&results.motionPixels.lantern>0);assert.deepEqual(results.actualFrames,{candle:8,lantern:8});assert.equal(results.actual,Math.round(results.original*.7));assert.equal(results.actual,results.target);assert.equal(results.grounded,true);assert.equal(results.clear,true);
+  assert.deepEqual(results.staticPixels,{candle:0,lantern:0});assert.ok(results.motionPixels.candle>0&&results.motionPixels.lantern>0);assert.deepEqual(results.actualFrames,{candle:8,lantern:8});assert.equal(results.baseTarget,Math.round(results.original*.7));assert.ok(results.actual<=results.baseTarget);assert.ok(results.openingAfter<=Math.ceil(results.openingBefore/3));assert.equal(results.actual,results.target);assert.equal(results.grounded,true);assert.equal(results.clear,true);
   await page.screenshot({path:`/tmp/upyr-static-lighting-${route==='/'?'hosted':'offline'}.png`});
   const blood=await page.evaluate(()=>{
    const item=items.find(i=>i.type==='rage');camera=item.x-280;player.x=item.x-160;const frames=new Set(),original=ctx.drawImage;

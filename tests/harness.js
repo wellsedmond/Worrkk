@@ -5,7 +5,7 @@ export function createGame(storage=new Map(),options={}){
  const node=()=>({textContent:'',hidden:false,disabled:false,dataset:{},classList:{remove:noop,toggle:noop},addEventListener:noop,setAttribute:noop,matches:()=>false,querySelector:()=>node(),getContext:()=>({beginPath:noop,rect:noop,clip:noop,drawImage:noop})});
  const context={console,document:{querySelector:s=>{if(!nodes.has(s))nodes.set(s,node());return nodes.get(s);},querySelectorAll:()=>[],addEventListener:noop,createElement:()=>node()},window:{addEventListener:noop},Image:class{decode(){return Promise.resolve()}},devicePixelRatio:1,requestAnimationFrame:noop,localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},atmosphere:{ready:Promise.resolve(),reset:noop,prepare:noop,burst:noop,tick:noop},levelArt:{ready:Promise.resolve()},InquisitorArt:{ready:Promise.resolve()},gameAudio:{activate:noop,effect:noop,tick:noop,syncButton:noop}};
  vm.createContext(context);
- for(const file of ['level1.js','combat-geometry.js','progress.js','achievements-core.js','achievements.js','parallax.js','hero-animation.js','inquisitor.js','game.js'])vm.runInContext(readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
+ for(const file of ['level1.js','relics.js','combat-geometry.js','progress.js','achievements-core.js','achievements.js','parallax.js','hero-animation.js','inquisitor.js','game.js'])vm.runInContext(readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
  vm.runInContext(options.start===false?'assetsReady=true':'assetsReady=true;start()',context);
  return {run:code=>vm.runInContext(code,context),storage};
 }

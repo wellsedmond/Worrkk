@@ -11,6 +11,7 @@ const atmosphere = (() => {
   const lightingFrames={"candle":[{"x":0,"y":0,"w":248,"h":345,"pivotX":138,"pivotY":340},{"x":248,"y":0,"w":248,"h":345,"pivotX":379,"pivotY":340},{"x":496,"y":0,"w":248,"h":345,"pivotX":620,"pivotY":340},{"x":744,"y":0,"w":248,"h":345,"pivotX":864,"pivotY":340},{"x":992,"y":0,"w":247,"h":345,"pivotX":1101,"pivotY":340},{"x":1239,"y":0,"w":248,"h":345,"pivotX":1351,"pivotY":340},{"x":1487,"y":0,"w":248,"h":345,"pivotX":1595,"pivotY":340},{"x":1735,"y":0,"w":248,"h":345,"pivotX":1846,"pivotY":340}],"lantern":[{"x":0,"y":345,"w":248,"h":440,"pivotX":68,"pivotY":765},{"x":248,"y":345,"w":248,"h":440,"pivotX":310,"pivotY":765},{"x":496,"y":345,"w":248,"h":440,"pivotX":554,"pivotY":765},{"x":744,"y":345,"w":248,"h":440,"pivotX":799,"pivotY":765},{"x":992,"y":345,"w":247,"h":440,"pivotX":1043,"pivotY":765},{"x":1239,"y":345,"w":248,"h":440,"pivotX":1287,"pivotY":765},{"x":1487,"y":345,"w":248,"h":440,"pivotX":1534,"pivotY":765},{"x":1735,"y":345,"w":248,"h":440,"pivotX":1779,"pivotY":765}]},lightingScale={candle:.2,lantern:.36};
   const lightingSprites={candle:[],lantern:[]};
   const lightingReady=lightingImage.decode().then(prepareLightingSprites);
+  let relicObstacles=[];
   let lightingLayout=[],lightingStats={original:0,target:0,actual:0};
   const ready = Promise.all([lightingReady,gothicArena.decode(),cemeteryBackdrop.decode(),alleyBackdrop.decode(),towerBackdrop.decode(), ...assetNames.map(async name => {
     const image = new Image(); image.src = `assets/environment/${name}.svg`;
@@ -28,7 +29,8 @@ const atmosphere = (() => {
   function oval(c,x,y,rx,ry,color){c.fillStyle=color;c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fill();}
   function round(c,x,y,w,h,r,fill,stroke){c.beginPath();c.roundRect(x,y,w,h,r);c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=1;c.stroke();}}
   function glow(c,x,y,r,color){const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,color);g.addColorStop(1,'transparent');c.fillStyle=g;c.fillRect(x-r,y-r,2*r,2*r);}
-  function prepare(platforms){
+  function prepare(platforms,relics=[]){
+    relicObstacles=relics.map(s=>({x:s.x-30,y:s.y-s.h-15,w:s.w+60,h:s.h+30}));
     // Rasterize once at 2x: no per-frame stone geometry, filters or large blur passes.
     stones = platforms.map((ref,index)=>{
       const [x,y,w,h]=ref;const key=[w,h,index%3].join(':');
@@ -153,7 +155,7 @@ const atmosphere = (() => {
   const intersects=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
   function lightingBounds(object){return object.kind==='lantern'?{x:object.x-26,y:273,w:100,h:159}:{x:object.x-25,y:362,w:50,h:70};}
   function lightingObstacles(){
-    const boxes=[{x:LEVEL1.boss.arenaStart,y:0,w:LEVEL1.boss.arenaEnd-LEVEL1.boss.arenaStart,h:440}];
+    const boxes=[...relicObstacles,{x:LEVEL1.boss.arenaStart,y:0,w:LEVEL1.boss.arenaEnd-LEVEL1.boss.arenaStart,h:440}];
     for(const p of LEVEL1.ledges){const ax=p.type==='moving'&&p.axis==='x'?p.amplitude:0,ay=p.type==='moving'&&p.axis==='y'?p.amplitude:0;boxes.push({x:p.x-ax-12,y:p.y-ay-8,w:p.w+ax*2+24,h:p.h+ay*2+16});}
     for(const t of LEVEL1.traps)if(t.type==='stake')boxes.push({x:t.x-15,y:290,w:115,h:145});else if(t.type==='fire')boxes.push({x:t.x-24,y:360,w:95,h:76});
     for(const cp of [{x:30,y:430},...LEVEL1.checkpoints])boxes.push({x:cp.x-55,y:cp.y-110,w:145,h:116});
@@ -181,7 +183,8 @@ const atmosphere = (() => {
     for(const original of candles){
       for(let d=0;d<=600;d+=12){const options=d?[original.x-d,original.x+d]:[original.x];const found=options.find(x=>{const o={...original,x},b=lightingBounds(o);return grounded(b.x,b.w)&&!obstacles.some(box=>intersects(b,box))&&!lanterns.some(l=>intersects(b,lightingBounds(l)))&&!placedCandles.some(c=>intersects(b,lightingBounds(c)));});if(found!==undefined){placedCandles.push({...original,x:found});break;}}
     }
-    lightingLayout=[...lanterns,...placedCandles];lightingStats={original:candidates.length,target,actual:lanterns.length};
+    const opening=lanterns.filter(l=>l.x<5000);const reduced=lanterns.filter(l=>l.x>=5000||opening.indexOf(l)%3===0);
+    lightingLayout=[...reduced,...placedCandles];lightingStats={original:candidates.length,baseTarget:target,target:reduced.length,actual:reduced.length,openingBefore:opening.length,openingAfter:reduced.filter(l=>l.x<5000).length};
   }
   function lightingFrame(elapsed,phase=0){return ((Math.floor((elapsed+phase)*10+1e-7)%8)+8)%8;}
   function lightingObjects(camera){return lightingLayout.filter(o=>o.x>camera-120&&o.x<camera+1080);}

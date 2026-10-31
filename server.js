@@ -3,6 +3,9 @@ import {createAchievementApi} from './achievement-server.js';
 const achievementApi=createAchievementApi();
 import { readFile } from 'node:fs/promises';
 const files = {
+  '/assets/level1/relic-statue.png': ['assets/level1/relic-statue.png', 'image/png'],
+  '/relics.js': ['relics.js', 'text/javascript'],
+  '/assets/fonts/RuslanDisplay-Regular.ttf': ['assets/fonts/RuslanDisplay-Regular.ttf', 'font/ttf'],
   '/combat-geometry.js': ['combat-geometry.js', 'text/javascript'],
   '/assets/audio/background.mp3': ['assets/audio/background.mp3', 'audio/mpeg'],
   '/assets/environment/clock-tower.png': ['assets/environment/clock-tower.png', 'image/png'],

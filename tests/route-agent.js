@@ -66,7 +66,7 @@ function driveLevel(maxSteps=100000){
    const end=floor?floor[0]+floor[2]:0;
    const gap=floor&&!groundPlatforms.some(p=>p!==floor&&Math.abs(p[0]-end)<.01);
    const nearGap=gap&&player.x>end-65;
-   const higher=ledgePlatforms.some(p=>p.active&&p[1]<player.y+player.h-2&&p[1]>=player.y+player.h-96&&p[0]-player.x<100&&p[0]+p[2]>player.x+50);
+   const higher=ledgePlatforms.some(p=>p.active&&!p.optional&&p[1]<player.y+player.h-2&&p[1]>=player.y+player.h-96&&p[0]-player.x<100&&p[0]+p[2]>player.x+50);
    const fire=traps.some(t=>t.type==='fire'&&t.x>player.x&&t.x-player.x<105&&player.y+player.h>t.y);
    const helmet=enemies.some(e=>!e.dead&&e.type==='helmet'&&e.x>player.x&&e.x-player.x<120&&player.y+player.h>e.y);
    keys.jump=player.ground&&!keys.crouch&&(nearGap||higher||fire||helmet);

@@ -18,7 +18,7 @@ test('enemy body outside the old rectangle hurts, smoke and empty corners do not
 });
 test('armored garlic still needs two stomps or one sword hit with model contours',()=>{
  const run=game();run('const target=enemies.find(e=>e.type==="helmet");enemies=[target];clock=0;target.x=500;target.y=388;target.baseY=388;target.origin=0;target.range=999;player.x=500;player.y=315;player.vy=100;updateEnemies(0,385)');assert.equal(run('target.hp'),1);assert.equal(run('player.hp'),3);
- run('player.y=315;player.vy=100;updateEnemies(0,385)');assert.equal(run('target.dead'),true);
+ run('player.y=240;player.vy=-200;updateEnemies(0,320);player.y=315;player.vy=100;updateEnemies(0,385)');assert.equal(run('target.dead'),true);
 });
 test('map has five continuous zones, safe gaps and all mandatory events',()=>{
  const run=game();assert.equal(run('LEVEL1.zones.length'),5);assert.equal(run('LEVEL1.items.every(i=>i.type==="rage")'),true);assert.ok(run('LEVEL1.enemies.length')>=30);
@@ -30,7 +30,7 @@ test('one-way tiers remain reachable at 30/60/120 Hz',()=>{
  for(const hz of [30,60,120]){
   const run=game();run('enemies=[];traps=[]');
   for(const index of [0,1,10]){
-   run(`const target${index}=ledgePlatforms[${index}];player.x=target${index}[0]+20;player.y=target${index}[1]+90-player.h;player.vy=0;player.ground=true;keys.jump=true;update(1/${hz});keys.jump=false;`);
+   run(`const target${index}=ledgePlatforms[${index}];player.x=target${index}[0]+20;clearPageTurn();zoneIndex=LEVEL1.zones.findIndex(z=>player.x>=z.start&&player.x<z.end);player.y=target${index}[1]+90-player.h;player.vy=0;player.ground=true;keys.jump=true;update(1/${hz});keys.jump=false;`);
    let landed=false;
    for(let i=0;i<hz*2;i++){run(`update(1/${hz})`);if(run('player.ground')){assert.equal(run('player.y+player.h'),run(`target${index}[1]`));landed=true;break;}}
    assert.ok(landed);

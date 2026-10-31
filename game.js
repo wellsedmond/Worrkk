@@ -2,12 +2,12 @@ const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d'),hud=do
 const heroImage=new Image(), garlicImage=new Image();
 heroImage.src='assets/hero.png'; garlicImage.src='assets/garlic.svg';
 let assetsReady=false;
-Promise.all([heroImage.decode(),heroAnimator.ready,garlicImage.decode(),atmosphere.ready,levelArt.ready,InquisitorArt.ready]).then(()=>{assetsReady=true;atmosphere.prepare(platforms);document.querySelector('#play').disabled=false;configureBossMenu();}).catch(()=>{overlay.hidden=false;overlay.querySelector('p').textContent='Не удалось загрузить графику. Откройте игру через npm start или используйте автономный HTML-файл.';});
+Promise.all([heroImage.decode(),heroAnimator.ready,garlicImage.decode(),atmosphere.ready,levelArt.ready,InquisitorArt.ready,document.fonts?.load('32px UpyrGothic')||Promise.resolve()]).then(()=>{assetsReady=true;atmosphere.prepare(platforms,statues);document.querySelector('#play').disabled=false;configureBossMenu();}).catch(()=>{overlay.hidden=false;overlay.querySelector('p').textContent='Не удалось загрузить графику. Откройте игру через npm start или используйте автономный HTML-файл.';});
 document.querySelector('#play').disabled=true;
 const keys={left:false,right:false,jump:false,attack:false,crouch:false};
 const toPlatform=p=>Object.assign([p.x,p.y,p.w,p.h],{id:p.id,kind:p.type,baseX:p.x,baseY:p.y,...p,active:true,collapse:-1,restore:0,dx:0,dy:0});
 let groundPlatforms=[],ledgePlatforms=[],platforms=[];
-let player,coins,enemies,traps,items,projectiles=[],boss,checkpoint,snapshot,coffinStates=[];
+let player,coins,enemies,traps,items,projectiles=[],boss,checkpoint,snapshot,coffinStates=[],statues=[];
 let bossDifficulty=progressStore.load().bossDifficulty;
 let camera=0,cameraY=0,state='menu',score=0,last=0,clock=0,jumpHeld=false,attackHeld=false;
 let kills=0,sword=0,swordRewards=0,damageTaken=0,leverOpen=false,escapeLeft=0,towerTimer=null,towerPassed=false,zoneIndex=0;
@@ -15,19 +15,20 @@ let achievementClock=0,safeIdle=0,deathNumber=0,projectileNumber=0,jumpFires=new
 let banner={text:'',left:0},cutsceneTime=0,victoryTime=0,paused=false,tutorialDone=new Set();
 const ui={zone:document.querySelector('#zone-name'),timer:document.querySelector('#time-count'),kills:document.querySelector('#kill-count'),sword:document.querySelector('#sword-hud'),hint:document.querySelector('#tutorial'),banner:document.querySelector('#banner'),boss:document.querySelector('#boss-hud'),rage:document.querySelector('#rage-meter')};
 // One reusable bitmap: transitions never accumulate old frames.
-const pageTurn={active:false,elapsed:0,duration:.9,to:0,snapshot:document.createElement('canvas'),reduced:false};
+const pageTurn={active:false,elapsed:0,duration:3.6,to:0,snapshot:document.createElement('canvas'),reduced:false};
 function clearPageTurn(){pageTurn.active=false;pageTurn.elapsed=0;pageTurn.snapshot.width=pageTurn.snapshot.height=1;}
 function beginPageTurn(to){
  pageTurn.snapshot.width=canvas.width;pageTurn.snapshot.height=canvas.height;
  pageTurn.snapshot.getContext('2d').drawImage(canvas,0,0);
  pageTurn.to=to;pageTurn.elapsed=0;pageTurn.reduced=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
- pageTurn.duration=pageTurn.reduced?.18:.9;pageTurn.active=true;
+ pageTurn.duration=3.6;pageTurn.active=true;
 }
 function drawPageTurn(){
  if(!pageTurn.active)return;
  const t=Math.min(1,pageTurn.elapsed/pageTurn.duration),ease=t*t*(3-2*t),old=pageTurn.snapshot;
  ctx.save();
- if(pageTurn.reduced){ctx.globalAlpha=1-ease;ctx.drawImage(old,0,0,960,510);ctx.restore();return;}
+ if(pageTurn.reduced){ctx.globalAlpha=1-ease;ctx.drawImage(old,0,0,960,510);ctx.globalAlpha=1;}
+ if(!pageTurn.reduced){
  const fold=960*(1-ease),curl=Math.sin(Math.PI*t)*155;
  if(fold>0)ctx.drawImage(old,0,0,old.width*fold/960,old.height,0,0,fold,510);
  const shadow=ctx.createLinearGradient(fold,0,Math.min(960,fold+curl+55),0);
@@ -38,8 +39,9 @@ function drawPageTurn(){
   const paper=ctx.createLinearGradient(fold,0,fold+curl,0);paper.addColorStop(0,'#635249');paper.addColorStop(.22,'#d6c4a1');paper.addColorStop(.72,'#eee0bd');paper.addColorStop(1,'#8b7560');ctx.fillStyle=paper;ctx.fill();
   ctx.strokeStyle='#f5e3b980';ctx.lineWidth=1;ctx.stroke();
  }
- const alpha=Math.sin(Math.PI*t);ctx.globalAlpha=alpha;ctx.fillStyle='#100d16c9';ctx.fillRect(210,207,540,88);ctx.strokeStyle='#a98a60';ctx.strokeRect(214,211,532,80);
- ctx.fillStyle='#e8d5b0';ctx.textAlign='center';ctx.font='15px Georgia';ctx.fillText('СТРАНИЦА '+(pageTurn.to+1),480,237);ctx.font='23px Georgia';ctx.fillText(LEVEL1.zones[pageTurn.to].name,480,270,510);ctx.restore();
+ }
+ const alpha=Math.min(1,t*12,(1-t)*12);ctx.globalAlpha=alpha;ctx.fillStyle='#100d16c9';ctx.fillRect(210,207,540,88);ctx.strokeStyle='#a98a60';ctx.strokeRect(214,211,532,80);
+ ctx.fillStyle='#e8d5b0';ctx.textAlign='center';ctx.font='16px UpyrGothic, Georgia';ctx.fillText('СТРАНИЦА '+(pageTurn.to+1),480,237);ctx.font='30px UpyrGothic, Georgia';ctx.fillText(LEVEL1.zones[pageTurn.to].name,480,270,510);ctx.restore();
 }
 function notify(text,seconds=3){banner={text,left:seconds};}
 function makeWorld(){
@@ -47,21 +49,25 @@ function makeWorld(){
  coins=LEVEL1.coins.map(c=>({...c,taken:false}));items=LEVEL1.items.map(c=>({...c,taken:false}));
  enemies=LEVEL1.enemies.map(e=>({...e,origin:e.x,baseY:e.y,w:38,h:42,dir:1,hp:e.type==='helmet'?2:1,dead:false,death:0,hurt:0,vy:0}));
  traps=LEVEL1.traps.map(t=>({...t,phase:0,active:t.type==='fire',warn:false,shotTime:-1}));
- boss=Inquisitor.create(LEVEL1.boss,bossDifficulty);projectiles=[];
+ boss=Inquisitor.create(LEVEL1.boss,bossDifficulty);projectiles=[];statues=Relics.create(LEVEL1);
 }
 function reset(){
  clearPageTurn();
  atmosphere.reset();heroAnimator.reset();makeWorld();coffinStates=[{id:'start',x:30,y:430,spawnX:70},...LEVEL1.checkpoints.map(cp=>({...cp,spawnX:cp.x}))].map(cp=>({...cp,opened:false,openTime:0}));player={x:70,y:330,w:40,h:80,vx:0,vy:0,ground:false,hp:3,inv:0,face:1,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false};
  score=0;camera=0;cameraY=0;clock=0;jumpHeld=false;attackHeld=false;kills=0;sword=0;swordRewards=0;damageTaken=0;leverOpen=false;escapeLeft=0;towerTimer=null;towerPassed=false;zoneIndex=0;cutsceneTime=0;paused=false;tutorialDone=new Set();
- for(const k in keys)keys[k]=false;checkpoint={id:'start',x:70,y:430};captureCheckpoint();atmosphere.prepare(platforms);notify('Пора вернуть своё!',3);
+ for(const k in keys)keys[k]=false;checkpoint={id:'start',x:70,y:430};captureCheckpoint();atmosphere.prepare(platforms,statues);notify('Пора вернуть своё!',3);
 }
-function captureCheckpoint(){snapshot={score,coins:coins.filter(c=>c.taken).map(c=>c.id),items:items.filter(c=>c.taken).map(c=>c.id),kills,sword,swordRewards,enemies:enemies.filter(e=>e.dead).map(e=>e.id),leverOpen};}
+function captureCheckpoint(){snapshot={score,coins:coins.filter(c=>c.taken).map(c=>c.id),items:items.filter(c=>c.taken).map(c=>c.id),kills,sword,swordRewards,enemies:enemies.filter(e=>e.dead).map(e=>e.id),leverOpen,statues:statues.map(s=>({...s,hurt:0}))};}
+function restoreRelics(saved){
+ statues=Relics.restore(saved,LEVEL1)||statues;
+ for(const s of statues)if(s.hp===0&&!items.some(i=>i.id==='blood-'+s.id))items.push(Relics.drop(s));
+}
 function resumeCheckpoint(){
- if(!assetsReady)return;clearPageTurn();safeIdle=0;achievementJump=false;jumpFires.clear();gameAudio.activate();const saved=snapshot;makeWorld();score=saved.score;kills=saved.kills;sword=saved.sword;swordRewards=saved.swordRewards;leverOpen=saved.leverOpen;
+ if(!assetsReady)return;clearPageTurn();safeIdle=0;achievementJump=false;jumpFires.clear();gameAudio.activate();const saved=snapshot;makeWorld();score=saved.score;kills=saved.kills;sword=saved.sword;swordRewards=saved.swordRewards;leverOpen=saved.leverOpen;restoreRelics(saved.statues);
  for(const c of coins)c.taken=saved.coins.includes(c.id);for(const c of items)c.taken=saved.items.includes(c.id);for(const e of enemies)e.dead=saved.enemies.includes(e.id);
  Object.assign(player,{x:checkpoint.x,y:checkpoint.y-80,h:80,hp:3,vx:0,vy:0,ground:false,inv:2,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false});
  escapeLeft=leverOpen?LEVEL1.escapeSeconds:0;towerTimer=null;towerPassed=checkpoint.x>=LEVEL1.timedSection.end;projectiles=[];camera=Math.max(0,player.x-260);cameraY=Math.min(0,player.y-250);state='playing';paused=false;
- for(const k in keys)keys[k]=false;jumpHeld=false;attackHeld=false;atmosphere.reset();heroAnimator.reset();atmosphere.prepare(platforms);overlay.hidden=true;if(checkpoint.id==='inquisitor-entry'){Inquisitor.engage(boss,true);player.x=boss.arenaStart+45;zoneIndex=4;camera=boss.arenaStart;}notify(checkpoint.id==='inquisitor-entry'?'ПОВТОРИТЬ БОЙ · ИНКВИЗИТОР':'Пробуждение у контрольной точки');
+ for(const k in keys)keys[k]=false;jumpHeld=false;attackHeld=false;atmosphere.reset();heroAnimator.reset();atmosphere.prepare(platforms,statues);overlay.hidden=true;if(checkpoint.id==='inquisitor-entry'){Inquisitor.engage(boss,true);player.x=boss.arenaStart+45;zoneIndex=4;camera=boss.arenaStart;}notify(checkpoint.id==='inquisitor-entry'?'ПОВТОРИТЬ БОЙ · ИНКВИЗИТОР':'Пробуждение у контрольной точки');
 }
 function start(){if(!assetsReady)return;progressStore.clearBossCheckpoint();configureBossMenu();menuReturnState=null;document.querySelector('#menu-resume').hidden=true;gameAudio.activate();reset();achievementSystem.start();achievementClock=0;safeIdle=0;deathNumber=0;projectileNumber=0;achievementJump=false;jumpFires.clear();state='playing';overlay.classList.remove('defeat');overlay.hidden=true;document.querySelector('#continue').hidden=true;document.querySelector('#main-menu').hidden=true;}
 function finish(win){
@@ -96,6 +102,7 @@ function punch(){
  if(player.cooldown>0||player.h<80)return;
  player.attack=.36;player.swordBroke=false;player.swingSword=sword>0;heroAnimator.strike(player.swingSword,player.rage>0);achievementSystem.emit('player_attacked');safeIdle=0;gameAudio.effect('hit');player.cooldown=.42;tutorialDone.add('attack');const box=attackBox();
  atmosphere.burst(box.x+box.w/2,box.y+20,'sparks');
+ for(const s of statues)if(s.hp>0&&overlap(box,Relics.body(s))&&Relics.strike(s)){atmosphere.burst(s.x+s.w/2,s.y-60,'sparks');if(s.hp===0){items.push(Relics.drop(s));notify('Статуэтка разрушена · забери кровь',2);}else notify('Статуэтка · прочность '+s.hp+'/5',.8);}
  for(const e of enemies)if(!e.dead&&CombatGeometry.touches(box,CombatGeometry.enemy(e,clock))){const armed=swordHit(e.id+'-'+e.hp);hurtEnemy(e,armed?2:e.type==='helmet'?1:player.rage>0?2:1);}
  if(Inquisitor.vulnerable(boss)&&overlap(box,boss)){const armed=swordHit('inquisitor-'+boss.hp);const result=Inquisitor.strike(boss,armed?2:1);if(result.killed)recordBossVictory();if(result.phaseChanged)notify(Inquisitor.warning(boss));if(result.interrupted)notify('АТАКА ПРЕРВАНА · ИНКВИЗИТОР ОГЛУШЁН',3);}
  if(player.swordBroke&&sword===0)notify(`Меч сломан. До следующего: ${10-kills%10} побед`);
@@ -124,7 +131,9 @@ function updateEnemies(dt,prevBottom){for(const e of enemies){e.hurt=Math.max(0,
  if(e.flying)e.y=e.baseY+Math.sin(clock*2.2+e.origin)*20;
  if(e.type==='helmet'){e.y=e.baseY-Math.max(0,Math.sin(clock*1.8+e.origin))*28;}
  const contour=CombatGeometry.enemy(e,clock),body=CombatGeometry.bounds(contour);
- if(CombatGeometry.touches(player,contour)){if(player.vy>0&&prevBottom<body.y+12){if(e.type==='helmet')hurtEnemy(e,1);else defeatEnemy(e);player.vy=-370;}else hit();}
+ const touching=CombatGeometry.touches(player,contour);
+ if(!touching)e.stompProtected=false;
+ if(touching&&!e.stompProtected){if(player.vy>0&&prevBottom<body.y+12){e.stompProtected=true;if(e.type==='helmet')hurtEnemy(e,1);else defeatEnemy(e);player.y=Math.min(player.y,body.y-player.h);player.vy=-370;}else hit();}
 }}
 function saveBossEntry(){
  checkpoint={id:'inquisitor-entry',x:57400,y:430};captureCheckpoint();achievementSystem.persist();
@@ -186,6 +195,7 @@ function updateEvents(dt){
 function update(dt){
  if(state!=='playing'||paused)return;
  if(pageTurn.active){pageTurn.elapsed+=dt;if(pageTurn.elapsed>=pageTurn.duration)clearPageTurn();return;}
+ for(const s of statues)s.hurt=Math.max(0,s.hurt-dt);
  clock+=dt;banner.left=Math.max(0,banner.left-dt);player.inv=Math.max(0,player.inv-dt);player.rage=Math.max(0,player.rage-dt);player.attack=Math.max(0,player.attack-dt);player.cooldown=Math.max(0,player.cooldown-dt);
  updatePlatforms(dt);if(player.ground&&player.support){const p=platforms.find(p=>p.id===player.support);if(p?.active){player.x+=p.dx;player.y+=p.dy;}else{player.ground=false;player.support=null;}}
  setCrouch();const travelStartX=player.x;player.vx=(boss.state==='INTRO'?0:((keys.right?1:0)-(keys.left?1:0)))*(player.h<80?125:245);if(player.vx)player.face=Math.sign(player.vx);
@@ -246,7 +256,7 @@ function draw(){
  atmosphere.background(ctx,camera,zoneIndex,cameraY);if(boss.engaged)InquisitorArt.background(ctx,boss,clock);levelArt.background(ctx,zoneIndex,camera,cameraY,clock,cutsceneTime);
  ctx.save();if(escapeLeft>0){ctx.translate(Math.sin(clock*32)*1.5,Math.cos(clock*27)*1.2);}ctx.translate(0,-cameraY);
  atmosphere.worldDecor(ctx,camera);ctx.save();ctx.translate(-camera,0);atmosphere.platforms(ctx,camera,cameraY);if(boss.engaged)InquisitorArt.floor(ctx,boss,camera);
- levelArt.world(ctx,{player,camera,cameraY,clock,traps,projectiles,items,checkpoint,coffins:coffinStates,leverOpen,escapeLeft,boss,state,cutsceneTime});
+ levelArt.world(ctx,{player,camera,cameraY,clock,traps,projectiles,items,checkpoint,coffins:coffinStates,statues,leverOpen,escapeLeft,boss,state,cutsceneTime});
  for(const c of coins){if(c.taken||boss.engaged&&c.x>=boss.arenaStart&&c.x<boss.arenaEnd||c.x<camera-30||c.x>camera+990)continue;const y=c.y+Math.sin(clock*4+c.x)*3;levelArt.coin(ctx,c.x,y,clock);}
  for(const e of enemies)if(activeNear(e.x,1200)&&(!e.dead||e.death>0)){if(e.type==='helmet')levelArt.enemy(ctx,e,clock);else if(!e.dead)drawGarlic(e);}
  character();if(window.debugHitboxes){for(const e of enemies)if(!e.dead&&activeNear(e.x))CombatGeometry.draw(ctx,CombatGeometry.enemy(e,clock),'#7aff82');for(const t of traps)if(t.type==='fire'&&t.active)CombatGeometry.draw(ctx,CombatGeometry.fire(t),'#ffdf5d');for(const p of [...projectiles,...boss.projectiles])if(p.type==='stake'||p.kind==='bolt'||p.kind==='rain')CombatGeometry.draw(ctx,CombatGeometry.bolt(p),'#5deaff');}ctx.restore();atmosphere.effects(ctx,camera);ctx.restore();

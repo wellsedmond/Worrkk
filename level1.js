@@ -52,6 +52,11 @@ const LEVEL1 = (() => {
  items.push({id:'rage-forest',type:'rage',x:5600,y:385},{id:'rage-alley',type:'rage',x:38200,y:385});
  for(const p of ground){if(p.x%1000<500&&p.x>300)coins.push({id:'c'+nextId++,x:p.x+Math.min(180,p.w/2),y:390});}
  for(const p of ledges)if(p.w>=150)coins.push({id:'c'+nextId++,x:p.x+p.w/2,y:p.y-40});
+ // Append optional routes after original IDs are assigned, preserving existing saves.
+ const bonus=(x,y,w=170)=>{const p=platform(x,y,w,'ledge',{optional:true});for(const offset of [.25,.5,.75])coins.push({id:'c'+nextId++,x:p.x+p.w*offset,y:p.y-40});};
+ const originalTiers=ledges.filter(p=>p.y===340&&p.x<47500);
+ for(const p of originalTiers){bonus(p.x+190,160);bonus(p.x+285,70);}
+ for(const x of [3700,6500,9450,15000,23800,30800,40800,47860,55000]){bonus(x,340,190);bonus(x+95,250);bonus(x+190,160);bonus(x+285,70);}
  return Object.freeze({id:'level1',name:'Проклятая дорога к СКА Арене',width:60300,stakeY,zones,ground,ledges,enemies,traps,coins,items,
   checkpoints:[{id:'cemetery-end',x:29600,y:430},{id:'tower-base',x:48000,y:430},{id:'tower-top',x:52800,y:-290},{id:'arena',x:57200,y:430}],
   lever:{x:53000,y:-290},gate:{x:53500,y:-600,w:48,h:1030},

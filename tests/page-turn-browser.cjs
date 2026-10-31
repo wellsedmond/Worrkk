@@ -15,7 +15,7 @@ const server=spawn(process.execPath,['server.js'],{cwd:path.resolve(__dirname,'.
    camera=12240;draw();return {active,to:pageTurn.to,elapsed:pageTurn.elapsed,frozen};
   });assert.deepEqual(transition,{active:true,to:1,elapsed:.3,frozen:true});
   const kind=route==='/'?'hosted':'offline';await page.screenshot({path:`/tmp/upyr-page-${kind}-turn.png`});
-  await page.evaluate(()=>{paused=false;update(.7);paused=true;player.x=20480;player.y=80;player.ground=true;zoneIndex=1;camera=20220;cameraY=-150;banner.left=0;draw();});
+  await page.evaluate(()=>{paused=false;update(pageTurn.duration);paused=true;player.x=20480;player.y=80;player.ground=true;zoneIndex=1;camera=20220;cameraY=-150;banner.left=0;draw();});
   assert.equal(await page.evaluate(()=>pageTurn.active),false);assert.equal(await page.evaluate(()=>pageTurn.snapshot.width),1);
   const backgrounds=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=960;c.height=510;const x=c.getContext('2d');atmosphere.background(x,20000,0,0);const a=x.getImageData(0,0,960,510).data;atmosphere.background(x,20000,1,0);const b=x.getImageData(0,0,960,510).data;let sum=0;for(let i=0;i<a.length;i+=4)sum+=Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2]);return sum/(960*510*3);});assert.ok(backgrounds>10);
   await page.screenshot({path:`/tmp/upyr-page-${kind}-cemetery.png`});
@@ -24,16 +24,16 @@ const server=spawn(process.execPath,['server.js'],{cwd:path.resolve(__dirname,'.
    atmosphere.background(x,36500,1,0);const a=x.getImageData(0,0,960,510).data;atmosphere.background(x,36500,2,0);const b=x.getImageData(0,0,960,510).data;
    let difference=0;for(let i=0;i<a.length;i+=4)difference+=Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2]);
    player.x=36500;player.y=350;player.vy=0;player.ground=true;camera=36240;cameraY=0;updateEvents(0);const turning=pageTurn.active&&pageTurn.to===2;
-   paused=false;update(.9);paused=true;draw();return {turning,difference:difference/(960*510*3)};
+   paused=false;update(pageTurn.duration);paused=true;draw();return {turning,difference:difference/(960*510*3)};
   });assert.equal(alley.turning,true);assert.ok(alley.difference>10);await page.screenshot({path:`/tmp/upyr-page-${kind}-alley.png`});
   const tower=await page.evaluate(()=>{
    const c=document.createElement('canvas');c.width=960;c.height=510;const x=c.getContext('2d');atmosphere.background(x,51100,2,0);const a=x.getImageData(0,0,960,510).data;atmosphere.background(x,51100,3,-600);const b=x.getImageData(0,0,960,510).data;
    let difference=0;for(let i=0;i<a.length;i+=4)difference+=Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2]);
    player.x=51100;player.y=-370;player.ground=true;camera=50840;cameraY=-600;updateEvents(0);const turning=pageTurn.active&&pageTurn.to===3;
-   paused=false;update(.9);paused=true;draw();return {turning,difference:difference/(960*510*3)};
+   paused=false;update(pageTurn.duration);paused=true;draw();return {turning,difference:difference/(960*510*3)};
   });assert.equal(tower.turning,true);assert.ok(tower.difference>5);await page.screenshot({path:`/tmp/upyr-page-${kind}-tower.png`});
-  const states=await page.evaluate(()=>{const results=[];for(const to of [4,3,2,1]){player.x=LEVEL1.zones[to].start+1;updateEvents(0);results.push(pageTurn.to===to&&pageTurn.active);paused=false;update(1);paused=true;}start();return {results,reset:!pageTurn.active};});assert.ok(states.results.every(Boolean));assert.equal(states.reset,true);
-  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.evaluate(()=>{beginPageTurn(1);return pageTurn.duration;}),.18);await page.evaluate(()=>{clearPageTurn();paused=true;player.x=20480;player.y=80;zoneIndex=1;camera=20220;cameraY=-150;draw();});
+  const states=await page.evaluate(()=>{const results=[];for(const to of [4,3,2,1]){player.x=LEVEL1.zones[to].start+1;updateEvents(0);results.push(pageTurn.to===to&&pageTurn.active);paused=false;update(pageTurn.duration);paused=true;}start();return {results,reset:!pageTurn.active};});assert.ok(states.results.every(Boolean));assert.equal(states.reset,true);
+  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.evaluate(()=>{beginPageTurn(1);return pageTurn.duration;}),3.6);await page.evaluate(()=>{clearPageTurn();paused=true;player.x=20480;player.y=80;zoneIndex=1;camera=20220;cameraY=-150;draw();});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:`/tmp/upyr-page-${kind}-mobile.png`});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   assert.deepEqual(errors,[]);console.log(route,'cemetery background, page curl, all zone boundaries, safe freeze, reset, reduced motion and mobile passed');await context.close();
  }

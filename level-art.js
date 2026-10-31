@@ -1,6 +1,7 @@
 /* Extra actors reuse the Canvas renderer. SVGs are explicit replaceable art assets. */
 const levelArt=(()=>{
  const images={};const names=['helmet','hunter','coffin','stake','sword','gate','werewolf','tower'];
+ const relicImage=new Image();relicImage.src='assets/level1/relic-statue.png';
  const bloodImage=new Image();bloodImage.src='assets/level1/blood-drop-atlas.png';
  const bloodFrames=[{"x":0,"y":210,"w":271,"h":340,"pivotX":162,"pivotY":376.5},{"x":271,"y":210,"w":272,"h":340,"pivotX":427,"pivotY":376.5},{"x":543,"y":210,"w":271,"h":340,"pivotX":697.5,"pivotY":376.5},{"x":814,"y":210,"w":272,"h":340,"pivotX":961,"pivotY":376.5},{"x":1086,"y":210,"w":271,"h":340,"pivotX":1195.5,"pivotY":376.5},{"x":1357,"y":210,"w":271,"h":340,"pivotX":1452.5,"pivotY":376.5},{"x":1628,"y":210,"w":272,"h":340,"pivotX":1726,"pivotY":376.5},{"x":1900,"y":210,"w":271,"h":340,"pivotX":2005.5,"pivotY":376.5}];
  const helmetImage=new Image();helmetImage.src='assets/level1/helmet-garlic-atlas.png';
@@ -9,7 +10,7 @@ const levelArt=(()=>{
  const propFrames={"fire":[{"x":5,"y":0,"w":207,"h":198,"pivotY":186},{"x":219,"y":0,"w":207,"h":198,"pivotY":185},{"x":432,"y":0,"w":207,"h":198,"pivotY":186},{"x":642,"y":0,"w":207,"h":198,"pivotY":186},{"x":852,"y":0,"w":207,"h":198,"pivotY":186},{"x":1065,"y":0,"w":207,"h":198,"pivotY":186},{"x":1273,"y":0,"w":207,"h":198,"pivotY":187}],"coin":[{"x":18,"y":199,"w":160,"h":155,"pivotX":98.5,"pivotY":276},{"x":201,"y":199,"w":160,"h":155,"pivotX":281,"pivotY":276},{"x":369,"y":199,"w":160,"h":155,"pivotX":449,"pivotY":276},{"x":534,"y":199,"w":160,"h":155,"pivotX":613.5,"pivotY":276},{"x":712,"y":199,"w":160,"h":155,"pivotX":792.5,"pivotY":276},{"x":896,"y":199,"w":160,"h":155,"pivotX":975.5,"pivotY":276},{"x":1080,"y":199,"w":160,"h":155,"pivotX":1159.5,"pivotY":276},{"x":1258,"y":199,"w":160,"h":155,"pivotX":1338,"pivotY":276},{"x":1438,"y":199,"w":160,"h":155,"pivotX":1518.5,"pivotY":276},{"x":1612,"y":199,"w":160,"h":155,"pivotX":1692,"pivotY":276},{"x":1796,"y":199,"w":160,"h":155,"pivotX":1875.5,"pivotY":276},{"x":1988,"y":199,"w":160,"h":155,"pivotX":2068,"pivotY":276}],"garlic":[{"x":10,"y":355,"w":163,"h":150,"pivotX":95,"pivotY":430},{"x":175,"y":355,"w":230,"h":150,"pivotX":326,"pivotY":430},{"x":405,"y":355,"w":241,"h":150,"pivotX":568,"pivotY":430},{"x":645,"y":355,"w":258,"h":150,"pivotX":827,"pivotY":430},{"x":905,"y":355,"w":252,"h":150,"pivotX":1083,"pivotY":430},{"x":1158,"y":355,"w":258,"h":150,"pivotX":1339,"pivotY":430}],"coffin":[{"x":16,"y":502,"w":164,"h":222,"pivotX":96,"pivotY":700},{"x":205,"y":502,"w":165,"h":222,"pivotX":287,"pivotY":700},{"x":391,"y":502,"w":160,"h":222,"pivotX":474,"pivotY":700},{"x":573,"y":502,"w":156,"h":222,"pivotX":655,"pivotY":700},{"x":741,"y":502,"w":177,"h":222,"pivotX":843,"pivotY":700},{"x":932,"y":502,"w":168,"h":222,"pivotX":1025,"pivotY":700},{"x":1108,"y":502,"w":174,"h":222,"pivotX":1203,"pivotY":700},{"x":1290,"y":502,"w":210,"h":222,"pivotX":1416,"pivotY":700}]};
  const crossbowImage=new Image();crossbowImage.src='assets/level1/crossbow-atlas.png';
  const crossbowFrames=[{"x":0,"y":160,"w":222,"h":356,"muzzleX":22,"muzzleY":270},{"x":222,"y":160,"w":222,"h":356,"muzzleX":242,"muzzleY":270},{"x":444,"y":160,"w":221,"h":356,"muzzleX":466,"muzzleY":270},{"x":665,"y":160,"w":222,"h":356,"muzzleX":688,"muzzleY":270},{"x":887,"y":160,"w":222,"h":356,"muzzleX":910,"muzzleY":270},{"x":1109,"y":160,"w":221,"h":356,"muzzleX":1128,"muzzleY":270},{"x":1330,"y":160,"w":222,"h":356,"muzzleX":1350,"muzzleY":270},{"x":1552,"y":160,"w":222,"h":356,"muzzleX":1564,"muzzleY":270}],boltFrames=[{"x":0,"y":695,"w":222,"h":74},{"x":222,"y":695,"w":222,"h":74},{"x":444,"y":695,"w":221,"h":74},{"x":665,"y":695,"w":222,"h":74},{"x":887,"y":695,"w":222,"h":74},{"x":1109,"y":695,"w":221,"h":74},{"x":1330,"y":695,"w":222,"h":74},{"x":1552,"y":695,"w":222,"h":74}];
- const ready=Promise.all([bloodImage.decode(),helmetImage.decode(),propsImage.decode(),crossbowImage.decode(),...names.map(async name=>{const img=new Image();img.src=`assets/level1/${name}.svg`;await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);images[name]=c;})]);
+ const ready=Promise.all([relicImage.decode(),bloodImage.decode(),helmetImage.decode(),propsImage.decode(),crossbowImage.decode(),...names.map(async name=>{const img=new Image();img.src=`assets/level1/${name}.svg`;await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);images[name]=c;})]);
  let zoneNow=0,zoneBefore=0,fade=1;
  const visible=(x,camera,w=120)=>x+w>camera-80&&x<camera+1040;
  function sprite(c,name,x,y,w,h){if(images[name])c.drawImage(images[name],x,y,w,h);}
@@ -19,9 +20,6 @@ const levelArt=(()=>{
  function flame(c,x,y,t,size=1){c.save();c.translate(x,y);c.scale(size,size);glow(c,0,-12,55,'#ff812b40');c.fillStyle='#ff812b';c.beginPath();c.moveTo(-12,0);c.bezierCurveTo(-24,-18,7,-22,Math.sin(t*9)*5,-45);c.bezierCurveTo(26,-18,15,4,-12,0);c.fill();oval(c,0,-12,6,13,'#ffe3a0');c.restore();}
  function drawZone(c,zone,camera,cameraY,time,cinematic){
   c.fillStyle=LEVEL1.zones[zone].tint+'20';c.fillRect(0,0,960,510);
-  if(zone===0){c.globalAlpha=.3;
-   for(const tile of parallax.tiles(camera,.35,190)){const x=tile.x;c.save();c.translate(x,440);c.fillStyle='#090c15';c.beginPath();c.moveTo(-12,0);c.lineTo(-4,-165);c.lineTo(-40,-215);c.lineTo(-15,-200);c.lineTo(6,-150);c.lineTo(35,-245);c.lineTo(29,-175);c.lineTo(62,-203);c.lineTo(30,-150);c.lineTo(14,0);c.fill();c.restore();}
-  }
   c.globalAlpha=1;
   // Hunters alley columns and banners are painted into its dedicated backdrop.
   // The clock tower uses the illustrated gears and clock face in its backdrop.
@@ -89,6 +87,13 @@ const levelArt=(()=>{
   const f=bloodFrames[bloodDropFrame(time,item.x*.001)],y=item.y+Math.sin(time*3)*4;
   glow(c,item.x,y,28,'#c5123b40');c.drawImage(bloodImage,f.x,f.y,f.w,f.h,item.x+(f.x-f.pivotX)*.12,y+(f.y-f.pivotY)*.12,f.w*.12,f.h*.12);
  }
+ function relic(c,s){
+  const frame=Math.max(0,Math.min(5,5-s.hp)),scale=s.h/537;
+  c.save();c.translate(s.x+s.w/2,s.y);if(s.hurt>0)c.translate(Math.sin(s.hurt*100)*2,0);
+  c.drawImage(relicImage,frame*362,0,362,724,-181*scale,-658*scale,362*scale,724*scale);
+  if(s.hp>0){c.fillStyle='#100d16cc';c.fillRect(-25,-s.h-15,50,8);for(let i=0;i<5;i++){c.fillStyle=i<s.hp?'#c74142':'#42363d';c.fillRect(-23+i*10,-s.h-13,8,4);}}
+  c.restore();
+ }
  function world(c,s){const {camera,cameraY,clock,player,boss}=s;
   for(const trap of s.traps){if(!visible(trap.x,camera,200))continue;
    if(trap.type==='fire')bonfire(c,trap,clock);
@@ -96,6 +101,7 @@ const levelArt=(()=>{
    if(trap.type==='pendulum'&&Number.isFinite(trap.headX)){line(c,[[trap.x,trap.y],[trap.headX,trap.headY]],'#ab97ac',4);oval(c,trap.headX,trap.headY,trap.radius,trap.radius,'#8c728e');oval(c,trap.headX,trap.headY,trap.radius-7,trap.radius-7,'#48354f');line(c,[[trap.headX-12,trap.headY],[trap.headX+12,trap.headY]],'#e4c2c6',2);}
   }
   for(const p of s.projectiles){if(!visible(p.x,camera))continue;if(p.type==='stake'){flyingBolt(c,p);}else garlic(c,p.x,p.y,p.w,p.h,p.life,p.vx<0?-1:1);}
+  for(const statue of s.statues||[])if(visible(statue.x,camera))relic(c,statue);
   for(const item of s.items){if(!item.taken&&visible(item.x,camera))bloodDrop(c,item,clock);}
   for(const cp of s.coffins){if(!visible(cp.x,camera))continue;if(cp.opened)glow(c,cp.x+20,cp.y-35,55,'#bc123830');coffin(c,cp);}
   const l=LEVEL1.lever;if(visible(l.x,camera)){c.fillStyle='#69526d';c.fillRect(l.x,l.y-20,40,20);line(c,[[l.x+20,l.y-18],[l.x+(s.leverOpen?40:1),l.y-65]],'#b5a0ae',7);oval(c,l.x+(s.leverOpen?40:1),l.y-65,8,8,'#c73d59');}
@@ -104,5 +110,5 @@ const levelArt=(()=>{
   InquisitorArt.drawWorld(c,s);
   if(visible(LEVEL1.exitX,camera,250)){const openness=s.state==='cutscene'?Math.min(1,Math.max(0,(s.cutsceneTime-4)/4)):s.state==='win'?1:0;sprite(c,'gate',LEVEL1.exitX,180,220,250);c.fillStyle='#17112b';c.fillRect(LEVEL1.exitX+100-openness*65,290,openness*130,135);}
  }
- return {ready,tick,flyingBolt,background,world,enemy,heroEffects,crossbowFrame,coin,garlic,propFrame,helmetPose,bonfireGeometry,bloodDropFrame};
+ return {ready,tick,relic,flyingBolt,background,world,enemy,heroEffects,crossbowFrame,coin,garlic,propFrame,helmetPose,bonfireGeometry,bloodDropFrame};
 })();
