@@ -6,7 +6,10 @@ const atmosphere = (() => {
   const gothicArena=new Image();gothicArena.src='assets/environment/gothic-arena.png';
   const lightingImage=new Image();lightingImage.src='assets/environment/lighting-atlas.png';
   const lightingFrames={"candle":[{"x":0,"y":0,"w":248,"h":345,"pivotX":138,"pivotY":340},{"x":248,"y":0,"w":248,"h":345,"pivotX":379,"pivotY":340},{"x":496,"y":0,"w":248,"h":345,"pivotX":620,"pivotY":340},{"x":744,"y":0,"w":248,"h":345,"pivotX":864,"pivotY":340},{"x":992,"y":0,"w":247,"h":345,"pivotX":1101,"pivotY":340},{"x":1239,"y":0,"w":248,"h":345,"pivotX":1351,"pivotY":340},{"x":1487,"y":0,"w":248,"h":345,"pivotX":1595,"pivotY":340},{"x":1735,"y":0,"w":248,"h":345,"pivotX":1846,"pivotY":340}],"lantern":[{"x":0,"y":345,"w":248,"h":440,"pivotX":68,"pivotY":765},{"x":248,"y":345,"w":248,"h":440,"pivotX":310,"pivotY":765},{"x":496,"y":345,"w":248,"h":440,"pivotX":554,"pivotY":765},{"x":744,"y":345,"w":248,"h":440,"pivotX":799,"pivotY":765},{"x":992,"y":345,"w":247,"h":440,"pivotX":1043,"pivotY":765},{"x":1239,"y":345,"w":248,"h":440,"pivotX":1287,"pivotY":765},{"x":1487,"y":345,"w":248,"h":440,"pivotX":1534,"pivotY":765},{"x":1735,"y":345,"w":248,"h":440,"pivotX":1779,"pivotY":765}]},lightingScale={candle:.2,lantern:.36};
-  const ready = Promise.all([lightingImage.decode(),gothicArena.decode(), ...assetNames.map(async name => {
+  const lightingSprites={candle:[],lantern:[]};
+  const lightingReady=lightingImage.decode().then(prepareLightingSprites);
+  let lightingLayout=[],lightingStats={original:0,target:0,actual:0};
+  const ready = Promise.all([lightingReady,gothicArena.decode(), ...assetNames.map(async name => {
     const image = new Image(); image.src = `assets/environment/${name}.svg`;
     await image.decode();
     const raster = document.createElement('canvas');
@@ -63,6 +66,7 @@ const atmosphere = (() => {
       if(h<30)for(const x of [12,w-12]){line(c,[[x,7],[x,Math.min(h-2,20)]],'#ad8584',2);oval(c,x,9,2,2,'#0a0b11');}
       if(gothicArena.complete&&gothicArena.naturalWidth)textureCache.set(key,image);return {ref,w,h,image};
     });
+    buildLightingLayout();
   }
   function bat(c,x,y,size,phase,color='#171124'){
     c.save();c.translate(x,y);c.scale(size,size);c.fillStyle=color;
@@ -106,26 +110,80 @@ const atmosphere = (() => {
     c.fillStyle='#ff812b';c.beginPath();c.moveTo(-4,0);c.bezierCurveTo(-10,-10,3+sway,-14,sway,-24);c.bezierCurveTo(15,-9,8,2,-4,0);c.fill();
     oval(c,1,-7,3,7,'#ffdf8c');c.restore();
   }
-  function lightingFrame(elapsed,phase=0){return ((Math.floor((elapsed+phase)*10+1e-7)%8)+8)%8;}
-  function lightingObjects(camera){
-    const objects=[];
-    const grounded=(x,w)=>stones.some(p=>p.ref.kind==='ground'&&x>=p.ref[0]&&x+w<=p.ref[0]+p.w);
-    for(let i=Math.floor(camera/600)-1;i<Math.floor(camera/600)+3;i++){
-      const x=i*600+230;if(x<camera-100||x>camera+1030)continue;
-      if(grounded(x-20,74))objects.push({kind:'lantern',x,y:430,phase:i*.137});
-      if(grounded(x-47,50))objects.push({kind:'candle',x:x-22,y:430,phase:i*.137+.23});
+  function prepareLightingSprites(){
+    const wickY=[210,210,210,210,222,244,210,245];
+    for(const kind of ['candle','lantern']){
+      const base=lightingFrames[kind][0],body=document.createElement('canvas');body.width=base.w;body.height=base.h;
+      const bc=body.getContext('2d');
+      if(kind==='candle')bc.drawImage(lightingImage,base.x,205,base.w,base.h-205,0,205,base.w,base.h-205);
+      else{
+        bc.drawImage(lightingImage,base.x,base.y,base.w,base.h,0,0,base.w,base.h);
+        bc.clearRect(140,128,74,102);bc.fillStyle='#2b130ee8';bc.fillRect(140,128,74,102);
+      }
+      for(let i=0;i<8;i++){
+        const f=lightingFrames[kind][i],frame=document.createElement('canvas');frame.width=base.w;frame.height=base.h;
+        const c=frame.getContext('2d');
+        if(kind==='candle'){
+          c.save();c.beginPath();c.rect(0,0,base.w,205);c.clip();
+          c.drawImage(lightingImage,f.x,0,f.w,wickY[i]+2,base.pivotX-(f.pivotX-f.x),210-wickY[i],f.w,wickY[i]+2);c.restore();
+          c.drawImage(body,0,0);
+        }else{
+          c.drawImage(body,0,0);
+          const fire=document.createElement('canvas');fire.width=66;fire.height=92;const fc=fire.getContext('2d');
+          fc.drawImage(lightingImage,f.pivotX+78,480,66,92,0,0,66,92);
+          const data=fc.getImageData(0,0,66,92);
+          for(let p=0;p<data.data.length;p+=4){const [r,g,b]=data.data.subarray(p,p+3);if(!(r>165&&g>55&&r>b*1.5))data.data[p+3]=0;}
+          fc.putImageData(data,0,0);
+          c.save();c.beginPath();c.rect(140,128,74,102);c.clip();c.drawImage(fire,146,135);c.restore();
+        }
+        lightingSprites[kind].push(frame);
+      }
     }
-    return objects;
   }
+  const intersects=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+  function lightingBounds(object){return object.kind==='lantern'?{x:object.x-26,y:273,w:100,h:159}:{x:object.x-25,y:362,w:50,h:70};}
+  function lightingObstacles(){
+    const boxes=[];
+    for(const p of LEVEL1.ledges){const ax=p.type==='moving'&&p.axis==='x'?p.amplitude:0,ay=p.type==='moving'&&p.axis==='y'?p.amplitude:0;boxes.push({x:p.x-ax-12,y:p.y-ay-8,w:p.w+ax*2+24,h:p.h+ay*2+16});}
+    for(const t of LEVEL1.traps)if(t.type==='stake')boxes.push({x:t.x-15,y:290,w:115,h:145});else if(t.type==='fire')boxes.push({x:t.x-24,y:360,w:95,h:76});
+    for(const cp of [{x:30,y:430},...LEVEL1.checkpoints])boxes.push({x:cp.x-55,y:cp.y-110,w:145,h:116});
+    for(const item of [...LEVEL1.items,...LEVEL1.coins])boxes.push({x:item.x-28,y:item.y-30,w:56,h:60});
+    for(const e of LEVEL1.enemies)boxes.push({x:e.x-e.range-65,y:e.y-45,w:e.range*2+150,h:110});
+    for(const gate of [LEVEL1.gate,{x:LEVEL1.exitX,y:180,w:220,h:250}])boxes.push({...gate});
+    return boxes;
+  }
+  function buildLightingLayout(){
+    const grounded=(x,w)=>stones.some(p=>p.ref.kind==='ground'&&x>=p.ref[0]&&x+w<=p.ref[0]+p.w);
+    const candidates=[],candles=[],obstacles=lightingObstacles();
+    for(let i=0;i*600+230<LEVEL1.width;i++){
+      const x=i*600+230;if(grounded(x-20,74))candidates.push({kind:'lantern',x,y:430,phase:i*.137});
+      if(grounded(x-47,50))candles.push({kind:'candle',x:x-22,y:430,phase:i*.137+.23});
+    }
+    const target=Math.round(candidates.length*.7),lanterns=[];
+    const free=o=>{const b=lightingBounds(o);return grounded(b.x,b.w)&&!obstacles.some(box=>intersects(b,box))&&!lanterns.some(other=>Math.abs(o.x-other.x)<250);};
+    for(let k=0;k<target;k++){
+      const original=candidates[Math.min(candidates.length-1,Math.floor((k+.5)*candidates.length/target))];
+      for(let d=0;d<=600;d+=12){const options=d?[original.x-d,original.x+d]:[original.x];const found=options.find(x=>x>40&&x<LEVEL1.width-100&&free({...original,x}));if(found!==undefined){lanterns.push({...original,x:found});break;}}
+    }
+    // Fill any locally blocked choices from other clear stretches, without lowering the requested count.
+    for(let x=80;lanterns.length<target&&x<LEVEL1.width-100;x+=24){const o={kind:'lantern',x,y:430,phase:x*.00023};if(free(o))lanterns.push(o);}
+    const placedCandles=[];
+    for(const original of candles){
+      for(let d=0;d<=600;d+=12){const options=d?[original.x-d,original.x+d]:[original.x];const found=options.find(x=>{const o={...original,x},b=lightingBounds(o);return grounded(b.x,b.w)&&!obstacles.some(box=>intersects(b,box))&&!lanterns.some(l=>intersects(b,lightingBounds(l)))&&!placedCandles.some(c=>intersects(b,lightingBounds(c)));});if(found!==undefined){placedCandles.push({...original,x:found});break;}}
+    }
+    lightingLayout=[...lanterns,...placedCandles];lightingStats={original:candidates.length,target,actual:lanterns.length};
+  }
+  function lightingFrame(elapsed,phase=0){return ((Math.floor((elapsed+phase)*10+1e-7)%8)+8)%8;}
+  function lightingObjects(camera){return lightingLayout.filter(o=>o.x>camera-120&&o.x<camera+1080);}
+  function lightingSprite(kind,frame){return lightingSprites[kind][frame];}
+  function lightingReport(){return {...lightingStats,objects:lightingLayout.map(o=>({...o})),obstacles:lightingObstacles()};}
   function worldDecor(c,camera){
-    if(!lightingImage.complete||!lightingImage.naturalWidth)return;
+    if(!lightingSprites.candle.length)return;
     c.save();c.translate(-camera,0);
     for(const object of lightingObjects(camera)){
-      const f=lightingFrames[object.kind][lightingFrame(time,object.phase)],scale=object.kind==='lantern'?lightingScale.lantern:lightingScale.candle;
-      const flicker=.8+.2*Math.sin(time*11+object.x);
-      if(object.kind==='lantern')glow(c,object.x+40,object.y-88,46,`rgba(255,112,31,${.17*flicker})`);
-      else glow(c,object.x,object.y-28,25,`rgba(255,129,40,${.14*flicker})`);
-      c.drawImage(lightingImage,f.x,f.y,f.w,f.h,(f.x-f.pivotX)*scale+object.x,(f.y-f.pivotY)*scale+object.y,f.w*scale,f.h*scale);
+      const f=lightingFrames[object.kind][0],scale=lightingScale[object.kind],sprite=lightingSprite(object.kind,lightingFrame(time,object.phase));
+      // Bodies and anchors are identical in every cached frame; only the flame regions differ.
+      c.drawImage(sprite,(f.x-f.pivotX)*scale+object.x,(f.y-f.pivotY)*scale+object.y,f.w*scale,f.h*scale);
     }
     c.restore();
   }
@@ -172,5 +230,5 @@ const atmosphere = (() => {
     node.querySelector('#coin-count').textContent=score;
     node.querySelector('#progress-count').textContent=progress+'%';
   }
-  return {ready,prepare,background,worldDecor,platforms,burst,effects,tick,reset,hud,palette,lightingFrame,lightingObjects};
+  return {ready,prepare,background,worldDecor,platforms,burst,effects,tick,reset,hud,palette,lightingFrame,lightingObjects,lightingSprite,lightingBounds,lightingReport};
 })();

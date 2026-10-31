@@ -137,5 +137,27 @@
     "candle": 0.2,
     "lantern": 0.36
   },
-  "fps": 10
+  "fps": 10,
+  "animation": {
+    "body_frame": 0,
+    "only_flame": true,
+    "candle_static_from_y": 205,
+    "candle_wick_y": [
+      210,
+      210,
+      210,
+      210,
+      222,
+      244,
+      210,
+      245
+    ],
+    "lantern_flame_window": {
+      "x": 140,
+      "y": 128,
+      "w": 74,
+      "h": 102
+    }
+  },
+  "lantern_density": 0.7
 }

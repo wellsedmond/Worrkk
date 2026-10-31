@@ -10,6 +10,7 @@ const files = {
   '/assets/hero-rage.png': ['assets/hero-rage.png', 'image/png'],
   '/assets/environment/lighting-atlas.png': ['assets/environment/lighting-atlas.png', 'image/png'],
   '/assets/hero-punch.png': ['assets/hero-punch.png', 'image/png'],
+  '/assets/level1/blood-drop-atlas.png': ['assets/level1/blood-drop-atlas.png', 'image/png'],
   '/': ['index.html', 'text/html'],
   '/atmosphere.js': ['atmosphere.js', 'text/javascript'],
   '/Worrkk.html': ['Worrkk.html', 'text/html'],

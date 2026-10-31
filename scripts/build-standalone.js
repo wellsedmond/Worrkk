@@ -19,6 +19,7 @@ for(const file of ['level1.js','progress.js','sound.js','parallax.js','atmospher
   const urls={};for(const name of names)urls[name]='data:image/svg+xml;base64,'+(await readFile(new URL(`assets/environment/${name}.svg`,root))).toString('base64');
   js=js.replace('`assets/environment/${name}.svg`',`(${JSON.stringify(urls)})[name]`);
  }else if(file==='level-art.js'){
+  js=js.replace("'assets/level1/blood-drop-atlas.png'",JSON.stringify('data:image/png;base64,'+(await readFile(new URL('assets/level1/blood-drop-atlas.png',root))).toString('base64')));
   js=js.replace("'assets/level1/helmet-garlic-atlas.png'",JSON.stringify('data:image/png;base64,'+(await readFile(new URL('assets/level1/helmet-garlic-atlas.png',root))).toString('base64')));
   js=js.replace("'assets/level1/props-atlas.png'",JSON.stringify('data:image/png;base64,'+(await readFile(new URL('assets/level1/props-atlas.png',root))).toString('base64')));
   js=js.replace("'assets/level1/crossbow-atlas.png'",JSON.stringify('data:image/png;base64,'+(await readFile(new URL('assets/level1/crossbow-atlas.png',root))).toString('base64')));
