@@ -191,3 +191,15 @@ test('crossbows launch head-height bolts at release and crouched artwork clears 
  run("projectiles=[];keys.crouch=false;setCrouch();player.inv=0;spawnProjectile('stake',player.x,LEVEL1.stakeY,0);updateTraps(0)");assert.equal(run('player.hp'),2,'standing visible head is vulnerable');
  run('makeWorld()');assert.equal(run('traps.filter(t=>t.type==="stake").every(t=>t.shotTime===-1)'),true);
 });
+
+test('coffins open and save once on first nearby pass, stay open on respawn, reset for a new run',()=>{
+ const run=game();
+ assert.equal(run('coffinStates.every(c=>!c.opened)'),true);
+ run('player.x=29600;player.y=200;score=7;updateEvents(.1)');assert.equal(run('coffinStates[1].opened'),false,'passing above does not activate');
+ run('player.y=350;updateEvents(0)');assert.equal(run('coffinStates[1].opened'),true);assert.equal(run('coffinStates[1].openTime'),0);assert.equal(run('snapshot.score'),7);
+ run('score=99;updateEvents(.4)');assert.equal(run('snapshot.score'),7,'standing nearby does not overwrite save');assert.equal(run('coffinStates[1].openTime'),.4);
+ run('player.x=29200;updateEvents(.4);player.x=29600;updateEvents(.1)');assert.equal(run('coffinStates[1].openTime'),.8);assert.equal(run('snapshot.score'),7);
+ run('resumeCheckpoint()');assert.equal(run('score'),7);assert.equal(run('player.x'),29600);assert.equal(run('coffinStates[1].opened'),true);
+ run('start()');assert.equal(run('coffinStates.every(c=>!c.opened)'),true);
+ run('player.y=350;updateEvents(0)');assert.equal(run('coffinStates[0].opened'),true);assert.equal(run('checkpoint.x'),70);
+});

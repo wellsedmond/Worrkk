@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 const files = {
   '/assets/environment/gothic-arena.png': ['assets/environment/gothic-arena.png', 'image/png'],
   '/assets/level1/crossbow-atlas.png': ['assets/level1/crossbow-atlas.png', 'image/png'],
+  '/assets/level1/props-atlas.png': ['assets/level1/props-atlas.png', 'image/png'],
   '/': ['index.html', 'text/html'],
   '/atmosphere.js': ['atmosphere.js', 'text/javascript'],
   '/Worrkk.html': ['Worrkk.html', 'text/html'],

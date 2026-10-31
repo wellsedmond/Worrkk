@@ -7,7 +7,7 @@ document.querySelector('#play').disabled=true;
 const keys={left:false,right:false,jump:false,attack:false,crouch:false};
 const toPlatform=p=>Object.assign([p.x,p.y,p.w,p.h],{id:p.id,kind:p.type,baseX:p.x,baseY:p.y,...p,active:true,collapse:-1,restore:0,dx:0,dy:0});
 let groundPlatforms=[],ledgePlatforms=[],platforms=[];
-let player,coins,enemies,traps,items,projectiles=[],boss,checkpoint,snapshot;
+let player,coins,enemies,traps,items,projectiles=[],boss,checkpoint,snapshot,coffinStates=[];
 let camera=0,cameraY=0,state='menu',score=0,last=0,clock=0,jumpHeld=false,attackHeld=false;
 let kills=0,sword=0,swordRewards=0,damageTaken=0,leverOpen=false,escapeLeft=0,towerTimer=null,towerPassed=false,zoneIndex=0;
 let achievementClock=0,safeIdle=0,deathNumber=0,projectileNumber=0,jumpFires=new Set(),achievementJump=false;
@@ -22,7 +22,7 @@ function makeWorld(){
  boss={...LEVEL1.boss,mode:'waiting',phase:1,shots:0,timer:0,dead:false,death:0,inv:0,shotTime:-1,shotDir:-1,retreat:0,retreatStart:LEVEL1.boss.x,targetX:LEVEL1.boss.x};projectiles=[];
 }
 function reset(){
- atmosphere.reset();heroAnimator.reset();makeWorld();player={x:70,y:330,w:40,h:80,vx:0,vy:0,ground:false,hp:3,inv:0,face:1,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false};
+ atmosphere.reset();heroAnimator.reset();makeWorld();coffinStates=[{id:'start',x:30,y:430,spawnX:70},...LEVEL1.checkpoints.map(cp=>({...cp,spawnX:cp.x}))].map(cp=>({...cp,opened:false,openTime:0}));player={x:70,y:330,w:40,h:80,vx:0,vy:0,ground:false,hp:3,inv:0,face:1,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false};
  score=0;camera=0;cameraY=0;clock=0;jumpHeld=false;attackHeld=false;kills=0;sword=0;swordRewards=0;damageTaken=0;leverOpen=false;escapeLeft=0;towerTimer=null;towerPassed=false;zoneIndex=0;cutsceneTime=0;paused=false;tutorialDone=new Set();
  for(const k in keys)keys[k]=false;checkpoint={id:'start',x:70,y:430};captureCheckpoint();atmosphere.prepare(platforms);notify('Пора вернуть своё!',3);
 }
@@ -111,7 +111,13 @@ function updateBoss(dt){
 }
 function updateEvents(dt){
  const current=LEVEL1.zones.findIndex(z=>player.x>=z.start&&player.x<z.end);if(current>=0&&current!==zoneIndex){zoneIndex=current;notify(LEVEL1.zones[current].name);}
- for(const cp of LEVEL1.checkpoints)if(cp.x>checkpoint.x&&Math.abs(player.x-cp.x)<70&&Math.abs(player.y+player.h-cp.y)<22){checkpoint={...cp};captureCheckpoint();notify('ПРОБУЖДЕНИЕ СОХРАНЕНО');}
+ for(const cp of coffinStates){
+  if(cp.opened){cp.openTime=Math.min(.8,cp.openTime+dt);continue;}
+  if(Math.abs(player.x-cp.x)<70&&Math.abs(player.y+player.h-cp.y)<22){
+   cp.opened=true;cp.openTime=0;
+   if(cp.spawnX>=checkpoint.x){checkpoint={id:cp.id,x:cp.spawnX,y:cp.y};captureCheckpoint();notify('ГРОБ ОТКРЫТ · ПРОБУЖДЕНИЕ СОХРАНЕНО');}
+  }
+ }
  for(const c of coins)if(!c.taken&&activeNear(c.x)&&Math.hypot(player.x+20-c.x,player.y+player.h/2-c.y)<35){c.taken=true;score++;achievementSystem.emit('coin_collected',{id:'pickup-'+c.id,amount:1});}
  for(const item of items)if(!item.taken&&activeNear(item.x)&&Math.hypot(player.x+20-item.x,player.y+player.h/2-item.y)<42){item.taken=true;player.rage=10;notify('КРОВАВАЯ ЯРОСТЬ — 10 секунд');}
  if(!towerPassed&&player.x>LEVEL1.timedSection.start&&player.x<LEVEL1.timedSection.end&&player.y<-150&&towerTimer===null){towerTimer=LEVEL1.timedSection.seconds;notify('Механизм запущен! Пройди галерею за 24 секунды.');}
@@ -178,7 +184,7 @@ function drawGarlic(e){
  ctx.save();ctx.translate(e.x+19,e.y+42);
  const stride=Math.sin(clock*9+e.origin)*2;
  ellipse(0,-1,23,4,'#100b2080');ctx.rotate(stride*.025);
- if(garlicImage.complete&&garlicImage.naturalWidth)ctx.drawImage(garlicImage,-24,-50+stride,48,50);
+ levelArt.garlic(ctx,-24,-50+stride,48,50,clock,e.dir);
  ctx.restore();
 }
 function draw(){
@@ -186,8 +192,8 @@ function draw(){
  atmosphere.background(ctx,camera,zoneIndex,cameraY);levelArt.background(ctx,zoneIndex,camera,cameraY,clock,cutsceneTime);
  ctx.save();if(escapeLeft>0){ctx.translate(Math.sin(clock*32)*1.5,Math.cos(clock*27)*1.2);}ctx.translate(0,-cameraY);
  atmosphere.worldDecor(ctx,camera);ctx.save();ctx.translate(-camera,0);atmosphere.platforms(ctx,camera,cameraY);
- levelArt.world(ctx,{player,camera,cameraY,clock,traps,projectiles,items,checkpoint,leverOpen,escapeLeft,boss,state,cutsceneTime});
- for(const c of coins){if(c.taken||c.x<camera-30||c.x>camera+990)continue;const y=c.y+Math.sin(clock*4+c.x)*3;const gold=ctx.createLinearGradient(c.x-10,y-10,c.x+10,y+10);gold.addColorStop(0,'#fff2ac');gold.addColorStop(.45,'#f5bf47');gold.addColorStop(1,'#bf7e2d');ctx.fillStyle=gold;ctx.strokeStyle='#b98233';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(c.x,y,9,12,0,0,Math.PI*2);ctx.fill();ctx.stroke();}
+ levelArt.world(ctx,{player,camera,cameraY,clock,traps,projectiles,items,checkpoint,coffins:coffinStates,leverOpen,escapeLeft,boss,state,cutsceneTime});
+ for(const c of coins){if(c.taken||c.x<camera-30||c.x>camera+990)continue;const y=c.y+Math.sin(clock*4+c.x)*3;levelArt.coin(ctx,c.x,y,clock);}
  for(const e of enemies)if(activeNear(e.x,1200)&&(!e.dead||e.death>0)){if(e.type==='helmet')levelArt.enemy(ctx,e,clock);else if(!e.dead)drawGarlic(e);}
  character();ctx.restore();atmosphere.effects(ctx,camera);ctx.restore();
  atmosphere.hud(hud,player,score,state==='win'?100:Math.min(100,Math.floor(player.x/LEVEL1.width*100)));renderStatus();

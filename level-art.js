@@ -1,9 +1,11 @@
 /* Extra actors reuse the Canvas renderer. SVGs are explicit replaceable art assets. */
 const levelArt=(()=>{
  const images={};const names=['helmet','hunter','coffin','stake','sword','gate','werewolf','tower'];
+ const propsImage=new Image();propsImage.src='assets/level1/props-atlas.png';
+ const propFrames={"fire":[{"x":5,"y":0,"w":207,"h":198},{"x":219,"y":0,"w":207,"h":198},{"x":432,"y":0,"w":207,"h":198},{"x":642,"y":0,"w":207,"h":198},{"x":852,"y":0,"w":207,"h":198},{"x":1065,"y":0,"w":207,"h":198},{"x":1273,"y":0,"w":207,"h":198}],"coin":[{"x":18,"y":199,"w":160,"h":155,"pivotX":98.5,"pivotY":276},{"x":201,"y":199,"w":160,"h":155,"pivotX":281,"pivotY":276},{"x":369,"y":199,"w":160,"h":155,"pivotX":449,"pivotY":276},{"x":534,"y":199,"w":160,"h":155,"pivotX":613.5,"pivotY":276},{"x":712,"y":199,"w":160,"h":155,"pivotX":792.5,"pivotY":276},{"x":896,"y":199,"w":160,"h":155,"pivotX":975.5,"pivotY":276},{"x":1080,"y":199,"w":160,"h":155,"pivotX":1159.5,"pivotY":276},{"x":1258,"y":199,"w":160,"h":155,"pivotX":1338,"pivotY":276},{"x":1438,"y":199,"w":160,"h":155,"pivotX":1518.5,"pivotY":276},{"x":1612,"y":199,"w":160,"h":155,"pivotX":1692,"pivotY":276},{"x":1796,"y":199,"w":160,"h":155,"pivotX":1875.5,"pivotY":276},{"x":1988,"y":199,"w":160,"h":155,"pivotX":2068,"pivotY":276}],"garlic":[{"x":10,"y":355,"w":163,"h":150,"pivotX":95,"pivotY":430},{"x":175,"y":355,"w":230,"h":150,"pivotX":326,"pivotY":430},{"x":405,"y":355,"w":241,"h":150,"pivotX":568,"pivotY":430},{"x":645,"y":355,"w":258,"h":150,"pivotX":827,"pivotY":430},{"x":905,"y":355,"w":252,"h":150,"pivotX":1083,"pivotY":430},{"x":1158,"y":355,"w":258,"h":150,"pivotX":1339,"pivotY":430}],"coffin":[{"x":16,"y":502,"w":164,"h":222,"pivotX":96,"pivotY":700},{"x":205,"y":502,"w":165,"h":222,"pivotX":287,"pivotY":700},{"x":391,"y":502,"w":160,"h":222,"pivotX":474,"pivotY":700},{"x":573,"y":502,"w":156,"h":222,"pivotX":655,"pivotY":700},{"x":741,"y":502,"w":177,"h":222,"pivotX":843,"pivotY":700},{"x":932,"y":502,"w":168,"h":222,"pivotX":1025,"pivotY":700},{"x":1108,"y":502,"w":174,"h":222,"pivotX":1203,"pivotY":700},{"x":1290,"y":502,"w":210,"h":222,"pivotX":1416,"pivotY":700}]};
  const crossbowImage=new Image();crossbowImage.src='assets/level1/crossbow-atlas.png';
  const crossbowFrames=[{"x":0,"y":160,"w":222,"h":356,"muzzleX":22,"muzzleY":270},{"x":222,"y":160,"w":222,"h":356,"muzzleX":242,"muzzleY":270},{"x":444,"y":160,"w":221,"h":356,"muzzleX":466,"muzzleY":270},{"x":665,"y":160,"w":222,"h":356,"muzzleX":688,"muzzleY":270},{"x":887,"y":160,"w":222,"h":356,"muzzleX":910,"muzzleY":270},{"x":1109,"y":160,"w":221,"h":356,"muzzleX":1128,"muzzleY":270},{"x":1330,"y":160,"w":222,"h":356,"muzzleX":1350,"muzzleY":270},{"x":1552,"y":160,"w":222,"h":356,"muzzleX":1564,"muzzleY":270}],boltFrames=[{"x":0,"y":695,"w":222,"h":74},{"x":222,"y":695,"w":222,"h":74},{"x":444,"y":695,"w":221,"h":74},{"x":665,"y":695,"w":222,"h":74},{"x":887,"y":695,"w":222,"h":74},{"x":1109,"y":695,"w":221,"h":74},{"x":1330,"y":695,"w":222,"h":74},{"x":1552,"y":695,"w":222,"h":74}];
- const ready=Promise.all([crossbowImage.decode(),...names.map(async name=>{const img=new Image();img.src=`assets/level1/${name}.svg`;await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);images[name]=c;})]);
+ const ready=Promise.all([propsImage.decode(),crossbowImage.decode(),...names.map(async name=>{const img=new Image();img.src=`assets/level1/${name}.svg`;await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);images[name]=c;})]);
  let zoneNow=0,zoneBefore=0,fade=1;
  const visible=(x,camera,w=120)=>x+w>camera-80&&x<camera+1040;
  function sprite(c,name,x,y,w,h){if(images[name])c.drawImage(images[name],x,y,w,h);}
@@ -54,16 +56,28 @@ const levelArt=(()=>{
   c.save();c.translate(p.x+(p.vx>0?p.w:0),p.y+p.h/2);if(p.vx>0)c.scale(-1,1);
   c.drawImage(crossbowImage,f.x,f.y,f.w,f.h,0,-8,p.w,16);c.restore();
  }
+ function prop(c,kind,frame,x,y,sx,sy=sx,dir=1){
+  const f=propFrames[kind][frame];if(!propsImage.complete||!propsImage.naturalWidth)return;
+  c.save();c.translate(x,y);if(dir<0)c.scale(-1,1);
+  c.drawImage(propsImage,f.x,f.y,f.w,f.h,(f.x-(f.pivotX??f.x+f.w/2))*sx,(f.y-(f.pivotY??f.y+f.h))*sy,f.w*sx,f.h*sy);c.restore();
+ }
+ function propFrame(kind,time){const count=propFrames[kind].length;return kind==='coffin'?Math.min(count-1,Math.floor(time/.8*count+1e-7)):Math.floor(time*(kind==='coin'?12:kind==='fire'?12:10))%count;}
+ function coin(c,x,y,time){prop(c,'coin',propFrame('coin',time+x*.003),x,y,24/135);}
+ function garlic(c,x,y,w,h,time,dir=1){prop(c,'garlic',propFrame('garlic',time),x+w/2,y+h/2,w/130,h/130,dir);}
+ function bonfire(c,t,time){
+  if(t.active){glow(c,t.x+t.w/2,t.y+20,50,'#ff65183a');prop(c,'fire',propFrame('fire',time+t.x*.001),t.x+t.w/2,t.y+t.h,58/207,55/198);}
+  else {const f=propFrames.fire[0];c.drawImage(propsImage,f.x,145,f.w,53,t.x-8,t.y+t.h-15,58,15);}
+ }
+ function coffin(c,cp){prop(c,'coffin',cp.opened?propFrame('coffin',cp.openTime):0,cp.x+20,cp.y,90/190);}
  function world(c,s){const {camera,cameraY,clock,player,boss}=s;
   for(const trap of s.traps){if(!visible(trap.x,camera,200))continue;
-   if(trap.type==='fire'){oval(c,trap.x+21,trap.y+31,28,6,'#342733');for(let i=0;i<4;i++)oval(c,trap.x+5+i*11,trap.y+29,7,4,trap.active?'#ab4935':'#4b3a48');if(trap.active)flame(c,trap.x+21,trap.y+31,clock,.9);else glow(c,trap.x+21,trap.y+28,25,'#ff812b15');}
+   if(trap.type==='fire')bonfire(c,trap,clock);
    if(trap.type==='stake'){crossbow(c,trap.x,trap.y,trap);if(trap.warn)glow(c,trap.x+30,trap.y+4,30,Math.sin(clock*16)>0?'#ff3e5840':'#ff3e5815');}
    if(trap.type==='pendulum'&&Number.isFinite(trap.headX)){line(c,[[trap.x,trap.y],[trap.headX,trap.headY]],'#ab97ac',4);oval(c,trap.headX,trap.headY,trap.radius,trap.radius,'#8c728e');oval(c,trap.headX,trap.headY,trap.radius-7,trap.radius-7,'#48354f');line(c,[[trap.headX-12,trap.headY],[trap.headX+12,trap.headY]],'#e4c2c6',2);}
   }
-  for(const p of s.projectiles){if(!visible(p.x,camera))continue;if(p.type==='stake'){flyingBolt(c,p);}else if(garlicImage.complete)c.drawImage(garlicImage,p.x,p.y,32,32);}
+  for(const p of s.projectiles){if(!visible(p.x,camera))continue;if(p.type==='stake'){flyingBolt(c,p);}else garlic(c,p.x,p.y,p.w,p.h,p.life,p.vx<0?-1:1);}
   for(const item of s.items){if(item.taken||!visible(item.x,camera))continue;const y=item.y+Math.sin(clock*3)*4;glow(c,item.x,y,30,'#b5223970');c.fillStyle='#b52239';c.beginPath();c.moveTo(item.x,y-18);c.bezierCurveTo(item.x-30,y+16,item.x+30,y+16,item.x,y-18);c.fill();line(c,[[item.x-3,y-5],[item.x-6,y+4]],'#ffb8b0',2);}
-  const coffins=[{id:'start',x:30,y:430},...LEVEL1.checkpoints];
-  for(const cp of coffins){if(!visible(cp.x,camera))continue;const active=cp.id===s.checkpoint.id;glow(c,cp.x+20,cp.y-35,65,active?'#cb526b40':'#8268ae25');sprite(c,'coffin',cp.x-10,cp.y-88,56,84);if(cp.id==='start'){c.save();c.translate(cp.x-12,cp.y);c.rotate(-.35);sprite(c,'coffin',-40,-84,48,78);c.restore();}}
+  for(const cp of s.coffins){if(!visible(cp.x,camera))continue;if(cp.opened)glow(c,cp.x+20,cp.y-35,55,'#bc123830');coffin(c,cp);}
   const l=LEVEL1.lever;if(visible(l.x,camera)){c.fillStyle='#69526d';c.fillRect(l.x,l.y-20,40,20);line(c,[[l.x+20,l.y-18],[l.x+(s.leverOpen?40:1),l.y-65]],'#b5a0ae',7);oval(c,l.x+(s.leverOpen?40:1),l.y-65,8,8,'#c73d59');}
   if(visible(LEVEL1.gate.x,camera))sprite(c,'gate',LEVEL1.gate.x-35,-520,s.leverOpen?65:120,950);
   if(s.escapeLeft>0){for(let i=0;i<8;i++){const x=camera+(i*153+clock*75)%960,y=cameraY+((clock*150+i*73)%540)-30;c.save();c.translate(x,y);c.rotate(clock+i);c.fillStyle='#a08a9d';c.beginPath();c.moveTo(-5,-4);c.lineTo(6,-2);c.lineTo(3,7);c.closePath();c.fill();c.restore();}}
@@ -75,5 +89,5 @@ const levelArt=(()=>{
   if(visible(LEVEL1.exitX,camera,250)){const openness=s.state==='cutscene'?Math.min(1,Math.max(0,(s.cutsceneTime-4)/4)):s.state==='win'?1:0;sprite(c,'gate',LEVEL1.exitX,180,220,250);c.fillStyle='#17112b';c.fillRect(LEVEL1.exitX+100-openness*65,290,openness*130,135);}
   if(s.state==='cutscene'&&s.cutsceneTime<4){const kx=s.cutsceneTime<2?boss.x+80:player.x+48,ky=s.cutsceneTime<2?420:player.y+40;oval(c,kx,ky,10,10,'#e9c36b');line(c,[[kx+7,ky],[kx+39,ky],[kx+39,ky+9]],'#e9c36b',5);}
  }
- return {ready,tick,background,world,enemy,heroEffects,crossbowFrame};
+ return {ready,tick,background,world,enemy,heroEffects,crossbowFrame,coin,garlic,propFrame};
 })();
