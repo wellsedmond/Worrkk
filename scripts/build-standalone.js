@@ -13,6 +13,7 @@ html=html.replace(/\s*<script src="https:\/\/telegram.org\/js\/telegram-web-app.
 for(const file of ['level1.js','progress.js','sound.js','parallax.js','atmosphere.js','level-art.js','hero-animation.js','achievements-core.js','achievements.js','game.js','achievements-ui.js']){
  let js=await read(file);
  if(file==='atmosphere.js'){
+  js=js.replace("'assets/environment/lighting-atlas.png'",JSON.stringify('data:image/png;base64,'+(await readFile(new URL('assets/environment/lighting-atlas.png',root))).toString('base64')));
   js=js.replace("'assets/environment/gothic-arena.png'",JSON.stringify(gothicUrl));
   const names=['ska-palace','skyline','graveyard','web'];
   const urls={};for(const name of names)urls[name]='data:image/svg+xml;base64,'+(await readFile(new URL(`assets/environment/${name}.svg`,root))).toString('base64');

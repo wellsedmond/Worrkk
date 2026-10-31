@@ -8,6 +8,7 @@ const files = {
   '/assets/level1/props-atlas.png': ['assets/level1/props-atlas.png', 'image/png'],
   '/assets/level1/helmet-garlic-atlas.png': ['assets/level1/helmet-garlic-atlas.png', 'image/png'],
   '/assets/hero-rage.png': ['assets/hero-rage.png', 'image/png'],
+  '/assets/environment/lighting-atlas.png': ['assets/environment/lighting-atlas.png', 'image/png'],
   '/': ['index.html', 'text/html'],
   '/atmosphere.js': ['atmosphere.js', 'text/javascript'],
   '/Worrkk.html': ['Worrkk.html', 'text/html'],

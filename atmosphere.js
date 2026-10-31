@@ -4,7 +4,9 @@ const atmosphere = (() => {
   const images = {};const textureCache=new Map();
   const assetNames = ['ska-palace','skyline','graveyard','web'];
   const gothicArena=new Image();gothicArena.src='assets/environment/gothic-arena.png';
-  const ready = Promise.all([gothicArena.decode(), ...assetNames.map(async name => {
+  const lightingImage=new Image();lightingImage.src='assets/environment/lighting-atlas.png';
+  const lightingFrames={"candle":[{"x":0,"y":0,"w":248,"h":345,"pivotX":138,"pivotY":340},{"x":248,"y":0,"w":248,"h":345,"pivotX":379,"pivotY":340},{"x":496,"y":0,"w":248,"h":345,"pivotX":620,"pivotY":340},{"x":744,"y":0,"w":248,"h":345,"pivotX":864,"pivotY":340},{"x":992,"y":0,"w":247,"h":345,"pivotX":1101,"pivotY":340},{"x":1239,"y":0,"w":248,"h":345,"pivotX":1351,"pivotY":340},{"x":1487,"y":0,"w":248,"h":345,"pivotX":1595,"pivotY":340},{"x":1735,"y":0,"w":248,"h":345,"pivotX":1846,"pivotY":340}],"lantern":[{"x":0,"y":345,"w":248,"h":440,"pivotX":68,"pivotY":765},{"x":248,"y":345,"w":248,"h":440,"pivotX":310,"pivotY":765},{"x":496,"y":345,"w":248,"h":440,"pivotX":554,"pivotY":765},{"x":744,"y":345,"w":248,"h":440,"pivotX":799,"pivotY":765},{"x":992,"y":345,"w":247,"h":440,"pivotX":1043,"pivotY":765},{"x":1239,"y":345,"w":248,"h":440,"pivotX":1287,"pivotY":765},{"x":1487,"y":345,"w":248,"h":440,"pivotX":1534,"pivotY":765},{"x":1735,"y":345,"w":248,"h":440,"pivotX":1779,"pivotY":765}]},lightingScale={candle:.2,lantern:.36};
+  const ready = Promise.all([lightingImage.decode(),gothicArena.decode(), ...assetNames.map(async name => {
     const image = new Image(); image.src = `assets/environment/${name}.svg`;
     await image.decode();
     const raster = document.createElement('canvas');
@@ -104,18 +106,26 @@ const atmosphere = (() => {
     c.fillStyle='#ff812b';c.beginPath();c.moveTo(-4,0);c.bezierCurveTo(-10,-10,3+sway,-14,sway,-24);c.bezierCurveTo(15,-9,8,2,-4,0);c.fill();
     oval(c,1,-7,3,7,'#ffdf8c');c.restore();
   }
+  function lightingFrame(elapsed,phase=0){return ((Math.floor((elapsed+phase)*10+1e-7)%8)+8)%8;}
+  function lightingObjects(camera){
+    const objects=[];
+    const grounded=(x,w)=>stones.some(p=>p.ref.kind==='ground'&&x>=p.ref[0]&&x+w<=p.ref[0]+p.w);
+    for(let i=Math.floor(camera/600)-1;i<Math.floor(camera/600)+3;i++){
+      const x=i*600+230;if(x<camera-100||x>camera+1030)continue;
+      if(grounded(x-20,74))objects.push({kind:'lantern',x,y:430,phase:i*.137});
+      if(grounded(x-47,50))objects.push({kind:'candle',x:x-22,y:430,phase:i*.137+.23});
+    }
+    return objects;
+  }
   function worldDecor(c,camera){
+    if(!lightingImage.complete||!lightingImage.naturalWidth)return;
     c.save();c.translate(-camera,0);
-    // Decorations are deliberately absent from floating platform tops and gaps.
-    const first=Math.floor((camera-120)/410);
-    for(let i=Math.floor(camera/600);i<Math.floor(camera/600)+3;i++){const x=i*600+230;
-      if(!stones.some(p=>p.ref.kind==='ground'&&x>=p.ref[0]&&x+20<=p.ref[0]+p.w))continue;
-      if(x<camera-70||x>camera+1030)continue;
-      // Carved iron lantern post.
-      line(c,[[x,430],[x,361],[x-7,352],[x+9,352]],'#24202e',4);
-      round(c,x+3,353,13,22,3,'#c16d3866','#97839d');
-      line(c,[[x+1,352],[x+10,346],[x+19,352]],'#8d7596',2);flame(c,x+9,372,.65);
-      round(c,x-20,421,5,9,1,'#d8c1bd');flame(c,x-18,421,.5);
+    for(const object of lightingObjects(camera)){
+      const f=lightingFrames[object.kind][lightingFrame(time,object.phase)],scale=object.kind==='lantern'?lightingScale.lantern:lightingScale.candle;
+      const flicker=.8+.2*Math.sin(time*11+object.x);
+      if(object.kind==='lantern')glow(c,object.x+40,object.y-88,46,`rgba(255,112,31,${.17*flicker})`);
+      else glow(c,object.x,object.y-28,25,`rgba(255,129,40,${.14*flicker})`);
+      c.drawImage(lightingImage,f.x,f.y,f.w,f.h,(f.x-f.pivotX)*scale+object.x,(f.y-f.pivotY)*scale+object.y,f.w*scale,f.h*scale);
     }
     c.restore();
   }
@@ -162,5 +172,5 @@ const atmosphere = (() => {
     node.querySelector('#coin-count').textContent=score;
     node.querySelector('#progress-count').textContent=progress+'%';
   }
-  return {ready,prepare,background,worldDecor,platforms,burst,effects,tick,reset,hud,palette};
+  return {ready,prepare,background,worldDecor,platforms,burst,effects,tick,reset,hud,palette,lightingFrame,lightingObjects};
 })();
