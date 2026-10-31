@@ -76,7 +76,6 @@ const atmosphere = (() => {
       const height=640,width=height*gothicArena.naturalWidth/gothicArena.naturalHeight;
       const drift=Math.sin(camera*.00008)*45;
       c.drawImage(gothicArena,(960-width)/2-drift,-95-cameraY*.035,width,height);
-      c.save();c.translate((960-width)/2-drift+width*.535,-95-cameraY*.035+height*.43);c.font='bold 23px Georgia';c.textAlign='center';c.letterSpacing='3px';c.shadowColor='#ff142f';c.shadowBlur=12;c.strokeStyle='#26080f';c.lineWidth=4;c.strokeText('СКА АРЕНА',0,0);c.fillStyle='#ff2544';c.fillText('СКА АРЕНА',0,0);c.restore();
       c.fillStyle=zone===3?'#06081670':zone===1?'#0d101c30':'#080a1415';c.fillRect(0,0,960,510);
     }
     // Fine moving mist and bats add life without repainting the backdrop.
