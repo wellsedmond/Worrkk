@@ -338,6 +338,11 @@ window.addEventListener('keyup',e=>{const key=physicalKeys[e.code]||mapping[e.ke
 window.addEventListener('blur',()=>{releaseKeys();if(state==='playing')paused=true;});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){persistActiveBoss();releaseKeys();if(state==='playing')paused=true;}});
 for(const b of document.querySelectorAll('[data-key]')){const pointers=new Set();touchPointerSets.push(pointers);b.addEventListener('pointerdown',e=>{e.preventDefault();if(orientationBlocked)return;pointers.add(e.pointerId);b.setPointerCapture(e.pointerId);keys[b.dataset.key]=true;});for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,e=>{pointers.delete(e.pointerId);keys[b.dataset.key]=!orientationBlocked&&pointers.size>0;});}
+// Older iOS WebViews can still zoom after fast taps despite pointerdown cancellation.
+// Cancel the touch default without replacing the independent multi-touch pointer controls.
+const touchControls=document.querySelector('nav[aria-label="Управление"]');
+touchControls.addEventListener('touchend',e=>{if(e.cancelable)e.preventDefault();},{passive:false});
+touchControls.addEventListener('dblclick',e=>e.preventDefault());
 document.querySelector('#play').onclick=start;document.querySelector('#reset').onclick=start;document.querySelector('#continue').onclick=resumeCheckpoint;document.querySelector('#main-menu').onclick=mainMenu;document.querySelector('#pause').onclick=()=>{if(state==='playing'){paused=!paused;releaseKeys();}};
 document.querySelector('#sound').onclick=gameAudio.toggle;gameAudio.syncButton();
 try{window.Telegram?.WebApp?.ready();window.Telegram?.WebApp?.expand();}catch{}reset();requestAnimationFrame(frame);

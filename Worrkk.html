@@ -81,7 +81,7 @@ footer{margin:18px 0 12px;color:#a18d8c;font-size:10px;letter-spacing:.6px}foote
 
 /* Telegram and mobile play fill the viewport; controls float above the scene. */
 body.immersive-game{display:block;overflow:hidden;background:#09090f}
-body.immersive-game main{position:fixed;inset:0;width:100%;height:100dvh;max-width:none;margin:0;padding:0}
+body.immersive-game main{position:fixed;inset:0;width:100%;height:100dvh;max-width:none;margin:0;padding:0;touch-action:manipulation}
 body.immersive-game .stage,body.immersive-game .stage:has(#overlay:not([hidden])){position:absolute;inset:0;width:100%;height:100%;min-height:0;border:0;border-radius:0;box-shadow:none}
 body.immersive-game .stage:before{display:none}
 body.immersive-game canvas{display:block;width:100%;height:100%;aspect-ratio:auto}
@@ -90,6 +90,8 @@ body.immersive-game .brand,body.immersive-game .chapter,body.immersive-game foot
 body.immersive-game .header-actions{gap:5px;max-width:none;flex-wrap:nowrap;pointer-events:auto}
 body.immersive-game .header-actions button{font-size:10px;min-height:36px;padding:7px 10px;background:#100b16c9}
 body.immersive-game nav,body.immersive-game main:has(#overlay:not([hidden])) nav{position:absolute;inset:auto max(12px,var(--game-right,0px),env(safe-area-inset-right)) max(10px,var(--game-bottom,0px),env(safe-area-inset-bottom)) max(12px,var(--game-left,0px),env(safe-area-inset-left));z-index:30;display:flex;margin:0;padding:0;gap:8px;min-height:62.4px;border:0;box-shadow:none;background:none;pointer-events:none;flex-wrap:nowrap;align-items:flex-end}
+body.immersive-game nav{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.immersive-game canvas{touch-action:none}
 body.immersive-game nav div{display:flex;gap:12px;pointer-events:none}
 body.immersive-game nav .actions{display:grid;grid-template-columns:repeat(2,109.2px);grid-template-rows:repeat(2,62.4px);gap:12px;pointer-events:none}
 body.immersive-game nav [data-key="jump"]{grid-column:2;grid-row:1}
@@ -1507,6 +1509,11 @@ window.addEventListener('keyup',e=>{const key=physicalKeys[e.code]||mapping[e.ke
 window.addEventListener('blur',()=>{releaseKeys();if(state==='playing')paused=true;});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){persistActiveBoss();releaseKeys();if(state==='playing')paused=true;}});
 for(const b of document.querySelectorAll('[data-key]')){const pointers=new Set();touchPointerSets.push(pointers);b.addEventListener('pointerdown',e=>{e.preventDefault();if(orientationBlocked)return;pointers.add(e.pointerId);b.setPointerCapture(e.pointerId);keys[b.dataset.key]=true;});for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,e=>{pointers.delete(e.pointerId);keys[b.dataset.key]=!orientationBlocked&&pointers.size>0;});}
+// Older iOS WebViews can still zoom after fast taps despite pointerdown cancellation.
+// Cancel the touch default without replacing the independent multi-touch pointer controls.
+const touchControls=document.querySelector('nav[aria-label="Управление"]');
+touchControls.addEventListener('touchend',e=>{if(e.cancelable)e.preventDefault();},{passive:false});
+touchControls.addEventListener('dblclick',e=>e.preventDefault());
 document.querySelector('#play').onclick=start;document.querySelector('#reset').onclick=start;document.querySelector('#continue').onclick=resumeCheckpoint;document.querySelector('#main-menu').onclick=mainMenu;document.querySelector('#pause').onclick=()=>{if(state==='playing'){paused=!paused;releaseKeys();}};
 document.querySelector('#sound').onclick=gameAudio.toggle;gameAudio.syncButton();
 try{window.Telegram?.WebApp?.ready();window.Telegram?.WebApp?.expand();}catch{}reset();requestAnimationFrame(frame);
