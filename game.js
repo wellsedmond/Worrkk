@@ -207,7 +207,7 @@ function updateEvents(dt){
  if(player.x>150)tutorialDone.add('move');if(player.vy<0)tutorialDone.add('jump');if(keys.crouch&&player.ground)tutorialDone.add('crouch');
 }
 function update(dt){
- if(state!=='playing'||paused)return;
+ if(state!=='playing'||paused||orientationBlocked)return;
  if(pageTurn.active){pageTurn.elapsed+=dt;if(pageTurn.elapsed>=pageTurn.duration)clearPageTurn();return;}
  for(const s of statues)s.hurt=Math.max(0,s.hurt-dt);
  clock+=dt;banner.left=Math.max(0,banner.left-dt);player.inv=Math.max(0,player.inv-dt);player.rage=Math.max(0,player.rage-dt);player.attack=Math.max(0,player.attack-dt);player.cooldown=Math.max(0,player.cooldown-dt);
@@ -237,6 +237,7 @@ function trackAchievements(dt,startX,wasGrounded){
 }
 function updateCamera(dt){if(boss.engaged){camera=boss.arenaStart;cameraY=0;return;}camera=Math.max(0,Math.min(LEVEL1.width-960,player.x-260));const target=Math.min(0,player.y-230);cameraY+=(target-cameraY)*Math.min(1,dt*7);}
 function updateCutscene(dt){
+ if(orientationBlocked)return;
  const startX=player.x;cutsceneTime+=dt;player.y=430-player.h;
  if(cutsceneTime>1&&cutsceneTime<4){const destination=boss.x-90;player.x+=(Math.sign(destination-player.x))*Math.min(Math.abs(destination-player.x),120*dt);}
  player.face=boss.x>player.x?1:-1;player.vx=(player.x-startX)/Math.max(dt,.001);
@@ -289,16 +290,28 @@ function renderStatus(){
  document.querySelector('#pause').textContent=paused?'Продолжить':'Пауза';
 }
 let accumulator=0;
-function frame(t){const dt=Math.min((t-last)/1000||0,.1);last=t;achievementSystem.tick(dt);if(typeof achievementUI!=='undefined')achievementUI.tick(dt);if(!paused){atmosphere.tick(dt);levelArt.tick(dt);accumulator=Math.min(accumulator+dt,.12);while(accumulator>=1/120){if(state==='playing')update(1/120);else if(state==='cutscene')updateCutscene(1/120);accumulator-=1/120;}}gameAudio.tick(dt,!paused&&state==='playing',!pageTurn.active&&player.ground&&Math.abs(player.vx)>0,boss.engaged);draw();requestAnimationFrame(frame);}
+let orientationBlocked=false;
+const touchPointerSets=[];
+function syncOrientation(){
+ const mobile=/Android|iPhone|iPad|iPod/i.test(globalThis.navigator?.userAgent||'')||['android','ios'].includes(window.Telegram?.WebApp?.platform)||(Boolean(window.matchMedia?.('(pointer: coarse)').matches)&&globalThis.navigator?.maxTouchPoints>0);
+ const blocked=mobile&&Boolean(window.matchMedia?.('(orientation: portrait)').matches);
+ if(blocked!==orientationBlocked){releaseKeys();accumulator=0;}
+ orientationBlocked=blocked;
+ document.querySelector('#orientation-notice').hidden=!blocked;
+ document.querySelector('main').inert=blocked;
+ document.body?.classList.toggle('orientation-blocked',blocked);
+ document.body?.classList.toggle('mobile-landscape',mobile&&!blocked);
+}
+function frame(t){const dt=Math.min((t-last)/1000||0,.1);last=t;achievementSystem.tick(dt);if(typeof achievementUI!=='undefined')achievementUI.tick(dt);if(!paused&&!orientationBlocked){atmosphere.tick(dt);levelArt.tick(dt);accumulator=Math.min(accumulator+dt,.12);while(accumulator>=1/120){if(state==='playing')update(1/120);else if(state==='cutscene')updateCutscene(1/120);accumulator-=1/120;}}gameAudio.tick(dt,!paused&&!orientationBlocked&&state==='playing',!pageTurn.active&&player.ground&&Math.abs(player.vx)>0,boss.engaged);draw();requestAnimationFrame(frame);}
 function resize(){canvas.width=960*Math.min(devicePixelRatio||1,2);canvas.height=510*Math.min(devicePixelRatio||1,2);}resize();window.addEventListener('resize',resize);
 const physicalKeys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyF:'attack',ArrowDown:'crouch',KeyS:'crouch'};
 const mapping={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',' ':'jump',ArrowUp:'jump',w:'jump',W:'jump',f:'attack',F:'attack',ArrowDown:'crouch',s:'crouch'};
-function releaseKeys(){for(const key in keys)keys[key]=false;}
-window.addEventListener('keydown',e=>{if(!document.querySelector('#achievements-panel').hidden||!document.querySelector('#settings-panel').hidden||!document.querySelector('#boss-access-panel').hidden)return;if(e.target.matches?.('button,input,textarea')&&e.key===' ')return;const key=physicalKeys[e.code]||mapping[e.key];if(key){e.preventDefault();keys[key]=true;}if(e.code==='Escape'&&state==='playing')paused=!paused;});
+function releaseKeys(){for(const key in keys)keys[key]=false;for(const pointers of touchPointerSets)pointers.clear();}
+window.addEventListener('keydown',e=>{if(orientationBlocked)return;if(!document.querySelector('#achievements-panel').hidden||!document.querySelector('#settings-panel').hidden||!document.querySelector('#boss-access-panel').hidden)return;if(e.target.matches?.('button,input,textarea')&&e.key===' ')return;const key=physicalKeys[e.code]||mapping[e.key];if(key){e.preventDefault();keys[key]=true;}if(e.code==='Escape'&&state==='playing')paused=!paused;});
 window.addEventListener('keyup',e=>{const key=physicalKeys[e.code]||mapping[e.key];if(key)keys[key]=false;});
 window.addEventListener('blur',()=>{releaseKeys();if(state==='playing')paused=true;});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){persistActiveBoss();releaseKeys();if(state==='playing')paused=true;}});
-for(const b of document.querySelectorAll('[data-key]')){const pointers=new Set();b.addEventListener('pointerdown',e=>{e.preventDefault();pointers.add(e.pointerId);b.setPointerCapture(e.pointerId);keys[b.dataset.key]=true;});for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,e=>{pointers.delete(e.pointerId);keys[b.dataset.key]=pointers.size>0;});}
+for(const b of document.querySelectorAll('[data-key]')){const pointers=new Set();touchPointerSets.push(pointers);b.addEventListener('pointerdown',e=>{e.preventDefault();if(orientationBlocked)return;pointers.add(e.pointerId);b.setPointerCapture(e.pointerId);keys[b.dataset.key]=true;});for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,e=>{pointers.delete(e.pointerId);keys[b.dataset.key]=!orientationBlocked&&pointers.size>0;});}
 document.querySelector('#play').onclick=start;document.querySelector('#reset').onclick=start;document.querySelector('#continue').onclick=resumeCheckpoint;document.querySelector('#main-menu').onclick=mainMenu;document.querySelector('#pause').onclick=()=>{if(state==='playing'){paused=!paused;releaseKeys();}};
 document.querySelector('#sound').onclick=gameAudio.toggle;gameAudio.syncButton();
 try{window.Telegram?.WebApp?.ready();window.Telegram?.WebApp?.expand();}catch{}reset();requestAnimationFrame(frame);
@@ -342,3 +355,10 @@ document.querySelector('#resume-boss').onclick=()=>restoreBossEntry(false);
 document.querySelector('#replay-boss').onclick=()=>restoreBossEntry(true,bossDifficulty);
 document.querySelector('#boss-difficulty').value=bossDifficulty;
 document.querySelector('#boss-difficulty').onchange=e=>{bossDifficulty=progressStore.setBossDifficulty(e.target.value);if(!boss.engaged)boss=Inquisitor.create(LEVEL1.boss,bossDifficulty);configureBossMenu();};
+
+// Keep orientation separate from manual pause and modal state.
+window.addEventListener('resize',syncOrientation);
+window.addEventListener('orientationchange',syncOrientation);
+globalThis.screen?.orientation?.addEventListener?.('change',syncOrientation);
+try{window.Telegram?.WebApp?.onEvent?.('viewportChanged',syncOrientation);}catch{}
+syncOrientation();
