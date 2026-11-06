@@ -23,6 +23,7 @@
 <script src="/achievements.js" defer></script>
 <script src="/game.js" defer></script>
 <script src="/achievements-ui.js" defer></script>
+<script src="/leaderboard-ui.js" defer></script>
 </head>
 <body>
 <section id="orientation-notice" role="dialog" aria-modal="true" aria-labelledby="orientation-title" aria-describedby="orientation-description" hidden>
@@ -61,7 +62,7 @@
       <div class="menu-subtitle">Проклятая дорога к СКА Арене</div><p>Кубок Вечной Ночи ждёт своего хозяина.</p>
       <button id="play" disabled><span aria-hidden="true">▶</span> Новая игра</button>
       <button id="boss-test" disabled><svg class="boss-lock" viewBox="0 0 20 24" aria-hidden="true"><path d="M5 10V6a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/><rect x="2" y="10" width="16" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 14v4" stroke="currentColor" stroke-width="2"/></svg> Босс</button><button id="resume-boss" hidden>Продолжить у арены</button><button id="replay-boss" hidden>Инквизитор · Повторить бой</button><button id="menu-resume" hidden>▶ Продолжить</button><button id="continue" hidden>Продолжить у гроба</button><button id="main-menu" hidden>Главное меню</button>
-      <button id="achievements-open">♜ &nbsp; Достижения</button><button id="settings-open">⚙ &nbsp; Настройки</button><div class="menu-hero" aria-hidden="true"><img src="assets/hero.png" alt=""></div>
+      <button id="achievements-open">♜ &nbsp; Достижения</button><button id="leaderboard-open">🏆 &nbsp; Рейтинг игроков</button><button id="settings-open">⚙ &nbsp; Настройки</button><div class="menu-hero" aria-hidden="true"><img src="assets/hero.png" alt=""></div>
       <span class="menu-hint">Стрелки — движение · Пробел — прыжок · F — удар · ↓ — присесть</span>
     </div>
   </section>
@@ -82,6 +83,13 @@
  <div class="achievement-heading"><div><small>ЛЕТОПИСЬ ВЕЧНОЙ НОЧИ</small><h2 id="achievements-title">Достижения</h2></div><button id="close-achievements" aria-label="Закрыть достижения">Закрыть ×</button></div>
  <p id="achievement-summary"></p><progress id="achievement-total" max="23" value="0"></progress><p id="achievement-sync" role="status"></p>
  <div id="achievement-tabs" aria-label="Категории достижений"></div><div id="achievement-list"></div>
+</section>
+<section id="leaderboard-panel" role="dialog" aria-modal="true" aria-labelledby="leaderboard-title" hidden>
+ <div class="achievement-heading"><div><small>МОНЕТЫ ЗА ВСЕ ИГРЫ</small><h2 id="leaderboard-title">Рейтинг игроков</h2></div><button id="leaderboard-close" aria-label="Закрыть рейтинг">Закрыть ×</button></div>
+ <p id="leaderboard-status" role="status" aria-live="polite"></p>
+ <p id="leaderboard-self" hidden></p>
+ <table id="leaderboard-table" hidden><caption>Топ-50 по общему числу собранных монет</caption><thead><tr><th scope="col">Место</th><th scope="col">Игрок</th><th scope="col">Монеты</th></tr></thead><tbody id="leaderboard-rows"></tbody></table>
+ <button id="leaderboard-refresh">Обновить рейтинг</button>
 </section>
 </main>
 </body>

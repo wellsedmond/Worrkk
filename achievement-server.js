@@ -1,6 +1,7 @@
 import {createHmac,timingSafeEqual} from 'node:crypto';
 import {mkdir,readFile,writeFile,rename} from 'node:fs/promises';
 import path from 'node:path';
+import {readLeaderboard} from './leaderboard-server.js';
 import './achievements-core.js';
 const core=globalThis.UpyrAchievements;
 export function verifyTelegram(initData,token,now=Date.now()){
@@ -23,11 +24,17 @@ export function createAchievementApi({token=process.env.TELEGRAM_BOT_TOKEN,direc
   if(req.headers.origin){try{if(new URL(req.headers.origin).host!==req.headers.host)return reply(403,{error:'Origin rejected'});}catch{return reply(403,{error:'Origin rejected'});}}
   let raw='';try{for await(const chunk of req){raw+=chunk;if(Buffer.byteLength(raw)>128000)return reply(413,{error:'Too large'});}}catch{return reply(400,{error:'Invalid body'});}
   let input,user;try{input=JSON.parse(raw);user=verifyTelegram(input.initData,token);}catch{return reply(401,{error:'Invalid or expired Telegram initData'});}
+  if(new URL(req.url||'/api/achievements','http://localhost').pathname==='/api/leaderboard'){
+   const task=lock.then(()=>readLeaderboard(directory,user));lock=task.catch(()=>{});
+   try{return reply(200,await task);}catch{return reply(500,{error:'Leaderboard unavailable'});}
+  }
   if(!Array.isArray(input.events)||input.events.length>100||input.events.some(e=>!e||!core.types.includes(e.type)||!/^[-a-zA-Z0-9]{12,100}$/.test(e.stream)||!/^[-a-zA-Z0-9]{12,120}$/.test(e.run)||!Number.isSafeInteger(e.seq)||e.seq<1||JSON.stringify(e.data||{}).length>2000))return reply(400,{error:'Invalid events'});
   const task=lock.then(async()=>{
    await mkdir(directory,{recursive:true,mode:0o700});const file=path.join(directory,user+'.json');let state;
    try{state=core.normalize(JSON.parse(await readFile(file,'utf8')));}catch(error){if(error.code!=='ENOENT')throw error;state=core.empty();}
    for(const event of input.events)core.apply(state,event);
+   const identity=JSON.parse(new URLSearchParams(input.initData).get('user'));
+   state.player={name:[identity.first_name,identity.last_name].filter(v=>typeof v==='string').join(' ').trim().slice(0,80)||(typeof identity.username==='string'?identity.username.slice(0,80):'Игрок')};
    const encoded=JSON.stringify(state);if(encoded.length>16000000)throw Error('Profile storage limit');
    await writeFile(file+'.tmp',encoded,{mode:0o600});await rename(file+'.tmp',file);return state;
   });lock=task.catch(()=>{});

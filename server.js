@@ -41,11 +41,11 @@ const files = {
 for (const name of ['ska-palace', 'skyline', 'graveyard', 'web']) {
   files['/assets/environment/' + name + '.svg'] = ['assets/environment/' + name + '.svg', 'image/svg+xml'];
 }
-for (const name of ['level1','progress','sound','level-art','parallax','achievements-core','achievements','achievements-ui'])files['/'+name+'.js']=[name+'.js','text/javascript'];
+for (const name of ['leaderboard-ui','level1','progress','sound','level-art','parallax','achievements-core','achievements','achievements-ui'])files['/'+name+'.js']=[name+'.js','text/javascript'];
 for(const name of ['helmet','hunter','coffin','stake','sword','gate','werewolf','tower'])files['/assets/level1/'+name+'.svg']=['assets/level1/'+name+'.svg','image/svg+xml'];
 for(const name of ['body-a','body-b','body-c','body-d','body-e','body-f','effects','arena'])files['/assets/inquisitor/'+name+'.png']=['assets/inquisitor/'+name+'.png','image/png'];
 http.createServer(async (req, res) => {
-  if(new URL(req.url,'http://localhost').pathname==='/api/achievements')return achievementApi(req,res);
+  if(['/api/achievements','/api/leaderboard'].includes(new URL(req.url,'http://localhost').pathname))return achievementApi(req,res);
   const file = files[new URL(req.url, 'http://localhost').pathname];
   if (!file) { res.writeHead(404); return res.end('Not found'); }
   try {
