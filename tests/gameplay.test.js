@@ -161,3 +161,15 @@ test('parallax keeps visible tiles and unique objects continuous across old wrap
  }
  for(const boundary of [160/.035,160/.11,320/.035]){assert.ok(Math.abs(run(`parallax.moonX(${boundary}+.01)-parallax.moonX(${boundary}-.01)`))<.01);assert.ok(Math.abs(run(`parallax.palaceX(${boundary}+.01)-parallax.palaceX(${boundary}-.01)`))<.01);}
 });
+
+test('all run frames keep the same visible height and foot line across the loop',()=>{
+ const run=game();let foot=null;const frames=new Set();
+ for(let i=0;i<32;i++){
+  run('heroAnimator.update(1/120,false,{ground:true,vy:0,travel:196/32})');
+  const g=run('heroAnimator.geometry()');frames.add(run('heroAnimator.pose().frame'));
+  assert.ok(Math.abs(g.dh-92)<1e-8);assert.ok(Math.abs(g.dw/g.sw-g.dh/g.sh)<1e-8);
+  if(foot===null)foot=g.dy+g.dh;
+  assert.ok(Math.abs(g.dy+g.dh-foot)<1e-8);
+ }
+ assert.equal(frames.size,16);
+});

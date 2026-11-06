@@ -157,12 +157,9 @@ function rounded(x,y,w,h,r,fill,stroke){const path=new Path2D();path.roundRect(x
 function ellipse(x,y,rx,ry,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();}
 function character(){
  ctx.save();ctx.translate(player.x+20,player.y+player.h);
- const animated=heroAnimator.pose().phase!=='stand';
- const bounce=animated?0:Math.sin(clock*3)*.6;
  ctx.scale(player.face,1);
  if(player.inv>0&&Math.floor(clock*14)%2)ctx.globalAlpha=.35;
  ellipse(0,-1,25,4,'#100b20aa');
- ctx.translate(0,bounce);
  if(!heroAnimator.draw(ctx)&&heroImage.complete&&heroImage.naturalWidth)ctx.drawImage(heroImage,-34,-92,68,92);
  ctx.save();ctx.translate(0,heroAnimator.effectOffset());levelArt.heroEffects(ctx,player,clock,cutsceneTime,state,sword);ctx.restore();
  ctx.restore();
