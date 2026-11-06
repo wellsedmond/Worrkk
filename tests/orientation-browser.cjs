@@ -21,6 +21,7 @@ const server=spawn(process.execPath,['server.js'],{cwd:path.resolve(__dirname,'.
   for(const selector of ['canvas','nav','[data-key="jump"]']){
    const box=await page.locator(selector).boundingBox();assert.ok(box.y>=0&&box.y+box.height<=391,selector+' must fit on the sideways phone');
   }
+  const field=await page.locator('canvas').boundingBox();assert.deepEqual({x:field.x,y:field.y,width:field.width,height:field.height},{x:0,y:0,width:844,height:390});
   assert.equal(await page.evaluate(()=>keys.right),false);
   await page.waitForFunction(()=>clock>frozenClock);
   await page.dispatchEvent('[data-key="right"]','pointerdown',{pointerId:1});assert.equal(await page.evaluate(()=>keys.right),true);
@@ -34,6 +35,20 @@ const server=spawn(process.execPath,['server.js'],{cwd:path.resolve(__dirname,'.
   await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>clock===frozenClock),true);
   if(route==='/')await page.screenshot({path:'/tmp/upyr-phone-landscape.png'});
   assert.deepEqual(errors,[]);await context.close();console.log(route+': portrait blocks play, rotation clears held input, landscape resumes, manual pause preserved');
+ }
+ for(const platform of ['android','tdesktop']){
+  const context=await browser.newContext({viewport:{width:1280,height:720},hasTouch:platform==='android'}),page=await context.newPage();
+  await page.route('https://telegram.org/**',r=>r.fulfill({body:`window.fullscreenCalls=0;window.telegramEvents={};window.Telegram={WebApp:{platform:${JSON.stringify(platform)},isVersionAtLeast:()=>true,ready(){},expand(){},disableVerticalSwipes(){},requestFullscreen(){fullscreenCalls++},safeAreaInset:{top:12,left:20,right:16,bottom:8},contentSafeAreaInset:{top:40},onEvent(name,fn){telegramEvents[name]=fn}}};`}));
+  await page.goto('http://127.0.0.1:3160/');await page.waitForFunction(()=>assetsReady);
+  assert.equal(await page.evaluate(()=>fullscreenCalls),1);
+  const box=await page.locator('canvas').boundingBox();assert.deepEqual(box,{x:0,y:0,width:1280,height:720});
+  assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--game-top')),'40px');
+  await page.evaluate(()=>{Telegram.WebApp.safeAreaInset.left=44;telegramEvents.safeAreaChanged();});
+  assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--game-left')),'44px');
+  await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>orientationBlocked);
+  assert.equal(await page.locator('#orientation-title').textContent(),platform==='android'?'Поверните телефон':'Расширьте окно игры');
+  await page.setViewportSize({width:1280,height:720});await page.waitForFunction(()=>!orientationBlocked);
+  await context.close();console.log(platform+': fullscreen requested, game fills viewport, safe areas update, portrait blocked');
  }
  const desktop=await browser.newContext({viewport:{width:390,height:844}}),page=await desktop.newPage();
  await page.route('https://telegram.org/**',r=>r.fulfill({body:''}));await page.goto('http://127.0.0.1:3160/');await page.waitForFunction(()=>assetsReady);

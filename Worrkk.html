@@ -79,27 +79,35 @@ footer{margin:18px 0 12px;color:#a18d8c;font-size:10px;letter-spacing:.6px}foote
 
 .boss-lock{display:inline-block;width:16px;height:20px;vertical-align:-3px;margin-right:7px;color:#c9b19a}#boss-access-note{line-height:1.55;font-size:15px;color:#d5bdb4;margin:0 0 20px}
 
-/* Reserve space for touch controls and keep the full scene visible on a sideways phone. */
-body.mobile-landscape{display:block;overflow:hidden}
-body.mobile-landscape main{width:min(100%,calc((100dvh - 104px) * 960 / 510 + 16px));height:100dvh;margin:auto;padding:6px 8px;display:flex;flex-direction:column}
-body.mobile-landscape header{flex:0 0 32px;gap:8px;margin:0 0 4px}
-body.mobile-landscape .brand small,body.mobile-landscape .brand p,body.mobile-landscape .chapter,body.mobile-landscape footer{display:none}
-body.mobile-landscape .brand h1{font-size:22px;letter-spacing:1px;margin:0;white-space:nowrap}
-body.mobile-landscape .header-actions{gap:4px;max-width:none;flex-wrap:nowrap}
-body.mobile-landscape .header-actions button{font-size:10px;min-height:30px;padding:6px 8px}
-body.mobile-landscape .stage,body.mobile-landscape .stage:has(#overlay:not([hidden])){flex:1;min-height:0}
-body.mobile-landscape canvas{display:block;width:100%;height:100%;aspect-ratio:auto}
-body.mobile-landscape nav,body.mobile-landscape main:has(#overlay:not([hidden])) nav{display:flex;flex:0 0 48px;min-height:48px;margin:6px 0 0;padding:3px;gap:8px;flex-wrap:nowrap}
-body.mobile-landscape nav div,body.mobile-landscape nav .actions{gap:6px}
-body.mobile-landscape nav button{min-width:40px;min-height:40px;font-size:12px;padding:6px 10px}
-body.mobile-landscape nav button:before,body.mobile-landscape nav button:after{display:none}
-body.mobile-landscape #overlay{padding:14px 18px;overflow:auto;justify-content:flex-start}
-body.mobile-landscape #overlay h2{font-size:36px;margin:4px 0}
-body.mobile-landscape .menu-emblem{font-size:24px}
-body.mobile-landscape #overlay p{font-size:10px;margin-bottom:8px;max-width:300px}
-body.mobile-landscape #overlay button{min-height:32px;font-size:12px;margin-bottom:6px;padding:7px 14px}
-body.mobile-landscape .menu-subtitle{font-size:9px;margin-bottom:8px}
-body.mobile-landscape .menu-hint{display:none}
+/* Telegram and mobile play fill the viewport; controls float above the scene. */
+body.immersive-game{display:block;overflow:hidden;background:#09090f}
+body.immersive-game main{position:fixed;inset:0;width:100%;height:100dvh;max-width:none;margin:0;padding:0}
+body.immersive-game .stage,body.immersive-game .stage:has(#overlay:not([hidden])){position:absolute;inset:0;width:100%;height:100%;min-height:0;border:0;border-radius:0;box-shadow:none}
+body.immersive-game .stage:before{display:none}
+body.immersive-game canvas{display:block;width:100%;height:100%;aspect-ratio:auto}
+body.immersive-game header{position:absolute;top:max(10px,var(--game-top,0px),env(safe-area-inset-top));right:max(12px,var(--game-right,0px),env(safe-area-inset-right));z-index:35;margin:0;padding:0;pointer-events:none}
+body.immersive-game .brand,body.immersive-game .chapter,body.immersive-game footer{display:none}
+body.immersive-game .header-actions{gap:5px;max-width:none;flex-wrap:nowrap;pointer-events:auto}
+body.immersive-game .header-actions button{font-size:10px;min-height:36px;padding:7px 10px;background:#100b16c9}
+body.immersive-game nav,body.immersive-game main:has(#overlay:not([hidden])) nav{position:absolute;inset:auto max(12px,var(--game-right,0px),env(safe-area-inset-right)) max(10px,var(--game-bottom,0px),env(safe-area-inset-bottom)) max(12px,var(--game-left,0px),env(safe-area-inset-left));z-index:30;display:flex;margin:0;padding:0;gap:8px;min-height:48px;border:0;box-shadow:none;background:none;pointer-events:none;flex-wrap:nowrap}
+body.immersive-game nav div,body.immersive-game nav .actions{gap:8px;pointer-events:none}
+body.immersive-game nav button{pointer-events:auto;min-width:48px;min-height:48px;font-size:12px;padding:8px 13px;background:#100b16b8;touch-action:none}
+body.immersive-game nav button:before,body.immersive-game nav button:after{display:none}
+body.immersive-game main:has(#overlay:not([hidden])) nav{display:none}
+body.immersive-game #hud{top:max(10px,var(--game-top,0px),env(safe-area-inset-top));left:max(12px,var(--game-left,0px),env(safe-area-inset-left));padding:7px 10px;gap:10px;max-width:calc(100% - 280px)}
+body.immersive-game #hud .stat small{font-size:6px}
+body.immersive-game #hud .stat b{font-size:16px}
+body.immersive-game .health svg{width:19px;height:21px}
+body.immersive-game #sword-hud{bottom:70px;left:max(12px,var(--game-left,0px),env(safe-area-inset-left));font-size:9px}
+body.immersive-game .stage-caption{bottom:70px}
+body.immersive-game #tutorial{bottom:72px;font-size:10px;padding:6px 10px}
+body.immersive-game #overlay{padding:max(14px,var(--game-top,0px),env(safe-area-inset-top)) max(24px,var(--game-right,0px),env(safe-area-inset-right)) max(14px,var(--game-bottom,0px),env(safe-area-inset-bottom)) max(24px,var(--game-left,0px),env(safe-area-inset-left));overflow:auto;justify-content:flex-start}
+body.immersive-game #overlay h2{font-size:42px;margin:4px 0}
+body.immersive-game .menu-emblem{font-size:24px}
+body.immersive-game #overlay p{font-size:11px;margin-bottom:8px;max-width:360px}
+body.immersive-game #overlay button{min-height:36px;font-size:13px;margin-bottom:6px;padding:8px 16px}
+body.immersive-game .menu-subtitle{font-size:10px;margin-bottom:8px}
+body.immersive-game .menu-hint{display:none}
 </style>
 
 
@@ -1447,15 +1455,41 @@ function renderStatus(){
 let accumulator=0;
 let orientationBlocked=false;
 const touchPointerSets=[];
+function mobileDevice(){return /Android|iPhone|iPad|iPod/i.test(globalThis.navigator?.userAgent||'')||['android','ios'].includes(window.Telegram?.WebApp?.platform)||(Boolean(window.matchMedia?.('(pointer: coarse)').matches)&&globalThis.navigator?.maxTouchPoints>0);}
+function telegramMiniApp(){const app=window.Telegram?.WebApp;return Boolean(app?.initData)||['android','ios','tdesktop','macos','web','weba','webk'].includes(app?.platform);}
+let fullscreenRequested=false;
+function requestGameFullscreen(gesture=false){
+ const app=window.Telegram?.WebApp;
+ if(telegramMiniApp()){
+  try{if(app.isExpanded===false)app.expand?.();}catch{}
+  try{app.disableVerticalSwipes?.();}catch{}
+  if(!fullscreenRequested&&!app.isFullscreen&&typeof app.requestFullscreen==='function'&&(!app.isVersionAtLeast||app.isVersionAtLeast('8.0'))){
+   try{app.requestFullscreen();fullscreenRequested=true;}catch{}
+  }
+ }else if(gesture&&mobileDevice()&&!document.fullscreenElement){
+  try{document.documentElement?.requestFullscreen?.().catch?.(()=>{});}catch{}
+ }
+}
+function syncGameSafeArea(){
+ const app=window.Telegram?.WebApp;
+ for(const side of ['top','right','bottom','left']){
+  const inset=Math.max(0,Number(app?.safeAreaInset?.[side])||0,Number(app?.contentSafeAreaInset?.[side])||0);
+  document.documentElement?.style.setProperty('--game-'+side,inset+'px');
+ }
+}
 function syncOrientation(){
- const mobile=/Android|iPhone|iPad|iPod/i.test(globalThis.navigator?.userAgent||'')||['android','ios'].includes(window.Telegram?.WebApp?.platform)||(Boolean(window.matchMedia?.('(pointer: coarse)').matches)&&globalThis.navigator?.maxTouchPoints>0);
- const blocked=mobile&&Boolean(window.matchMedia?.('(orientation: portrait)').matches);
+ const mobile=mobileDevice(),immersive=mobile||telegramMiniApp();
+ const blocked=immersive&&Boolean(window.matchMedia?.('(orientation: portrait)').matches);
  if(blocked!==orientationBlocked){releaseKeys();accumulator=0;}
  orientationBlocked=blocked;
  document.querySelector('#orientation-notice').hidden=!blocked;
+ document.querySelector('#orientation-title').textContent=mobile?'Поверните телефон':'Расширьте окно игры';
+ document.querySelector('#orientation-description').textContent=mobile?'Игра доступна только в горизонтальном положении.':'Для игры нужно горизонтальное окно. Разверните Mini App на весь экран.';
+ document.querySelector('#orientation-notice small').textContent=mobile?'Поверните устройство, чтобы продолжить.':'Увеличьте ширину окна, чтобы продолжить.';
  document.querySelector('main').inert=blocked;
  document.body?.classList.toggle('orientation-blocked',blocked);
- document.body?.classList.toggle('mobile-landscape',mobile&&!blocked);
+ document.body?.classList.toggle('immersive-game',immersive&&!blocked);
+ syncGameSafeArea();
 }
 function frame(t){const dt=Math.min((t-last)/1000||0,.1);last=t;achievementSystem.tick(dt);if(typeof achievementUI!=='undefined')achievementUI.tick(dt);if(!paused&&!orientationBlocked){atmosphere.tick(dt);levelArt.tick(dt);accumulator=Math.min(accumulator+dt,.12);while(accumulator>=1/120){if(state==='playing')update(1/120);else if(state==='cutscene')updateCutscene(1/120);accumulator-=1/120;}}gameAudio.tick(dt,!paused&&!orientationBlocked&&state==='playing',!pageTurn.active&&player.ground&&Math.abs(player.vx)>0,boss.engaged);draw();requestAnimationFrame(frame);}
 function resize(){canvas.width=960*Math.min(devicePixelRatio||1,2);canvas.height=510*Math.min(devicePixelRatio||1,2);}resize();window.addEventListener('resize',resize);
@@ -1515,7 +1549,14 @@ document.querySelector('#boss-difficulty').onchange=e=>{bossDifficulty=progressS
 window.addEventListener('resize',syncOrientation);
 window.addEventListener('orientationchange',syncOrientation);
 globalThis.screen?.orientation?.addEventListener?.('change',syncOrientation);
-try{window.Telegram?.WebApp?.onEvent?.('viewportChanged',syncOrientation);}catch{}
+document.addEventListener('pointerdown',()=>requestGameFullscreen(true),{capture:true});
+document.addEventListener('fullscreenchange',syncOrientation);
+try{
+ const app=window.Telegram?.WebApp;
+ for(const event of ['viewportChanged','fullscreenChanged','safeAreaChanged','contentSafeAreaChanged'])app?.onEvent?.(event,syncOrientation);
+ app?.onEvent?.('fullscreenFailed',()=>{fullscreenRequested=false;});
+}catch{}
+requestGameFullscreen();
 syncOrientation();
 </script>
 <script>const achievementUI=(()=>{

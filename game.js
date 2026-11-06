@@ -292,15 +292,41 @@ function renderStatus(){
 let accumulator=0;
 let orientationBlocked=false;
 const touchPointerSets=[];
+function mobileDevice(){return /Android|iPhone|iPad|iPod/i.test(globalThis.navigator?.userAgent||'')||['android','ios'].includes(window.Telegram?.WebApp?.platform)||(Boolean(window.matchMedia?.('(pointer: coarse)').matches)&&globalThis.navigator?.maxTouchPoints>0);}
+function telegramMiniApp(){const app=window.Telegram?.WebApp;return Boolean(app?.initData)||['android','ios','tdesktop','macos','web','weba','webk'].includes(app?.platform);}
+let fullscreenRequested=false;
+function requestGameFullscreen(gesture=false){
+ const app=window.Telegram?.WebApp;
+ if(telegramMiniApp()){
+  try{if(app.isExpanded===false)app.expand?.();}catch{}
+  try{app.disableVerticalSwipes?.();}catch{}
+  if(!fullscreenRequested&&!app.isFullscreen&&typeof app.requestFullscreen==='function'&&(!app.isVersionAtLeast||app.isVersionAtLeast('8.0'))){
+   try{app.requestFullscreen();fullscreenRequested=true;}catch{}
+  }
+ }else if(gesture&&mobileDevice()&&!document.fullscreenElement){
+  try{document.documentElement?.requestFullscreen?.().catch?.(()=>{});}catch{}
+ }
+}
+function syncGameSafeArea(){
+ const app=window.Telegram?.WebApp;
+ for(const side of ['top','right','bottom','left']){
+  const inset=Math.max(0,Number(app?.safeAreaInset?.[side])||0,Number(app?.contentSafeAreaInset?.[side])||0);
+  document.documentElement?.style.setProperty('--game-'+side,inset+'px');
+ }
+}
 function syncOrientation(){
- const mobile=/Android|iPhone|iPad|iPod/i.test(globalThis.navigator?.userAgent||'')||['android','ios'].includes(window.Telegram?.WebApp?.platform)||(Boolean(window.matchMedia?.('(pointer: coarse)').matches)&&globalThis.navigator?.maxTouchPoints>0);
- const blocked=mobile&&Boolean(window.matchMedia?.('(orientation: portrait)').matches);
+ const mobile=mobileDevice(),immersive=mobile||telegramMiniApp();
+ const blocked=immersive&&Boolean(window.matchMedia?.('(orientation: portrait)').matches);
  if(blocked!==orientationBlocked){releaseKeys();accumulator=0;}
  orientationBlocked=blocked;
  document.querySelector('#orientation-notice').hidden=!blocked;
+ document.querySelector('#orientation-title').textContent=mobile?'Поверните телефон':'Расширьте окно игры';
+ document.querySelector('#orientation-description').textContent=mobile?'Игра доступна только в горизонтальном положении.':'Для игры нужно горизонтальное окно. Разверните Mini App на весь экран.';
+ document.querySelector('#orientation-notice small').textContent=mobile?'Поверните устройство, чтобы продолжить.':'Увеличьте ширину окна, чтобы продолжить.';
  document.querySelector('main').inert=blocked;
  document.body?.classList.toggle('orientation-blocked',blocked);
- document.body?.classList.toggle('mobile-landscape',mobile&&!blocked);
+ document.body?.classList.toggle('immersive-game',immersive&&!blocked);
+ syncGameSafeArea();
 }
 function frame(t){const dt=Math.min((t-last)/1000||0,.1);last=t;achievementSystem.tick(dt);if(typeof achievementUI!=='undefined')achievementUI.tick(dt);if(!paused&&!orientationBlocked){atmosphere.tick(dt);levelArt.tick(dt);accumulator=Math.min(accumulator+dt,.12);while(accumulator>=1/120){if(state==='playing')update(1/120);else if(state==='cutscene')updateCutscene(1/120);accumulator-=1/120;}}gameAudio.tick(dt,!paused&&!orientationBlocked&&state==='playing',!pageTurn.active&&player.ground&&Math.abs(player.vx)>0,boss.engaged);draw();requestAnimationFrame(frame);}
 function resize(){canvas.width=960*Math.min(devicePixelRatio||1,2);canvas.height=510*Math.min(devicePixelRatio||1,2);}resize();window.addEventListener('resize',resize);
@@ -360,5 +386,12 @@ document.querySelector('#boss-difficulty').onchange=e=>{bossDifficulty=progressS
 window.addEventListener('resize',syncOrientation);
 window.addEventListener('orientationchange',syncOrientation);
 globalThis.screen?.orientation?.addEventListener?.('change',syncOrientation);
-try{window.Telegram?.WebApp?.onEvent?.('viewportChanged',syncOrientation);}catch{}
+document.addEventListener('pointerdown',()=>requestGameFullscreen(true),{capture:true});
+document.addEventListener('fullscreenchange',syncOrientation);
+try{
+ const app=window.Telegram?.WebApp;
+ for(const event of ['viewportChanged','fullscreenChanged','safeAreaChanged','contentSafeAreaChanged'])app?.onEvent?.(event,syncOrientation);
+ app?.onEvent?.('fullscreenFailed',()=>{fullscreenRequested=false;});
+}catch{}
+requestGameFullscreen();
 syncOrientation();
