@@ -98,7 +98,7 @@ body.immersive-game nav .actions button{width:92.82px}
 body.immersive-game nav button:active{background:linear-gradient(145deg,#75344ad9,#291321e8)}
 body.immersive-game nav button:before,body.immersive-game nav button:after{display:none}
 body.immersive-game main:has(#overlay:not([hidden])) nav{display:none}
-body.immersive-game #hud{top:max(10px,var(--game-top,0px),env(safe-area-inset-top));left:max(12px,var(--game-left,0px),env(safe-area-inset-left));padding:7px 10px;gap:10px;max-width:calc(100% - 280px)}
+body.immersive-game #hud{top:max(10px,var(--game-top,0px),env(safe-area-inset-top));left:max(12px,var(--game-left,0px),env(safe-area-inset-left));padding:7px 10px;gap:10px;max-width:calc(100% - 84px)}
 body.immersive-game #hud .stat small{font-size:6px}
 body.immersive-game #hud .stat b{font-size:16px}
 body.immersive-game .health svg{width:19px;height:21px}
@@ -112,6 +112,14 @@ body.immersive-game #overlay p{font-size:11px;margin-bottom:8px;max-width:360px}
 body.immersive-game #overlay button{min-height:36px;font-size:13px;margin-bottom:6px;padding:8px 16px}
 body.immersive-game .menu-subtitle{font-size:10px;margin-bottom:8px}
 body.immersive-game .menu-hint{display:none}
+#game-settings{display:grid;place-items:center;width:44px;height:44px;min-width:44px;padding:8px;font-size:20px}
+#game-settings svg{display:block;width:26px;height:26px}
+body.immersive-game .header-actions #game-settings{min-height:44px;padding:8px}
+.settings-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+.settings-actions button,.settings-actions #reset{min-height:44px;padding:10px 14px;font-size:14px}
+.settings-actions #menu-open,.settings-actions #reset{border-color:#9e6271}
+body.immersive-game #settings-panel{inset:max(12px,var(--game-top,0px),env(safe-area-inset-top)) max(12px,var(--game-right,0px),env(safe-area-inset-right)) max(12px,var(--game-bottom,0px),env(safe-area-inset-bottom)) max(12px,var(--game-left,0px),env(safe-area-inset-left));max-width:520px;margin:0 auto;padding:18px;overflow:auto}
+@media(max-height:450px){body.immersive-game #settings-panel{padding:12px 16px}.settings-actions{margin:12px 0;gap:8px}#settings-panel .difficulty-label{margin-top:12px}#settings-panel .achievement-heading h2{font-size:24px}}
 
 /* Compact boss readout below the top HUD on phones, clear of the touch controls. */
 @media(pointer:coarse) and (orientation:landscape){

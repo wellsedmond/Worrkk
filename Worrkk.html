@@ -105,7 +105,7 @@ body.immersive-game nav .actions button{width:92.82px}
 body.immersive-game nav button:active{background:linear-gradient(145deg,#75344ad9,#291321e8)}
 body.immersive-game nav button:before,body.immersive-game nav button:after{display:none}
 body.immersive-game main:has(#overlay:not([hidden])) nav{display:none}
-body.immersive-game #hud{top:max(10px,var(--game-top,0px),env(safe-area-inset-top));left:max(12px,var(--game-left,0px),env(safe-area-inset-left));padding:7px 10px;gap:10px;max-width:calc(100% - 280px)}
+body.immersive-game #hud{top:max(10px,var(--game-top,0px),env(safe-area-inset-top));left:max(12px,var(--game-left,0px),env(safe-area-inset-left));padding:7px 10px;gap:10px;max-width:calc(100% - 84px)}
 body.immersive-game #hud .stat small{font-size:6px}
 body.immersive-game #hud .stat b{font-size:16px}
 body.immersive-game .health svg{width:19px;height:21px}
@@ -119,6 +119,14 @@ body.immersive-game #overlay p{font-size:11px;margin-bottom:8px;max-width:360px}
 body.immersive-game #overlay button{min-height:36px;font-size:13px;margin-bottom:6px;padding:8px 16px}
 body.immersive-game .menu-subtitle{font-size:10px;margin-bottom:8px}
 body.immersive-game .menu-hint{display:none}
+#game-settings{display:grid;place-items:center;width:44px;height:44px;min-width:44px;padding:8px;font-size:20px}
+#game-settings svg{display:block;width:26px;height:26px}
+body.immersive-game .header-actions #game-settings{min-height:44px;padding:8px}
+.settings-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+.settings-actions button,.settings-actions #reset{min-height:44px;padding:10px 14px;font-size:14px}
+.settings-actions #menu-open,.settings-actions #reset{border-color:#9e6271}
+body.immersive-game #settings-panel{inset:max(12px,var(--game-top,0px),env(safe-area-inset-top)) max(12px,var(--game-right,0px),env(safe-area-inset-right)) max(12px,var(--game-bottom,0px),env(safe-area-inset-bottom)) max(12px,var(--game-left,0px),env(safe-area-inset-left));max-width:520px;margin:0 auto;padding:18px;overflow:auto}
+@media(max-height:450px){body.immersive-game #settings-panel{padding:12px 16px}.settings-actions{margin:12px 0;gap:8px}#settings-panel .difficulty-label{margin-top:12px}#settings-panel .achievement-heading h2{font-size:24px}}
 
 /* Compact boss readout below the top HUD on phones, clear of the touch controls. */
 @media(pointer:coarse) and (orientation:landscape){
@@ -169,7 +177,7 @@ body.immersive-game .menu-hint{display:none}
 <main>
   <header>
     <div class="brand"><small>ПОЛНОЛУНИЕ · ГЛАВА I</small><h1>UPYR <span>RUN</span></h1><p>Проклятая дорога к СКА Арене</p></div>
-    <div class="header-actions"><span class="chapter">Санкт-Петербург<br><b>После заката</b></span><button id="sound" aria-label="Переключить звук">Звук: выкл</button><button id="pause">Пауза</button><button id="menu-open" aria-label="Открыть главное меню">☰</button><button id="reset" aria-label="Начать заново">↻</button></div>
+    <div class="header-actions"><span class="chapter">Санкт-Петербург<br><b>После заката</b></span><button id="game-settings" aria-label="Настройки игры" aria-controls="settings-panel" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 2-.7 2.5-2 .9L5 4.7 2.8 8.5 4.6 10v2.3l-1.8 1.5L5 17.6l2.3-.7 2 .9L10 20.3h4l.7-2.5 2-.9 2.3.7 2.2-3.8-1.8-1.5V10l1.8-1.5L19 4.7l-2.3.7-2-.9L14 2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="11.2" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div>
   </header>
   <section class="stage" aria-label="Игровое поле">
     <canvas id="game" aria-label="Платформер. Стрелки — движение, пробел — прыжок."></canvas>
@@ -205,7 +213,7 @@ body.immersive-game .menu-hint{display:none}
     <div class="boss-access-actions"><button type="submit" id="boss-access-submit">Войти</button><button type="button" id="boss-access-cancel">Отмена</button></div>
   </form>
 </section>
-<section id="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden><div class="achievement-heading"><h2 id="settings-title">Настройки</h2><button id="settings-close">Закрыть ×</button></div><label class="difficulty-label" for="boss-difficulty">Сложность Инквизитора · следующая попытка</label><select id="boss-difficulty"><option value="easy">Легко · 18 HP</option><option value="normal" selected>Нормально · 25 HP</option><option value="hard">Сложно · 35 HP</option></select><p>Звуки ночи</p><button id="settings-sound">Переключить звук</button><p>← → / A D — движение<br>Пробел / ↑ / W — прыжок<br>F — удар · ↓ / S — присесть<br>Escape — пауза</p><small>Звук включается после нажатия. Ваш выбор сохраняется.</small></section>
+<section id="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden><div class="achievement-heading"><h2 id="settings-title">Настройки</h2><button id="settings-close">Закрыть ×</button></div><div class="settings-actions"><button id="sound" aria-label="Переключить звук">Звук: выкл</button><button id="pause">Пауза</button><button id="menu-open">Главное меню</button><button id="reset">Заново уровень</button></div><label class="difficulty-label" for="boss-difficulty">Сложность Инквизитора · следующая попытка</label><select id="boss-difficulty"><option value="easy">Легко · 18 HP</option><option value="normal" selected>Нормально · 25 HP</option><option value="hard">Сложно · 35 HP</option></select><p>← → / A D — движение<br>Пробел / ↑ / W — прыжок<br>F — удар · ↓ / S — присесть<br>Escape — пауза</p><small>Звук включается после нажатия. Ваш выбор сохраняется.</small></section>
 <section id="achievements-panel" role="dialog" aria-modal="true" aria-labelledby="achievements-title" hidden>
  <div class="achievement-heading"><div><small>ЛЕТОПИСЬ ВЕЧНОЙ НОЧИ</small><h2 id="achievements-title">Достижения</h2></div><button id="close-achievements" aria-label="Закрыть достижения">Закрыть ×</button></div>
  <p id="achievement-summary"></p><progress id="achievement-total" max="23" value="0"></progress><p id="achievement-sync" role="status"></p>
@@ -1483,7 +1491,7 @@ function renderStatus(){
  ui.boss.dataset.vulnerable=String(Inquisitor.vulnerable(boss));
 
  document.querySelector('#escape-timer').textContent=escapeLeft>0?`Побег: ${Math.ceil(escapeLeft)} с`:towerTimer!==null?`Галерея: ${Math.ceil(towerTimer)} с`:'';
- document.querySelector('#pause').textContent=paused?'Продолжить':'Пауза';
+ document.querySelector('#pause').textContent=settingsPaused?'Продолжить игру':'Пауза';
 }
 let accumulator=0;
 let orientationBlocked=false;
@@ -1539,19 +1547,27 @@ for(const b of document.querySelectorAll('[data-key]')){const pointers=new Set()
 const touchControls=document.querySelector('nav[aria-label="Управление"]');
 touchControls.addEventListener('touchend',e=>{if(e.cancelable)e.preventDefault();},{passive:false});
 touchControls.addEventListener('dblclick',e=>e.preventDefault());
-document.querySelector('#play').onclick=start;document.querySelector('#reset').onclick=start;document.querySelector('#continue').onclick=resumeCheckpoint;document.querySelector('#main-menu').onclick=mainMenu;document.querySelector('#pause').onclick=()=>{if(state==='playing'){paused=!paused;releaseKeys();}};
+document.querySelector('#play').onclick=start;document.querySelector('#reset').onclick=()=>{closeSettings();start();};document.querySelector('#continue').onclick=resumeCheckpoint;document.querySelector('#main-menu').onclick=mainMenu;document.querySelector('#pause').onclick=()=>{if(state==='playing'||state==='cutscene'){settingsPaused=!settingsPaused;releaseKeys();if(!settingsPaused)closeSettings();}};
 document.querySelector('#sound').onclick=gameAudio.toggle;gameAudio.syncButton();
 try{window.Telegram?.WebApp?.ready();window.Telegram?.WebApp?.expand();}catch{}reset();requestAnimationFrame(frame);
 
 // Menu controls share the existing game and audio state.
-document.querySelector('#menu-open').onclick=()=>{releaseKeys();mainMenu();};
+document.querySelector('#menu-open').onclick=()=>{closeSettings();releaseKeys();mainMenu();};
 document.querySelector('#menu-resume').onclick=()=>{if(menuReturnState){state=menuReturnState;menuReturnState=null;paused=false;overlay.hidden=true;releaseKeys();}};
-let settingsPaused=false;
-document.querySelector('#settings-open').onclick=()=>{settingsPaused=paused;paused=true;releaseKeys();document.querySelector('#settings-panel').hidden=false;document.querySelector('#settings-close').focus?.();};
-function closeSettings(){document.querySelector('#settings-panel').hidden=true;paused=settingsPaused;document.querySelector('#settings-open').focus?.();}
+let settingsPaused=false,settingsFocus=null;
+function openSettings(event){
+ const panel=document.querySelector('#settings-panel');if(!panel.hidden)return;
+ settingsFocus=event?.currentTarget||document.activeElement;settingsPaused=paused;paused=true;releaseKeys();panel.hidden=false;
+ document.querySelector('#game-settings').setAttribute('aria-expanded','true');
+ document.querySelector('#pause').disabled=state!=='playing'&&state!=='cutscene';
+ document.querySelector('#reset').disabled=!assetsReady;
+ document.querySelector('#settings-close').focus?.();
+}
+document.querySelector('#settings-open').onclick=openSettings;
+document.querySelector('#game-settings').onclick=event=>{if(document.querySelector('#settings-panel').hidden)openSettings(event);else closeSettings();};
+function closeSettings(){document.querySelector('#settings-panel').hidden=true;paused=settingsPaused;releaseKeys();document.querySelector('#game-settings').setAttribute('aria-expanded','false');settingsFocus?.focus?.();}
 document.querySelector('#settings-close').onclick=closeSettings;
-document.querySelector('#settings-sound').onclick=gameAudio.toggle;
-document.querySelector('#settings-panel').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSettings();}if(e.key==='Tab'){const controls=[...document.querySelector('#settings-panel').querySelectorAll('button,select')],first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
+document.querySelector('#settings-panel').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSettings();}if(e.key==='Tab'){const controls=[...document.querySelector('#settings-panel').querySelectorAll('button:not(:disabled),select')],first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
 
 window.addEventListener('pagehide',persistActiveBoss);
 let bossAccessPaused=false;

@@ -287,7 +287,7 @@ function renderStatus(){
  ui.boss.dataset.vulnerable=String(Inquisitor.vulnerable(boss));
 
  document.querySelector('#escape-timer').textContent=escapeLeft>0?`Побег: ${Math.ceil(escapeLeft)} с`:towerTimer!==null?`Галерея: ${Math.ceil(towerTimer)} с`:'';
- document.querySelector('#pause').textContent=paused?'Продолжить':'Пауза';
+ document.querySelector('#pause').textContent=settingsPaused?'Продолжить игру':'Пауза';
 }
 let accumulator=0;
 let orientationBlocked=false;
@@ -343,19 +343,27 @@ for(const b of document.querySelectorAll('[data-key]')){const pointers=new Set()
 const touchControls=document.querySelector('nav[aria-label="Управление"]');
 touchControls.addEventListener('touchend',e=>{if(e.cancelable)e.preventDefault();},{passive:false});
 touchControls.addEventListener('dblclick',e=>e.preventDefault());
-document.querySelector('#play').onclick=start;document.querySelector('#reset').onclick=start;document.querySelector('#continue').onclick=resumeCheckpoint;document.querySelector('#main-menu').onclick=mainMenu;document.querySelector('#pause').onclick=()=>{if(state==='playing'){paused=!paused;releaseKeys();}};
+document.querySelector('#play').onclick=start;document.querySelector('#reset').onclick=()=>{closeSettings();start();};document.querySelector('#continue').onclick=resumeCheckpoint;document.querySelector('#main-menu').onclick=mainMenu;document.querySelector('#pause').onclick=()=>{if(state==='playing'||state==='cutscene'){settingsPaused=!settingsPaused;releaseKeys();if(!settingsPaused)closeSettings();}};
 document.querySelector('#sound').onclick=gameAudio.toggle;gameAudio.syncButton();
 try{window.Telegram?.WebApp?.ready();window.Telegram?.WebApp?.expand();}catch{}reset();requestAnimationFrame(frame);
 
 // Menu controls share the existing game and audio state.
-document.querySelector('#menu-open').onclick=()=>{releaseKeys();mainMenu();};
+document.querySelector('#menu-open').onclick=()=>{closeSettings();releaseKeys();mainMenu();};
 document.querySelector('#menu-resume').onclick=()=>{if(menuReturnState){state=menuReturnState;menuReturnState=null;paused=false;overlay.hidden=true;releaseKeys();}};
-let settingsPaused=false;
-document.querySelector('#settings-open').onclick=()=>{settingsPaused=paused;paused=true;releaseKeys();document.querySelector('#settings-panel').hidden=false;document.querySelector('#settings-close').focus?.();};
-function closeSettings(){document.querySelector('#settings-panel').hidden=true;paused=settingsPaused;document.querySelector('#settings-open').focus?.();}
+let settingsPaused=false,settingsFocus=null;
+function openSettings(event){
+ const panel=document.querySelector('#settings-panel');if(!panel.hidden)return;
+ settingsFocus=event?.currentTarget||document.activeElement;settingsPaused=paused;paused=true;releaseKeys();panel.hidden=false;
+ document.querySelector('#game-settings').setAttribute('aria-expanded','true');
+ document.querySelector('#pause').disabled=state!=='playing'&&state!=='cutscene';
+ document.querySelector('#reset').disabled=!assetsReady;
+ document.querySelector('#settings-close').focus?.();
+}
+document.querySelector('#settings-open').onclick=openSettings;
+document.querySelector('#game-settings').onclick=event=>{if(document.querySelector('#settings-panel').hidden)openSettings(event);else closeSettings();};
+function closeSettings(){document.querySelector('#settings-panel').hidden=true;paused=settingsPaused;releaseKeys();document.querySelector('#game-settings').setAttribute('aria-expanded','false');settingsFocus?.focus?.();}
 document.querySelector('#settings-close').onclick=closeSettings;
-document.querySelector('#settings-sound').onclick=gameAudio.toggle;
-document.querySelector('#settings-panel').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSettings();}if(e.key==='Tab'){const controls=[...document.querySelector('#settings-panel').querySelectorAll('button,select')],first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
+document.querySelector('#settings-panel').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSettings();}if(e.key==='Tab'){const controls=[...document.querySelector('#settings-panel').querySelectorAll('button:not(:disabled),select')],first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
 
 window.addEventListener('pagehide',persistActiveBoss);
 let bossAccessPaused=false;
