@@ -202,7 +202,7 @@ body.immersive-game #settings-panel{inset:max(12px,var(--game-top,0px),env(safe-
     </div>
   </section>
   <footer><span>← → / A D — бег · Пробел — прыжок · F — удар · ↓ / S — присесть</span><span>ЧЕСНОК НЕ ДРЕМЛЕТ. ТЫ ТОЖЕ.</span></footer>
-  <nav aria-label="Управление"><div><button data-key="left" aria-label="Влево">←</button><button data-key="right" aria-label="Вправо">→</button></div><div class="actions"><button data-key="crouch" aria-label="Присесть">Присесть</button><button data-key="attack" aria-label="Удар">Удар</button><button data-key="jump" aria-label="Прыжок">Прыжок <span aria-hidden="true">↑</span></button></div></nav>
+  <nav aria-label="Управление"><div><button data-key="left" aria-label="Влево">←</button><button data-key="right" aria-label="Вправо">→</button></div><div class="actions"><button data-key="crouch" aria-label="Присесть или спуститься с платформы">Присесть</button><button data-key="attack" aria-label="Удар">Удар</button><button data-key="jump" aria-label="Прыжок">Прыжок <span aria-hidden="true">↑</span></button></div></nav>
 <section id="boss-access-panel" role="dialog" aria-modal="true" aria-labelledby="boss-access-title" aria-describedby="boss-access-note" hidden>
   <form id="boss-access-form">
     <h2 id="boss-access-title">Доступ к боссу</h2>
@@ -1209,6 +1209,8 @@ let assetsReady=false;
 Promise.all([heroImage.decode(),heroAnimator.ready,garlicImage.decode(),atmosphere.ready,levelArt.ready,InquisitorArt.ready,document.fonts?.load('32px UpyrGothic')||Promise.resolve()]).then(()=>{assetsReady=true;atmosphere.prepare(platforms,statues);document.querySelector('#play').disabled=false;configureBossMenu();}).catch(()=>{overlay.hidden=false;overlay.querySelector('p').textContent='Не удалось загрузить графику. Откройте игру через npm start или используйте автономный HTML-файл.';});
 document.querySelector('#play').disabled=true;
 const keys={left:false,right:false,jump:false,attack:false,crouch:false};
+let crouchHeld=false;
+const dropPlatforms=new Set();
 const toPlatform=p=>Object.assign([p.x,p.y,p.w,p.h],{id:p.id,kind:p.type,baseX:p.x,baseY:p.y,...p,active:true,collapse:-1,restore:0,dx:0,dy:0});
 let groundPlatforms=[],ledgePlatforms=[],platforms=[];
 let player,coins,enemies,traps,items,projectiles=[],boss,checkpoint,snapshot,coffinStates=[],statues=[];
@@ -1258,6 +1260,7 @@ function makeWorld(){
  boss=Inquisitor.create(LEVEL1.boss,bossDifficulty);projectiles=[];statues=Relics.create(LEVEL1);
 }
 function reset(){
+ crouchHeld=false;dropPlatforms.clear();
  clearPageTurn();
  atmosphere.reset();heroAnimator.reset();makeWorld();coffinStates=[{id:'start',x:30,y:430,spawnX:70},...LEVEL1.checkpoints.map(cp=>({...cp,spawnX:cp.x}))].map(cp=>({...cp,opened:false,openTime:0}));player={x:70,y:330,w:40,h:80,vx:0,vy:0,ground:false,hp:3,inv:0,face:1,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false};
  score=0;camera=0;cameraY=0;clock=0;jumpHeld=false;attackHeld=false;kills=0;sword=0;swordRewards=0;damageTaken=0;leverOpen=false;escapeLeft=0;towerTimer=null;towerPassed=false;zoneIndex=0;cutsceneTime=0;paused=false;tutorialDone=new Set();
@@ -1269,6 +1272,7 @@ function restoreRelics(saved){
  for(const s of statues)if(s.hp===0&&!items.some(i=>i.id==='blood-'+s.id))items.push(Relics.drop(s));
 }
 function resumeCheckpoint(){
+ crouchHeld=false;dropPlatforms.clear();
  if(!assetsReady)return;clearPageTurn();safeIdle=0;achievementJump=false;jumpFires.clear();gameAudio.activate(checkpoint.id==='inquisitor-entry');const saved=snapshot;makeWorld();score=saved.score;kills=saved.kills;sword=saved.sword;swordRewards=saved.swordRewards;leverOpen=saved.leverOpen;restoreRelics(saved.statues);
  for(const c of coins)c.taken=saved.coins.includes(c.id);for(const c of items)c.taken=saved.items.includes(c.id);for(const e of enemies)e.dead=saved.enemies.includes(e.id);
  Object.assign(player,{x:checkpoint.x,y:checkpoint.y-80,h:80,hp:3,vx:0,vy:0,ground:false,inv:2,rage:0,attack:0,cooldown:0,support:null,swingSword:false,swordBroke:false});
@@ -1298,6 +1302,14 @@ function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 function activeNear(x,range=1250){return Math.abs(x-player.x)<range;}
 function solidRects(){return [...groundPlatforms.filter(p=>activeNear(p[0]+p[2]/2,p[2]+160)).map(p=>({x:p[0],y:p[1],w:p[2],h:p[3]})),...(!leverOpen?[LEVEL1.gate]:[])];}
 function setCrouch(){const feet=player.y+player.h;const height=keys.crouch&&player.ground?44:80;if(height===80&&player.h===44&&solidRects().some(r=>overlap({x:player.x,y:feet-80,w:player.w,h:80},r)))return;player.h=height;player.y=feet-height;}
+function dropThroughPlatform(){
+ const support=ledgePlatforms.find(p=>p.id===player.support&&p.active);
+ if(!player.ground||!support)return;
+ // Adjacent ledges at the same height must not catch the player during this step.
+ for(const p of ledgePlatforms)if(p.active&&Math.abs(p[1]-support[1])<2&&player.x+player.w>p[0]&&player.x<p[0]+p[2])dropPlatforms.add(p.id);
+ player.ground=false;player.support=null;player.vy=Math.max(player.vy,120);
+ achievementJump=false;jumpFires.clear();safeIdle=0;
+}
 function updatePlatforms(dt){for(const p of ledgePlatforms){const oldX=p[0],oldY=p[1];if(p.kind==='moving'){const offset=Math.sin(clock*Math.PI*2/p.period)*p.amplitude;p[0]=p.baseX+(p.axis==='x'?offset:0);p[1]=p.baseY+(p.axis==='y'?offset:0);}
  if(p.collapse>=0){p.collapse+=dt;if(p.collapse>=.8){p.active=false;p.restore+=dt;if(p.restore>4){p.active=true;p.collapse=-1;p.restore=0;}}}p.dx=p[0]-oldX;p.dy=p[1]-oldY;}}
 function attackBox(){const armed=player.attack>0?player.swingSword:sword>0;const reach=armed?96:63;return {x:player.face>0?player.x+player.w-5:player.x-reach+5,y:player.y+8,w:reach,h:Math.max(40,player.h-12)};}
@@ -1416,7 +1428,10 @@ function update(dt){
  for(const s of statues)s.hurt=Math.max(0,s.hurt-dt);
  clock+=dt;banner.left=Math.max(0,banner.left-dt);player.inv=Math.max(0,player.inv-dt);player.rage=Math.max(0,player.rage-dt);player.attack=Math.max(0,player.attack-dt);player.cooldown=Math.max(0,player.cooldown-dt);
  updatePlatforms(dt);if(player.ground&&player.support){const p=platforms.find(p=>p.id===player.support);if(p?.active){player.x+=p.dx;player.y+=p.dy;}else{player.ground=false;player.support=null;}}
- setCrouch();const travelStartX=player.x;player.vx=(boss.state==='INTRO'?0:((keys.right?1:0)-(keys.left?1:0)))*(player.h<80?125:245)*(player.rage>0?1.25:1);if(player.vx)player.face=Math.sign(player.vx);
+ for(const id of dropPlatforms){const p=ledgePlatforms.find(p=>p.id===id);if(!p?.active||player.y>p[1]+p[3]||(player.ground&&!dropPlatforms.has(player.support)))dropPlatforms.delete(id);}
+ const crouchPressed=keys.crouch&&!crouchHeld;crouchHeld=keys.crouch;
+ setCrouch();if(crouchPressed&&boss.state!=='INTRO')dropThroughPlatform();
+ const travelStartX=player.x;player.vx=(boss.state==='INTRO'?0:((keys.right?1:0)-(keys.left?1:0)))*(player.h<80?125:245)*(player.rage>0?1.25:1);if(player.vx)player.face=Math.sign(player.vx);
  if(boss.state!=='INTRO'&&keys.jump&&!jumpHeld&&player.ground&&!keys.crouch){achievementJump=true;jumpFires.clear();player.vy=-590;player.ground=false;player.support=null;}jumpHeld=keys.jump;
  if(boss.state!=='INTRO'&&keys.attack&&!attackHeld)punch();attackHeld=keys.attack;
  player.x=Math.max(0,Math.min(LEVEL1.width-player.w,player.x+player.vx*dt));
@@ -1424,7 +1439,7 @@ function update(dt){
  for(const r of solidRects())if(overlap(player,r)){if(player.vx>0)player.x=r.x-player.w;if(player.vx<0)player.x=r.x+r.w;}
  const wasGrounded=player.ground,prevBottom=player.y+player.h;player.vy+=1550*dt;player.y+=player.vy*dt;player.ground=false;player.support=null;
  if(player.vy>=0){let landing=null,landingY=Infinity;
-  for(const p of platforms){if(!p.active)continue;const [x,y,w]=p;if(player.x+player.w>x&&player.x<x+w&&prevBottom<=y-p.dy+.01&&player.y+player.h>=y&&y<landingY){landing=p;landingY=y;}}
+  for(const p of platforms){if(!p.active||dropPlatforms.has(p.id))continue;const [x,y,w]=p;if(player.x+player.w>x&&player.x<x+w&&prevBottom<=y-p.dy+.01&&player.y+player.h>=y&&y<landingY){landing=p;landingY=y;}}
   if(landing){player.y=landingY-player.h;player.vy=0;player.ground=true;player.support=landing.id;if(landing.kind==='crumble'&&landing.collapse<0)landing.collapse=0;if(!wasGrounded)atmosphere.burst(player.x+20,landingY,'landing');}
  }else{for(const r of solidRects())if(overlap(player,r)){player.y=r.y+r.h;player.vy=0;}}
  updateEnemies(dt,prevBottom);updateTraps(dt);if(state!=='playing')return;updateEvents(dt);updateBoss(dt);
@@ -1536,7 +1551,7 @@ function frame(t){const dt=Math.min((t-last)/1000||0,.1);last=t;achievementSyste
 function resize(){canvas.width=960*Math.min(devicePixelRatio||1,2);canvas.height=510*Math.min(devicePixelRatio||1,2);}resize();window.addEventListener('resize',resize);
 const physicalKeys={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyF:'attack',ArrowDown:'crouch',KeyS:'crouch'};
 const mapping={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',' ':'jump',ArrowUp:'jump',w:'jump',W:'jump',f:'attack',F:'attack',ArrowDown:'crouch',s:'crouch'};
-function releaseKeys(){for(const key in keys)keys[key]=false;for(const pointers of touchPointerSets)pointers.clear();}
+function releaseKeys(){for(const key in keys)keys[key]=false;crouchHeld=false;for(const pointers of touchPointerSets)pointers.clear();}
 window.addEventListener('keydown',e=>{if(orientationBlocked)return;if(!document.querySelector('#leaderboard-panel').hidden||!document.querySelector('#achievements-panel').hidden||!document.querySelector('#settings-panel').hidden||!document.querySelector('#boss-access-panel').hidden)return;if(e.target.matches?.('button,input,textarea')&&e.key===' ')return;const key=physicalKeys[e.code]||mapping[e.key];if(key){e.preventDefault();keys[key]=true;}if(e.code==='Escape'&&state==='playing')paused=!paused;});
 window.addEventListener('keyup',e=>{const key=physicalKeys[e.code]||mapping[e.key];if(key)keys[key]=false;});
 window.addEventListener('blur',()=>{releaseKeys();if(state==='playing')paused=true;});
