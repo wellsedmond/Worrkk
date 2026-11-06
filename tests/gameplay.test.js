@@ -256,3 +256,15 @@ test('fist attacks play 8 normal or 10 rage frames once, preserving the selected
  run('heroAnimator.reset();heroAnimator.strike(true,true)');assert.equal(run('heroAnimator.pose().clip'),'sword');
  run('heroAnimator.reset();sword=0;player.rage=10;player.cooldown=0;punch()');assert.equal(run('heroAnimator.pose().clip'),'ragePunch');assert.equal(run('player.cooldown'),.42);
 });
+
+test('all run frames keep the same visible height and foot line across the loop',()=>{
+ const run=game();let foot=null;const frames=new Set();
+ for(let i=0;i<32;i++){
+  run('heroAnimator.update(1/120,false,{ground:true,vy:0,travel:196/32})');
+  const g=run('heroAnimator.geometry()');frames.add(run('heroAnimator.pose().frame'));
+  assert.ok(Math.abs(g.dh-92)<1e-8);assert.ok(Math.abs(g.dw/g.sw-g.dh/g.sh)<1e-8);
+  if(foot===null)foot=g.dy+g.dh;
+  assert.ok(Math.abs(g.dy+g.dh-foot)<1e-8);
+ }
+ assert.equal(frames.size,16);
+});

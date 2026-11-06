@@ -35,7 +35,7 @@ for(const file of ['level1.js','relics.js','combat-geometry.js','inquisitor-sock
   for(const name of names)urls[name]='data:image/svg+xml;base64,'+(await readFile(new URL(`assets/level1/${name}.svg`,root))).toString('base64');
   js=js.replace('`assets/level1/${name}.svg`',`(${JSON.stringify(urls)})[name]`);
  }else if(file==='hero-animation.js'){
-  for(const name of ['hero-crouch','hero-run','hero-jump','hero-attack','hero-sword','hero-sword-movement','hero-rage','hero-punch']){
+  for(const name of ['hero','hero-crouch','hero-run','hero-jump','hero-attack','hero-sword','hero-sword-movement','hero-rage','hero-punch']){
    const url='data:image/png;base64,'+(await readFile(new URL('assets/'+name+'.png',root))).toString('base64');
    js=js.replace("'assets/"+name+".png'",JSON.stringify(url));
   }
