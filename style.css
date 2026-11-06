@@ -82,16 +82,22 @@ body.immersive-game header{position:absolute;top:max(10px,var(--game-top,0px),en
 body.immersive-game .brand,body.immersive-game .chapter,body.immersive-game footer{display:none}
 body.immersive-game .header-actions{gap:5px;max-width:none;flex-wrap:nowrap;pointer-events:auto}
 body.immersive-game .header-actions button{font-size:10px;min-height:36px;padding:7px 10px;background:#100b16c9}
-body.immersive-game nav,body.immersive-game main:has(#overlay:not([hidden])) nav{position:absolute;inset:auto max(12px,var(--game-right,0px),env(safe-area-inset-right)) max(10px,var(--game-bottom,0px),env(safe-area-inset-bottom)) max(12px,var(--game-left,0px),env(safe-area-inset-left));z-index:30;display:flex;margin:0;padding:0;gap:8px;min-height:48px;border:0;box-shadow:none;background:none;pointer-events:none;flex-wrap:nowrap}
-body.immersive-game nav div,body.immersive-game nav .actions{gap:8px;pointer-events:none}
-body.immersive-game nav button{pointer-events:auto;min-width:48px;min-height:48px;font-size:12px;padding:8px 13px;background:#100b16b8;touch-action:none}
+body.immersive-game nav,body.immersive-game main:has(#overlay:not([hidden])) nav{position:absolute;inset:auto max(12px,var(--game-right,0px),env(safe-area-inset-right)) max(10px,var(--game-bottom,0px),env(safe-area-inset-bottom)) max(12px,var(--game-left,0px),env(safe-area-inset-left));z-index:30;display:flex;margin:0;padding:0;gap:8px;min-height:62.4px;border:0;box-shadow:none;background:none;pointer-events:none;flex-wrap:nowrap;align-items:flex-end}
+body.immersive-game nav div{display:flex;gap:12px;pointer-events:none}
+body.immersive-game nav .actions{display:grid;grid-template-columns:repeat(2,109.2px);grid-template-rows:repeat(2,62.4px);gap:12px;pointer-events:none}
+body.immersive-game nav [data-key="jump"]{grid-column:2;grid-row:1}
+body.immersive-game nav [data-key="crouch"]{grid-column:2;grid-row:2}
+body.immersive-game nav [data-key="attack"]{grid-column:1;grid-row:1 / 3;align-self:center}
+body.immersive-game nav button{pointer-events:auto;box-sizing:border-box;width:83.2px;height:62.4px;min-width:0;min-height:62.4px;font-size:15.6px;line-height:1;padding:10.4px 16.9px;border-radius:50%;clip-path:none;background:linear-gradient(145deg,#342333d9,#100b16c9);border:1px solid #b8979c;box-shadow:inset 0 0 0 3px #110c17aa,0 3px 12px #0007;touch-action:none;white-space:nowrap}
+body.immersive-game nav .actions button{width:109.2px}
+body.immersive-game nav button:active{background:linear-gradient(145deg,#75344ad9,#291321e8)}
 body.immersive-game nav button:before,body.immersive-game nav button:after{display:none}
 body.immersive-game main:has(#overlay:not([hidden])) nav{display:none}
 body.immersive-game #hud{top:max(10px,var(--game-top,0px),env(safe-area-inset-top));left:max(12px,var(--game-left,0px),env(safe-area-inset-left));padding:7px 10px;gap:10px;max-width:calc(100% - 280px)}
 body.immersive-game #hud .stat small{font-size:6px}
 body.immersive-game #hud .stat b{font-size:16px}
 body.immersive-game .health svg{width:19px;height:21px}
-body.immersive-game #sword-hud{bottom:70px;left:max(12px,var(--game-left,0px),env(safe-area-inset-left));font-size:9px}
+body.immersive-game #sword-hud{bottom:84px;left:max(12px,var(--game-left,0px),env(safe-area-inset-left));font-size:9px}
 body.immersive-game .stage-caption{bottom:70px}
 body.immersive-game #tutorial{bottom:72px;font-size:10px;padding:6px 10px}
 body.immersive-game #overlay{padding:max(14px,var(--game-top,0px),env(safe-area-inset-top)) max(24px,var(--game-right,0px),env(safe-area-inset-right)) max(14px,var(--game-bottom,0px),env(safe-area-inset-bottom)) max(24px,var(--game-left,0px),env(safe-area-inset-left));overflow:auto;justify-content:flex-start}

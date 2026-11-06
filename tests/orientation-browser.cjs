@@ -34,6 +34,23 @@ const server=spawn(process.execPath,['server.js'],{cwd:path.resolve(__dirname,'.
   assert.equal(await page.evaluate(()=>paused),true);
   await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>clock===frozenClock),true);
   if(route==='/')await page.screenshot({path:'/tmp/upyr-phone-landscape.png'});
+  for(const [width,height]of [[568,320],[667,375],[844,390],[932,430],[1024,768]]){
+   await page.setViewportSize({width,height});await page.waitForFunction(()=>!orientationBlocked);
+   const boxes={};
+   for(const key of ['left','right','jump','attack','crouch']){
+    const button=page.locator(`[data-key="${key}"]`);boxes[key]=await button.boundingBox();
+    const box=boxes[key];assert.ok(box.x>=0&&box.y>=0&&box.x+box.width<=width&&box.y+box.height<=height,key+' fits '+width+'x'+height);
+    assert.ok(Math.abs(box.height-62.4)<.1,key+' has 30 percent greater height');
+    assert.ok(box.width>box.height,key+' has oval proportions');
+    assert.equal(await button.evaluate(el=>getComputedStyle(el).borderRadius),'50%');
+   }
+   const values=Object.values(boxes);
+   for(let i=0;i<values.length;i++)for(let j=i+1;j<values.length;j++){
+    const a=values[i],b=values[j];assert.ok(a.x+a.width<=b.x||b.x+b.width<=a.x||a.y+a.height<=b.y||b.y+b.height<=a.y,'control buttons must not overlap');
+   }
+   assert.ok(boxes.jump.y+boxes.jump.height<boxes.crouch.y);
+   assert.ok(boxes.attack.x+boxes.attack.width<boxes.jump.x);
+  }
   assert.deepEqual(errors,[]);await context.close();console.log(route+': portrait blocks play, rotation clears held input, landscape resumes, manual pause preserved');
  }
  for(const platform of ['android','tdesktop']){
