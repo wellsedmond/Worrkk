@@ -40,7 +40,7 @@ const server=spawn(process.execPath,['server.js'],{cwd:path.resolve(__dirname,'.
    for(const key of ['left','right','jump','attack','crouch']){
     const button=page.locator(`[data-key="${key}"]`);boxes[key]=await button.boundingBox();
     const box=boxes[key];assert.ok(box.x>=0&&box.y>=0&&box.x+box.width<=width&&box.y+box.height<=height,key+' fits '+width+'x'+height);
-    assert.ok(Math.abs(box.height-62.4)<.1,key+' has 30 percent greater height');
+    assert.ok(Math.abs(box.height-53.04)<.1,key+' has 15 percent smaller height');
     assert.ok(box.width>box.height,key+' has oval proportions');
     assert.equal(await button.evaluate(el=>getComputedStyle(el).borderRadius),'50%');
    }
