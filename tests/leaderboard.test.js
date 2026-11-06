@@ -16,14 +16,14 @@ async function request(api,url,body){
  const req=Readable.from([JSON.stringify(body)]);req.url=url;req.method='POST';req.headers={'content-type':'application/json',host:'localhost'};
  let status,answer;await api(req,{writeHead:s=>{status=s;},end:data=>{answer=JSON.parse(data);}});return {status,answer};
 }
-test('rank is based on persisted lifetime coins, respects ties, includes own place outside top 50 and hides account IDs',async()=>{
+test('rank is based on persisted lifetime coins, respects ties, includes own place outside top 100 and hides account IDs',async()=>{
  const directory=await mkdtemp(path.join(tmpdir(),'upyr-ranks-'));
  try{
-  for(let i=1;i<=55;i++)await writeFile(path.join(directory,i+'.json'),JSON.stringify({stats:{coins:i<3?1000:1000-i},player:{name:'Player '+i}}));
+  for(let i=1;i<=105;i++)await writeFile(path.join(directory,i+'.json'),JSON.stringify({stats:{coins:i<3?1000:1000-i},player:{name:'Player '+i}}));
   await writeFile(path.join(directory,'not-a-player.json'),JSON.stringify({stats:{coins:999999}}));
-  const board=await readLeaderboard(directory,'55');
-  assert.equal(board.total,55);assert.equal(board.players.length,50);assert.deepEqual(board.players.slice(0,3).map(p=>p.rank),[1,1,3]);
-  assert.equal(board.self.rank,55);assert.equal(board.self.coins,945);assert.equal(board.self.isSelf,true);assert.equal(board.players.some(p=>p.isSelf),false);
+  const board=await readLeaderboard(directory,'105');
+  assert.equal(board.total,105);assert.equal(board.players.length,100);assert.deepEqual(board.players.slice(0,3).map(p=>p.rank),[1,1,3]);
+  assert.equal(board.self.rank,105);assert.equal(board.self.coins,895);assert.equal(board.self.isSelf,true);assert.equal(board.players.some(p=>p.isSelf),false);
   assert.ok(board.players.every(p=>Object.keys(p).sort().join(',')==='coins,isSelf,name,rank'));
  }finally{await rm(directory,{recursive:true,force:true});}
 });

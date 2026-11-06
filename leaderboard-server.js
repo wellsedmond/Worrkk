@@ -18,5 +18,5 @@ export async function readLeaderboard(directory,currentUser){
   if(p.coins!==lastCoins){rank=index+1;lastCoins=p.coins;}
   return {rank,name:p.name,coins:p.coins,isSelf:p.id===currentUser};
  });
- return {players:publicRows.slice(0,50),self:publicRows.find(p=>p.isSelf)||null,total:players.length};
+ return {players:publicRows.slice(0,100),self:publicRows.find(p=>p.isSelf)||null,total:players.length};
 }
