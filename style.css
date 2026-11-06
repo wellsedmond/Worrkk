@@ -112,3 +112,17 @@ body.immersive-game #overlay p{font-size:11px;margin-bottom:8px;max-width:360px}
 body.immersive-game #overlay button{min-height:36px;font-size:13px;margin-bottom:6px;padding:8px 16px}
 body.immersive-game .menu-subtitle{font-size:10px;margin-bottom:8px}
 body.immersive-game .menu-hint{display:none}
+
+/* Compact boss readout below the top HUD on phones, clear of the touch controls. */
+@media(pointer:coarse) and (orientation:landscape){
+ body.immersive-game #boss-hud{top:calc(max(10px,var(--game-top,0px),env(safe-area-inset-top)) + 58px);bottom:auto;width:min(320px,calc(100% - 32px));padding:5px 9px;gap:2px}
+ body.immersive-game #boss-hud strong{font-size:9px;line-height:11px;letter-spacing:.4px}
+ body.immersive-game #boss-health-value{font-size:8px;line-height:10px}
+ body.immersive-game #boss-health{height:5px}
+ body.immersive-game #boss-warning{font-size:9px;line-height:12px;min-height:12px;letter-spacing:0}
+ body.immersive-game .attention-row{gap:6px}
+ body.immersive-game .attention-row small{font-size:6px;line-height:9px}
+ body.immersive-game #hunter-attention{height:3px}
+ body.immersive-game .stage:has(#boss-hud:not([hidden])) #banner{top:calc(max(10px,var(--game-top,0px),env(safe-area-inset-top)) + 140px);width:max-content;max-width:280px;padding:5px 8px;font-size:8px;line-height:11px}
+ body.immersive-game .stage:has(#boss-hud:not([hidden])) #rage-meter{top:auto;bottom:112px;left:max(12px,var(--game-left,0px),env(safe-area-inset-left));right:auto;max-width:180px;font-size:9px;line-height:12px}
+}
